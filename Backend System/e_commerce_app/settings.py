@@ -31,8 +31,10 @@ if os.environ.get('SETTINGS')=='dev':
 else:
     DEBUG = False
  
-
-ALLOWED_HOSTS = ['*']
+if os.environ.get('SETTINGS')=='dev':
+    ALLOWED_HOSTS = ['*']
+else:
+    pass
 
 
 # Application definition
@@ -61,7 +63,7 @@ ROOT_URLCONF = 'e_commerce_app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -80,25 +82,31 @@ WSGI_APPLICATION = 'e_commerce_app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    # Sqlite
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
-    
-    # POSTGRESQL
-    'default': {
-                    
-            #Postgres in localhost
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DEV_DATABASE_NAME'),
-            'USER': os.environ.get('DEV_DATABASE_USER'),
-            'PASSWORD': os.environ.get('DEV_DATABASE_PASSWORD'),
-            'HOST': os.environ.get('DEV_DATABASE_HOST'),
-            'PORT':'5432', 
+if os.environ.get('SETTINGS')=='dev':
+
+    DATABASES = {
+        # Sqlite
+        # 'default': {
+        #     'ENGINE': 'django.db.backends.sqlite3',
+        #     'NAME': BASE_DIR / 'db.sqlite3',
+        # }
+        
+        # POSTGRESQL
+        'default': {
+                        
+                #Postgres in localhost
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.environ.get('DEV_DATABASE_NAME'),
+                'USER': os.environ.get('DEV_DATABASE_USER'),
+                'PASSWORD': os.environ.get('DEV_DATABASE_PASSWORD'),
+                'HOST': os.environ.get('DEV_DATABASE_HOST'),
+                'PORT':'5432', 
+        }
     }
-}
+    
+else:
+    # Use Production Database Here
+    pass
 
 
 # Password validation
@@ -125,7 +133,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+from django.utils import timezone
+TIME_ZONE = os.environ.get('TIME_ZONE')
 
 USE_I18N = True
 
@@ -136,6 +145,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+# Static Root
+STATIC_ROOT=os.path.join(BASE_DIR,'staticfiles')
+# Static Files Directory
+STATICFIlES_DIRS=(os.path.join(BASE_DIR,'static/'))
+
+
+# Media files
+MEDIA_ROOT= os.path.join(BASE_DIR, 'Media/')
+MEDIA_URL= "/media_files/" 
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
