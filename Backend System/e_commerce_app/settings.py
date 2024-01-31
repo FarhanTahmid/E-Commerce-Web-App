@@ -46,6 +46,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages',
+    'business_company',
+    
 ]
 
 MIDDLEWARE = [
@@ -161,3 +164,14 @@ MEDIA_URL= "/media_files/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# # AWS Configs for production usage
+# AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY')
+# AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
+
+# # S3 Configs
+# AWS_STORAGE_BUCKET_NAME=os.environ.get('AWS_STORAGE_BUCKET_NAME')
+# DEFAULT_FILE_STORAGE=os.environ.get('DEFAULT_FILE_STORAGE')
+# STATICFILES_STORAGE=os.environ.get('STATICFILES_STORAGE')
+# AWS_S3_CUSTOM_DOMAIN='%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
