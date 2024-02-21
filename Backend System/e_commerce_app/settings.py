@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'storages',
     'business_company',
+    'products',
     
 ]
 
@@ -147,16 +148,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
-# Static Root
-STATIC_ROOT=os.path.join(BASE_DIR,'staticfiles')
-# Static Files Directory
-STATICFIlES_DIRS=(os.path.join(BASE_DIR,'static/'))
+if os.environ.get('SETTINGS')=='dev':
+    STATIC_URL = 'static/'
+    # Static Root
+    STATIC_ROOT=os.path.join(BASE_DIR,'staticfiles')
+    # Static Files Directory
+    STATICFIlES_DIRS=(os.path.join(BASE_DIR,'static/'))
 
-
-# Media files
-MEDIA_ROOT= os.path.join(BASE_DIR, 'Media/')
-MEDIA_URL= "/media_files/" 
+    # Media files
+    MEDIA_ROOT= os.path.join(BASE_DIR, 'Media/')
+    MEDIA_URL= "/media_files/"
+else:
+    # USE AWS Or production static file server
+    pass
 
 
 

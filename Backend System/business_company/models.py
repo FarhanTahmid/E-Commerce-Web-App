@@ -1,8 +1,8 @@
 from django.db import models
-from django_resized import ResizedImageField
+
 # Create your models here.
 
-class Business_Identity:
+class Business_Identity(models.Model):
     '''
     This class stores all the primary identities of the business company. This will be a single row class
     to specify one buisiness in the whole app.
@@ -14,6 +14,7 @@ class Business_Identity:
     
     class Meta:
         verbose_name="Business Identity"
+        verbose_name_plural="Business Identities"
     def __str__(self) -> str:
         return self.business_name
 
