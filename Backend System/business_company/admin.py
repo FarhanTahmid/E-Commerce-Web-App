@@ -7,3 +7,8 @@ class Business_Identity(admin.ModelAdmin):
     list_display=[
         'business_name','platform_product_key'
     ]
+@admin.register(Comapany_Users)
+class Company_Users(admin.ModelAdmin):
+    list_display=[
+        'first_name','last_name','email','is_super_user','is_staff','is_employee'
+    ]

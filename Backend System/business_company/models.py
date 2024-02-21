@@ -17,6 +17,22 @@ class Business_Identity(models.Model):
         verbose_name_plural="Business Identities"
     def __str__(self) -> str:
         return self.business_name
+    
+class Comapany_Users(models.Model):
+    first_name = models.CharField(null=False,blank=False,max_length = 50)
+    last_name = models.CharField(null=False,blank=False,max_length = 50)
+    email = models.EmailField(unique=True,blank=True,null=True)
+    is_super_user = models.BooleanField(default = False)
+    is_staff = models.BooleanField(default = False)
+    is_employee = models.BooleanField(default = False)
+
+    class Meta:
+        verbose_name="Company User"
+    def __str__(self) -> str:
+        return self.first_name
+
+
+
 
     
     

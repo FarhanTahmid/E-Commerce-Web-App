@@ -1,7 +1,7 @@
 from business_company.models import Business_Identity
 
 
-class Buisiness_Handling:
+class Business_Handling:
     
     def create_business(**kwargs):
         """Creates a new business."""

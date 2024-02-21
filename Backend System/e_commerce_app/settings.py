@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'storages',
     'business_company',
     'products',
-    
+    'system_administrator',
 ]
 
 MIDDLEWARE = [
