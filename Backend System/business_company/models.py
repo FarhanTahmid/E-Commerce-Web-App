@@ -19,9 +19,12 @@ class Business_Identity(models.Model):
         return self.business_name
     
 class Comapany_Users(models.Model):
-    first_name = models.CharField(null=False,blank=False,max_length = 50)
-    last_name = models.CharField(null=False,blank=False,max_length = 50)
+
+    employee_id = models.CharField(null=False,blank=False,default=None)
+    first_name = models.CharField(null=False,blank=False,max_length = 50,default = None)
+    last_name = models.CharField(null=False,blank=False,max_length = 50,default = None)
     email = models.EmailField(unique=True,blank=True,null=True)
+    phone_number = models.CharField(max_length = 20,null=True,blank=True,default = None)
     is_super_user = models.BooleanField(default = False)
     is_staff = models.BooleanField(default = False)
     is_employee = models.BooleanField(default = False)

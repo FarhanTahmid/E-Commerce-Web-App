@@ -1,6 +1,7 @@
 from business_company.models import Business_Identity
 
 
+
 class Business_Handling:
     
     def create_business(**kwargs):
@@ -23,5 +24,6 @@ class Business_Handling:
             func_status=True
             return message,func_status
         
-            
+
+
             

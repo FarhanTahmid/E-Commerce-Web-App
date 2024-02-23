@@ -9,7 +9,7 @@ class ErrorHandling:
     
     logger=logging.getLogger(__name__)
     
-    def save_system_errors(error_name,error_traceback,user):
+    def save_system_errors(user,error_name,error_traceback):
         try:
             new_error=SystemErrors.objects.create(
                 date_time=datetime.now(),
@@ -24,5 +24,5 @@ class ErrorHandling:
                 #send email to devlopers
                 pass
         except:
-            ErrorHandling.logger.error("An error occurred for user, {user.first_name} , at {datetime}".format(datetime=datetime.now()), exc_info=True)
+            ErrorHandling.logger.error("An error occurred for user, {user} , at {datetime}".format(datetime=datetime.now()), exc_info=True)
     
