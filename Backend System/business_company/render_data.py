@@ -1,6 +1,10 @@
 from business_company.models import Business_Identity
+import logging
+from datetime import datetime
+import traceback
+from system_administrator.system_error_handling  import ErrorHandling
 
-
+logger=logging.getLogger(__name__)
 
 class Business_Handling:
     
@@ -23,6 +27,11 @@ class Business_Handling:
             message="New business created!"
             func_status=True
             return message,func_status
+        
+    def get_business_credentials():
+
+        return Business_Identity.objects.first()
+
         
 
 
