@@ -85,7 +85,7 @@ def company_dashboard(request):
         context = {
             'company':company
         }
-        return render(request,'apps-kanban-board.html',context)
+        return render(request,'dashboard.html',context)
     except Exception as e:
         logger.error("An error occurred for user, (during loggin in) , at {datetime}".format(datetime=datetime.now()), exc_info=True)
         ErrorHandling.save_system_errors(user,error_name=e,error_traceback=traceback.format_exc())
