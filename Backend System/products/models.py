@@ -127,4 +127,35 @@ class Product_Images(models.Model):
     def __str__(self):
         return str(self.pk)
 
+
+from django.utils import timezone
+class Product_Discount(models.Model):
+    '''This table stores all the discounts of the products'''
+
+    DISCOUNT_TYPE_CHOICES=[
+        ('percentage','Percentage'),
+        ('fixed_amount','Fixed Amount'),
+    ]
+
+    discount_type=models.CharField(max_length=30,choices=DISCOUNT_TYPE_CHOICES)
+    discount_value=models.DecimalField(max_digits=10,decimal_places=2)
+    start_date=models.DateTimeField()
+    end_date=models.DateTimeField()
+    isActive=models.BooleanField(default=True)
+    product_id=models.ForeignKey(Product,on_delete=models.CASCADE,related_name='discounts')
+
+    class Meta:
+        verbose_name="Product Discount"
+        verbose_name_plural="Product Discounts"
+
+    def __str__(self):
+        return f"{self.discount_type} - {self.discount_value}"
     
+    # def is_discount_active(self):
+    #     '''Check if the discount is currently active'''
+    #     now=timezone.now()
+
+    #     if self.start_date <= now and now <= self.end_date and self.isActive:
+    #         return True
+    #     else:
+    #         return False
