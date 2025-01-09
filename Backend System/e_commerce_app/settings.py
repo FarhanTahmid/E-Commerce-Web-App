@@ -99,7 +99,6 @@ if os.environ.get('SETTINGS')=='dev':
         
         # POSTGRESQL
         'default': {
-                        
                 #Postgres in localhost
                 'ENGINE': 'django.db.backends.postgresql',
                 'NAME': os.environ.get('DEV_DATABASE_NAME'),
