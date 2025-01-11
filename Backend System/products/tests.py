@@ -97,3 +97,116 @@ class TestManageProducts(TestCase):
         
         self.assertEqual(ErrorLogs.objects.filter(error_type="DatabaseError").count(), 1,
                          "A DatabaseError should be logged in the ErrorLogs model.")
+
+class TestUpdateProductType(TestCase):
+    def setUp(self):
+        """
+        Set up initial data for testing.
+        """
+        self.product_type1 = Product_type.objects.create(type="Electronics", description="Electronic items")
+        self.product_type2 = Product_type.objects.create(type="Furniture", description="Furniture items")
+
+    def test_update_product_type_success(self):
+        """
+        Test successfully updating a product type.
+        """
+        success, message = ManageProducts.update_product_type(
+            product_type_pk=self.product_type1.pk, 
+            new_type="Updated Electronics", 
+            description="Updated description for electronics"
+        )
+        self.assertTrue(success, "The function should return True for a successful update.")
+        self.assertEqual(message, "Product Type updated successfully!", "The success message is incorrect.")
+
+        # Verify the updates
+        updated_product_type = Product_type.objects.get(pk=self.product_type1.pk)
+        self.assertEqual(updated_product_type.type, "Updated Electronics", "The product type name was not updated.")
+        self.assertEqual(updated_product_type.description, "Updated description for electronics",
+                         "The product type description was not updated.")
+
+    def test_update_duplicate_product_type(self):
+        """
+        Test updating a product type when a duplicate exists.
+        """
+        success, message = ManageProducts.update_product_type(
+            product_type_pk=self.product_type1.pk, 
+            new_type="Furniture",  # Duplicate type
+            description="Trying to update to a duplicate type"
+        )
+        self.assertFalse(success, "The function should return False for a duplicate type.")
+        self.assertEqual(message, "Same type exists in Database!", "The duplicate type message is incorrect.")
+
+    def test_update_nonexistent_product_type(self):
+        """
+        Test updating a non-existent product type.
+        """
+        success, message = ManageProducts.update_product_type(
+            product_type_pk=9999,  # Non-existent primary key
+            new_type="Nonexistent",
+            description="Trying to update a non-existent product type"
+        )
+        self.assertFalse(success, "The function should return False for a non-existent product type.")
+        self.assertEqual(message, "Product Type does not exist!", "The error message for a non-existent product type is incorrect.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=DatabaseError("Database Error"))
+    def test_update_product_type_database_error(self, mock_get):
+        """
+        Test handling of a DatabaseError during product type update.
+        """
+        success, message = ManageProducts.update_product_type(
+            product_type_pk=self.product_type1.pk, 
+            new_type="New Type",
+            description="Description"
+        )
+        self.assertFalse(success, "The function should return False on a DatabaseError.")
+        self.assertEqual(message, "An unexpected error in Database occurred while updating Product Type! Please try again later.",
+                         "The error message for DatabaseError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="DatabaseError").count(), 1,
+                         "A DatabaseError should be logged in the ErrorLogs model.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=OperationalError("Operational Error"))
+    def test_update_product_type_operational_error(self, mock_get):
+        """
+        Test handling of an OperationalError during product type update.
+        """
+        success, message = ManageProducts.update_product_type(
+            product_type_pk=self.product_type1.pk, 
+            new_type="New Type",
+            description="Description"
+        )
+        self.assertFalse(success, "The function should return False on an OperationalError.")
+        self.assertEqual(message, "An unexpected error in server occurred while updating Product Type! Please try again later.",
+                         "The error message for OperationalError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="OperationalError").count(), 1,
+                         "An OperationalError should be logged in the ErrorLogs model.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=ProgrammingError("Programming Error"))
+    def test_update_product_type_programming_error(self, mock_get):
+        """
+        Test handling of a ProgrammingError during product type update.
+        """
+        success, message = ManageProducts.update_product_type(
+            product_type_pk=self.product_type1.pk, 
+            new_type="New Type",
+            description="Description"
+        )
+        self.assertFalse(success, "The function should return False on a ProgrammingError.")
+        self.assertEqual(message, "An unexpected error in server occurred while updating Product Type! Please try again later.",
+                         "The error message for ProgrammingError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="ProgrammingError").count(), 1,
+                         "A ProgrammingError should be logged in the ErrorLogs model.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=IntegrityError("Integrity Error"))
+    def test_update_product_type_integrity_error(self, mock_get):
+        """
+        Test handling of an IntegrityError during product type update.
+        """
+        success, message = ManageProducts.update_product_type(
+            product_type_pk=self.product_type1.pk, 
+            new_type="New Type",
+            description="Description"
+        )
+        self.assertFalse(success, "The function should return False on an IntegrityError.")
+        self.assertEqual(message, "Same type exists in Database!", "The error message for IntegrityError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="IntegrityError").count(), 1,
+                         "An IntegrityError should be logged in the ErrorLogs model.")

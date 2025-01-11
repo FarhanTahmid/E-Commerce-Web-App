@@ -195,8 +195,135 @@ class ManageProducts:
 
         return False, error_messages.get(error_type, "An unexpected error occurred while creating Product Type! Please try again later.")
     
-    def update_product_type(product_type_pk,type,description):
-        pass
+    def update_product_type(product_type_pk, new_type, description):
+        """
+            Update an existing product type in the database.
+
+            This function performs the following operations:
+            1. Fetches all existing product types using `ManageProducts.fetch_all_product_types`.
+            2. Checks if a product type with the same name already exists (case-insensitive comparison).
+            3. If no duplicate exists:
+                - Retrieves the product type to update using its primary key (`product_type_pk`).
+                - Updates the product type's `type` and `description` fields with the provided values.
+                - Saves the changes to the database.
+                - Returns a success status and message.
+            4. If a duplicate exists:
+                - Returns a failure status and a message indicating duplication.
+            5. Handles and logs any errors encountered during the process.
+
+            Args:
+                product_type_pk (int): The primary key of the product type to be updated.
+                new_type (str): The new name for the product type.
+                description (str): The new description for the product type.
+
+            Returns:
+                tuple:
+                    - bool: Indicates success (`True`) or failure (`False`) of the operation.
+                    - str: A message describing the result of the operation.
+
+            Example Usage:
+                success, message = update_product_type(
+                    product_type_pk=1, 
+                    new_type="Updated Electronics", 
+                    description="Updated description for electronics"
+                )
+                if success:
+                    print(message)
+                else:
+                    print(f"Failed to update product type: {message}")
+
+            Workflow:
+                1. Retrieve existing product types using `ManageProducts.fetch_all_product_types`.
+                2. Check if a duplicate product type exists:
+                    - Perform a case-insensitive comparison of `new_type` with existing records.
+                3. If no duplicate exists:
+                    - Use `Product_type.objects.get` to retrieve the product type by its primary key.
+                    - Update the `type` and `description` fields.
+                    - Save the changes to the database.
+                    - Return a success status and message.
+                4. If a duplicate exists:
+                    - Return a failure status with the message "Same type exists in Database!".
+                5. Handle any errors during the process:
+                    - Log errors in the `ErrorLogs` model with details such as:
+                        - `error_type`: The type of error (e.g., `DatabaseError`).
+                        - `error_message`: The specific error message.
+                    - Return an appropriate error message to the caller.
+
+            Error Handling:
+                - **Product_type.DoesNotExist**:
+                    - Raised if the specified product type does not exist in the database.
+                    - Returns (False, "Product Type does not exist!").
+                - **DatabaseError**: Indicates a general database-related issue.
+                - **OperationalError**: Indicates server-related issues such as connection problems.
+                - **ProgrammingError**: Indicates issues like invalid queries or schema mismatches.
+                - **IntegrityError**: Indicates data integrity issues, such as duplicate entries.
+                - **Exception**: Handles all unexpected errors as a fallback.
+
+            Error Logging:
+                - Errors are logged in the `ErrorLogs` model with the following fields:
+                    - `error_type` (str): The type of error encountered.
+                    - `error_message` (str): A detailed error message describing the issue.
+
+            Error Messages Returned:
+                - **DoesNotExist**:
+                    "Product Type does not exist!"
+                - **DatabaseError**:
+                    "An unexpected error in Database occurred while updating Product Type! Please try again later."
+                - **OperationalError**:
+                    "An unexpected error in server occurred while updating Product Type! Please try again later."
+                - **ProgrammingError**:
+                    "An unexpected error in server occurred while updating Product Type! Please try again later."
+                - **IntegrityError**:
+                    "Same type exists in Database!"
+                - **General Error**:
+                    "An unexpected error occurred while updating Product Type! Please try again later."
+
+            Returns in Various Scenarios:
+                - **Success**:
+                    (True, "Product Type updated successfully!")
+                - **Duplicate Product Type**:
+                    (False, "Same type exists in Database!")
+                - **Non-existent Product Type**:
+                    (False, "Product Type does not exist!")
+                - **Error Scenarios**:
+                    (False, "<Error-specific message>")
+        """
+        try:
+            # Fetch existing product types
+            product_types, message = ManageProducts.fetch_all_product_types()
+            if product_types:
+                # Check for duplicate types (case-insensitive)
+                if any(p.type.lower() == new_type.lower() for p in product_types):
+                    return False, "Same type exists in Database!" 
+            
+            # Get the product type object
+            product_type = Product_type.objects.get(pk=product_type_pk)
+
+            # Update the product type
+            product_type.type = new_type  # Ensure this is a string
+            product_type.description = description
+            product_type.save()
+
+            return True, "Product Type updated successfully!"
+        
+        except Product_type.DoesNotExist:
+            return False, "Product Type does not exist!"
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+            
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating Product Type! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating Product Type! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating Product Type! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating Product Type! Please try again later.")
 
     def delete_product_type(product_type_pk):
         pass
