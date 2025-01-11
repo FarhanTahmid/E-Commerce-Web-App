@@ -1,5 +1,7 @@
 from .models import *
+from system.models import *
 from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingError
+
 class ManageProducts:
     # Manage Product Types
     
@@ -37,6 +39,8 @@ class ManageProducts:
                 Message: "Same type exists in Database!"
             - **Exception**: A catch-all for unexpected errors, ensuring the application remains stable.
                 Message: "An unexpected error occurred! Please try again later."
+                
+            **All the error gets logged in system.models.ErrorLogs. This helps to identify the errors in the system.
 
         Notes:
             - The returned queryset allows you to access individual objects and their attributes.
@@ -50,26 +54,31 @@ class ManageProducts:
         # Handle database-related errors
         except DatabaseError as db_err:
             print(f"Database error occurred: {db_err}")
+            ErrorLogs.objects.create(error_type="DatabaseError", error_message=str(db_err))
             return None, "An unexpected error in Database occurred! Please try again later."
 
         # Handle Operational errors, e.g., connection issues
         except OperationalError as op_err:
             print(f"Operational error occurred: {op_err}")
+            ErrorLogs.objects.create(error_type="OperationalError", error_message=str(op_err))
             return None, "An unexpected error in server occurred! Please try again later."
 
         # Handle programming errors, e.g., invalid queries
         except ProgrammingError as prog_err:
             print(f"Programming error occurred: {prog_err}")
+            ErrorLogs.objects.create(error_type="ProgrammingError", error_message=str(prog_err))
             return None, "An unexpected error in server occurred! Please try again later."
 
         # Handle integrity errors, e.g., data inconsistency
         except IntegrityError as integrity_err:
             print(f"Integrity error occurred: {integrity_err}")
+            ErrorLogs.objects.create(error_type="IntegrityError", error_message=str(integrity_err))
             return None, "Same type exists in Database!"
 
         # Handle general exceptions (fallback for unexpected errors)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+            ErrorLogs.objects.create(error_type="UnexpectedError", error_message=str(e))
             return None, "An unexpected error occurred! Please try again later."
 
 
