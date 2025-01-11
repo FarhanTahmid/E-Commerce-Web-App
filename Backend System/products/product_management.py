@@ -54,42 +54,147 @@ class ManageProducts:
         # Handle database-related errors
         except DatabaseError as db_err:
             print(f"Database error occurred: {db_err}")
-            ErrorLogs.objects.create(error_type="DatabaseError", error_message=str(db_err))
+            new_error=ErrorLogs.objects.create(error_type="DatabaseError", error_message=str(db_err))
+            new_error.save()
             return None, "An unexpected error in Database occurred! Please try again later."
 
         # Handle Operational errors, e.g., connection issues
         except OperationalError as op_err:
             print(f"Operational error occurred: {op_err}")
-            ErrorLogs.objects.create(error_type="OperationalError", error_message=str(op_err))
+            new_error=ErrorLogs.objects.create(error_type="OperationalError", error_message=str(op_err))
+            new_error.save()
             return None, "An unexpected error in server occurred! Please try again later."
 
         # Handle programming errors, e.g., invalid queries
         except ProgrammingError as prog_err:
             print(f"Programming error occurred: {prog_err}")
-            ErrorLogs.objects.create(error_type="ProgrammingError", error_message=str(prog_err))
+            new_error=ErrorLogs.objects.create(error_type="ProgrammingError", error_message=str(prog_err))
+            new_error.save()
             return None, "An unexpected error in server occurred! Please try again later."
 
         # Handle integrity errors, e.g., data inconsistency
         except IntegrityError as integrity_err:
             print(f"Integrity error occurred: {integrity_err}")
-            ErrorLogs.objects.create(error_type="IntegrityError", error_message=str(integrity_err))
+            new_error=ErrorLogs.objects.create(error_type="IntegrityError", error_message=str(integrity_err))
+            new_error.save()
             return None, "Same type exists in Database!"
 
         # Handle general exceptions (fallback for unexpected errors)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            ErrorLogs.objects.create(error_type="UnexpectedError", error_message=str(e))
+            new_error=ErrorLogs.objects.create(error_type="UnexpectedError", error_message=str(e))
+            new_error.save()
             return None, "An unexpected error occurred! Please try again later."
-
-
     
-    def create_product_type(type,description):
-        try:
-            # first check if the type already exists
-            pass
-        except:
-            pass
+    def create_product_type(product_type, description):
+        """
+            Create a new product type in the database.
 
+            This function performs the following operations:
+            1. Fetches all existing product types using `ManageProducts.fetch_all_product_types`.
+            2. Checks if a product type with the same name already exists (case-insensitive comparison).
+            3. If no matching type exists:
+                - Creates a new `Product_type` record with the given `product_type` and `description`.
+                - Returns a success status and message.
+            4. If a matching type exists:
+                - Returns a failure status and a message indicating duplication.
+            5. Handles and logs any errors encountered during the process.
+
+            Args:
+                product_type (str): The name of the product type to be created.
+                description (str): A brief description of the product type.
+
+            Returns:
+                tuple:
+                    - bool: Indicates success (`True`) or failure (`False`) of the operation.
+                    - str: A message describing the result of the operation.
+
+            Example Usage:
+                success, message = create_product_type("Electronics", "Products related to electronic items")
+                if success:
+                    print(message)
+                else:
+                    print(f"Failed to create product type: {message}")
+
+            Workflow:
+                1. Retrieve existing product types using `ManageProducts.fetch_all_product_types`.
+                2. Check if a duplicate product type exists:
+                    - Perform a case-insensitive comparison of the provided `product_type` with existing records.
+                3. If no duplicate exists:
+                    - Create a new `Product_type` record using `Product_type.objects.create`.
+                    - Return a success status and message.
+                4. If a duplicate exists:
+                    - Return a failure status with the message "Same type exists in Database!".
+                5. Handle any errors during the process:
+                    - Log errors in the `ErrorLogs` model with details such as:
+                        - `error_type`: The type of error (e.g., `DatabaseError`).
+                        - `error_message`: The specific error message.
+                    - Return an appropriate error message to the caller.
+
+            Error Handling:
+                - **DatabaseError**: Indicates a general database-related issue.
+                - **OperationalError**: Indicates server-related issues such as connection problems.
+                - **ProgrammingError**: Indicates issues like invalid queries or schema mismatches.
+                - **IntegrityError**: Indicates data integrity issues, such as duplicate entries.
+                - **Exception**: Handles all unexpected errors as a fallback.
+
+            Error Logging:
+                - Errors are logged in the `ErrorLogs` model with the following fields:
+                    - `error_type` (str): The type of error encountered.
+                    - `error_message` (str): A detailed error message describing the issue.
+
+            Error Messages Returned:
+                - **DatabaseError**:
+                    "An unexpected error in Database occurred while creating Product Type! Please try again later."
+                - **OperationalError**:
+                    "An unexpected error in server occurred while creating Product Type! Please try again later."
+                - **ProgrammingError**:
+                    "An unexpected error in server occurred while creating Product Type! Please try again later."
+                - **IntegrityError**:
+                    "Same type exists in Database!"
+                - **General Error**:
+                    "An unexpected error occurred while creating Product Type! Please try again later."
+
+            Returns in Various Scenarios:
+                - **Success**:
+                    (True, "New Product type <product_type> successfully added!")
+                - **Duplicate Product Type**:
+                    (False, "Same type exists in Database!")
+                - **Error Scenarios**:
+                    (False, "<Error-specific message>")
+        """
+        
+        try:
+            # Fetch existing product types
+            product_types, message = ManageProducts.fetch_all_product_types()
+            if product_types:
+                # Check for duplicate types (case-insensitive)
+                if any(p.type.lower() == product_type.lower() for p in product_types):
+                    return False, "Same type exists in Database!"
+
+                # Create a new product type if no duplicates are found
+                Product_type.objects.create(type=product_type, description=description)
+                return True, f"New Product type {product_type} successfully added!"
+
+            return False, message
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating Product Type! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating Product Type! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating Product Type! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+        return False, error_messages.get(error_type, "An unexpected error occurred while creating Product Type! Please try again later.")
+    
     def update_product_type(product_type_pk,type,description):
         pass
 
