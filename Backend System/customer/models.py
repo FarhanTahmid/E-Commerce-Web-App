@@ -16,7 +16,6 @@ class Customer(models.Model):
 
     full_name=models.CharField(max_length=100,verbose_name="Full name")
     email=models.EmailField(max_length=254,unique=True,verbose_name="Email Address")
-    password=models.CharField(max_length=128,verbose_name="Password")
     address=models.TextField(verbose_name="Address")
     phone=models.CharField(max_length=15,verbose_name="Phone") 
     skinType=models.CharField(max_length=20,choices=SKIN_TYPE_CHOICES,blank=True,verbose_name="Skin Type")

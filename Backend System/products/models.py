@@ -1,5 +1,6 @@
 from django.db import models
 from django_resized import ResizedImageField
+from django.utils import timezone
 from inventory.models import *
 # Create your models here.
 
@@ -13,6 +14,10 @@ class Product_type(models.Model):
         verbose_name="Product Type"
         verbose_name_plural="Product Types"
 
+    # def save(self,*args, **kwargs):
+    #     if(Product_type.objects.filter(type=self.type).exists()):
+    #         raise ValueError("Product Type already exists")
+    
     def __str__(self) -> str:
         # returns the type's primary when called via filter or get
         return str(self.pk)
@@ -128,7 +133,6 @@ class Product_Images(models.Model):
         return str(self.pk)
 
 
-from django.utils import timezone
 class Product_Discount(models.Model):
     '''This table stores all the discounts of the products'''
 
