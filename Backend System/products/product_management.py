@@ -1,7 +1,7 @@
 from .models import *
 from system.models import *
 from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingError
-
+from system.manage_error_log import ManageErrorLog
 class ManageProducts:
     # Manage Product Types
     
@@ -326,9 +326,94 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while updating Product Type! Please try again later.")
 
     def delete_product_type(product_type_pk):
-        pass
+        """
+            Delete a product type from the database.
 
-    
+            This function attempts to delete a product type identified by its primary key (`product_type_pk`).
+            If the product type exists, it is deleted, and a success message is returned.
+            If the product type does not exist or an error occurs, appropriate error messages are logged and returned.
+
+            Args:
+                product_type_pk (int): The primary key of the product type to delete.
+
+            Returns:
+                tuple:
+                    - bool: Indicates success (`True`) or failure (`False`) of the operation.
+                    - str: A message describing the result of the operation.
+
+            Example Usage:
+                success, message = delete_product_type(1)
+                if success:
+                    print(message)
+                else:
+                    print(f"Failed to delete product type: {message}")
+
+            Workflow:
+                1. Retrieve the product type using `Product_type.objects.get` with the provided primary key.
+                2. Delete the product type if it exists.
+                3. Handle cases where the product type does not exist by returning an appropriate error message.
+                4. Log errors using `ManageErrorLog.create_error_log` for various exception types.
+                5. Return an error message based on the type of exception encountered.
+
+            Error Handling:
+                - **DoesNotExist**:
+                    - Raised if the specified product type does not exist in the database.
+                    - Returns (False, "Product Type does not exist!").
+                - **DatabaseError**:
+                    - Indicates a general database-related issue.
+                    - Logs the error and returns (False, "An unexpected error in Database occurred while deleting Product Type! Please try again later.").
+                - **OperationalError**:
+                    - Indicates server-related issues such as connection problems.
+                    - Logs the error and returns (False, "An unexpected error in server occurred while deleting Product Type! Please try again later.").
+                - **ProgrammingError**:
+                    - Indicates issues like invalid queries or schema mismatches.
+                    - Logs the error and returns (False, "An unexpected error in server occurred while deleting Product Type! Please try again later.").
+                - **IntegrityError**:
+                    - Indicates data integrity issues, such as constraint violations.
+                    - Logs the error and returns (False, "Same type exists in Database!").
+                - **Exception**:
+                    - Catches any other unexpected errors.
+                    - Logs the error and returns (False, "An unexpected error occurred while deleting Product Type! Please try again later.").
+
+            Error Logging:
+                - Errors are logged in the `ErrorLogs` model using the `ManageErrorLog.create_error_log` method.
+                - Each error log includes:
+                    - `error_type` (str): The type of error encountered (e.g., "DatabaseError").
+                    - `error_message` (str): A detailed error message describing the issue.
+
+            Returns in Various Scenarios:
+                - **Success**:
+                    (True, "Product Type deleted successfully!")
+                - **Non-existent Product Type**:
+                    (False, "Product Type does not exist!")
+                - **Error Scenarios**:
+                    - DatabaseError: "An unexpected error in Database occurred while deleting Product Type! Please try again later."
+                    - OperationalError: "An unexpected error in server occurred while deleting Product Type! Please try again later."
+                    - ProgrammingError: "An unexpected error in server occurred while deleting Product Type! Please try again later."
+                    - IntegrityError: "Same type exists in Database!"
+                    - General Error: "An unexpected error occurred while deleting Product Type! Please try again later."
+            """
+        # Get the product type with product_type_pk
+        try:
+            get_product_type = Product_type.objects.get(pk=product_type_pk)
+            get_product_type.delete()
+            return True, "Product Type deleted successfully!"
+        except Product_type.DoesNotExist:
+            return False, "Product Type does not exist!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__
+            error_message = str(error)
+            ManageErrorLog.create_error_log(error_type, error_message)
+            print(f"{error_type} occurred: {error_message}")
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting Product Type! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting Product Type! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting Product Type! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Type! Please try again later.")
 
     # Manage Product Category
     def create_product_category(product_type_pk,category,description):

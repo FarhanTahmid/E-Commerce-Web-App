@@ -210,3 +210,76 @@ class TestUpdateProductType(TestCase):
         self.assertEqual(message, "Same type exists in Database!", "The error message for IntegrityError is incorrect.")
         self.assertEqual(ErrorLogs.objects.filter(error_type="IntegrityError").count(), 1,
                          "An IntegrityError should be logged in the ErrorLogs model.")
+
+class TestDeleteProductType(TestCase):
+    def setUp(self):
+        """
+        Set up initial data for testing.
+        """
+        self.product_type1 = Product_type.objects.create(type="Electronics", description="Electronic items")
+        self.product_type2 = Product_type.objects.create(type="Furniture", description="Furniture items")
+
+    def test_delete_product_type_success(self):
+        """
+        Test successfully deleting an existing product type.
+        """
+        success, message = ManageProducts.delete_product_type(self.product_type1.pk)
+        self.assertTrue(success, "The function should return True for successful deletion.")
+        self.assertEqual(message, "Product Type deleted successfully!", "The success message is incorrect.")
+        self.assertFalse(Product_type.objects.filter(pk=self.product_type1.pk).exists(),
+                         "The product type should be deleted from the database.")
+
+    def test_delete_nonexistent_product_type(self):
+        """
+        Test attempting to delete a non-existent product type.
+        """
+        success, message = ManageProducts.delete_product_type(9999)  # Non-existent primary key
+        self.assertFalse(success, "The function should return False for a non-existent product type.")
+        self.assertEqual(message, "Product Type does not exist!", "The error message for a non-existent product type is incorrect.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=DatabaseError("Database Error"))
+    def test_delete_product_type_database_error(self, mock_get):
+        """
+        Test handling of a DatabaseError during deletion.
+        """
+        success, message = ManageProducts.delete_product_type(self.product_type1.pk)
+        self.assertFalse(success, "The function should return False on a DatabaseError.")
+        self.assertEqual(message, "An unexpected error in Database occurred while deleting Product Type! Please try again later.",
+                         "The error message for DatabaseError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="DatabaseError").count(), 1,
+                         "A DatabaseError should be logged in the ErrorLogs model.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=OperationalError("Operational Error"))
+    def test_delete_product_type_operational_error(self, mock_get):
+        """
+        Test handling of an OperationalError during deletion.
+        """
+        success, message = ManageProducts.delete_product_type(self.product_type1.pk)
+        self.assertFalse(success, "The function should return False on an OperationalError.")
+        self.assertEqual(message, "An unexpected error in server occurred while deleting Product Type! Please try again later.",
+                         "The error message for OperationalError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="OperationalError").count(), 1,
+                         "An OperationalError should be logged in the ErrorLogs model.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=ProgrammingError("Programming Error"))
+    def test_delete_product_type_programming_error(self, mock_get):
+        """
+        Test handling of a ProgrammingError during deletion.
+        """
+        success, message = ManageProducts.delete_product_type(self.product_type1.pk)
+        self.assertFalse(success, "The function should return False on a ProgrammingError.")
+        self.assertEqual(message, "An unexpected error in server occurred while deleting Product Type! Please try again later.",
+                         "The error message for ProgrammingError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="ProgrammingError").count(), 1,
+                         "A ProgrammingError should be logged in the ErrorLogs model.")
+
+    @mock.patch('products.models.Product_type.objects.get', side_effect=IntegrityError("Integrity Error"))
+    def test_delete_product_type_integrity_error(self, mock_get):
+        """
+        Test handling of an IntegrityError during deletion.
+        """
+        success, message = ManageProducts.delete_product_type(self.product_type1.pk)
+        self.assertFalse(success, "The function should return False on an IntegrityError.")
+        self.assertEqual(message, "Same type exists in Database!", "The error message for IntegrityError is incorrect.")
+        self.assertEqual(ErrorLogs.objects.filter(error_type="IntegrityError").count(), 1,
+                         "An IntegrityError should be logged in the ErrorLogs model.")
