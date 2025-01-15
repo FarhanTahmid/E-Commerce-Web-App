@@ -3,6 +3,9 @@ from django.core.validators import MinValueValidator,MaxValueValidator
 
 # Create your models here.
 
+
+def get_customer_avatar(instance, filename):
+    return f'customer_profile_picture/{instance.customer_id}/{filename}'
 class Customer(models.Model):
     '''This model is for storing customer data'''
 
@@ -15,13 +18,19 @@ class Customer(models.Model):
     ]
 
     full_name=models.CharField(max_length=100,verbose_name="Full name")
+    unique_id=models.CharField(max_length=50,unique=True,verbose_name="Unique ID")
+    profile_picture = models.ImageField(upload_to=get_customer_avatar, null=True, blank=True,verbose_name="Profile Picture")
+    username = models.CharField(max_length=50,unique=True,verbose_name="Username")
+    skinType=models.CharField(max_length=20,choices=SKIN_TYPE_CHOICES,blank=True,verbose_name="Skin Type")
     email=models.EmailField(max_length=254,unique=True,verbose_name="Email Address")
     address=models.TextField(verbose_name="Address")
     phone=models.CharField(max_length=15,verbose_name="Phone") 
-    skinType=models.CharField(max_length=20,choices=SKIN_TYPE_CHOICES,blank=True,verbose_name="Skin Type")
+    block=models.BooleanField(default=False,verbose_name="Block Customer")
     created_at=models.DateTimeField(auto_now_add=True,verbose_name="Created At")
     updated_at=models.DateTimeField(auto_now=True,verbose_name="Updated At")
 
+    def __str__(self):
+        return f"{self.unique_id} - {self.full_name}"
 class Coupon(models.Model):
     '''This model is for discount coupon for customer'''
 
