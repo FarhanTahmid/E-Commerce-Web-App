@@ -10,10 +10,11 @@ from system.models import *
 class TestManageProducts(TestCase):
     
     def setUp(self):
-        # create sample data
-        self.category1= Product_Category.objects.create(category_name="Cosmetics", description="Daily Life Product")
-        self.category2=Product_Category.objects.create(category_name="Clothing", description="Daily Life Product")
-        self.category3=Product_Category.objects.create(category_name="Groceries", description="Daily Life Product")
+        # create sample data with timezone-aware datetime
+        now = timezone.now()
+        Product_Category.objects.create(category_name="Cosmetics", description="Daily Life Product", created_at=now)
+        Product_Category.objects.create(category_name="Clothing", description="Daily Life Product", created_at=now)
+        Product_Category.objects.create(category_name="Groceries", description="Daily Life Product", created_at=now)
     
     def test_fetch_all_product_categories_success(self):
         """
@@ -31,25 +32,7 @@ class TestManageProducts(TestCase):
         """
         product_categories, message = ManageProducts.fetch_all_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on DatabaseError.")
-        self.assertEqual(message, "An error occurred while fetching product categories.", "Error message is incorrect.")
-
-    @mock.patch('products.models.Product_Category.objects.all', side_effect=OperationalError("Operational Error"))
-    def test_fetch_all_product_categories_operational_error(self, mock_all):
-        """
-        Test if the function handles OperationalError correctly.
-        """
-        product_categories, message = ManageProducts.fetch_all_product_categories()
-        self.assertIsNone(product_categories, "Product categories should be None on OperationalError.")
-        self.assertEqual(message, "An error occurred while fetching product categories.", "Error message is incorrect.")
-
-    @mock.patch('products.models.Product_Category.objects.all', side_effect=ProgrammingError("Programming Error"))
-    def test_fetch_all_product_categories_programming_error(self, mock_all):
-        """
-        Test if the function handles ProgrammingError correctly.
-        """
-        product_categories, message = ManageProducts.fetch_all_product_categories()
-        self.assertIsNone(product_categories, "Product categories should be None on ProgrammingError.")
-        self.assertEqual(message, "An error occurred while fetching product categories.", "Error message is incorrect.")
+        self.assertEqual(message, "An unexpected error in Database occurred! Please try again later.", "Error message is incorrect.")
 
     @mock.patch('products.models.Product_Category.objects.all', side_effect=IntegrityError("Integrity Error"))
     def test_fetch_all_product_categories_integrity_error(self, mock_all):
@@ -58,7 +41,25 @@ class TestManageProducts(TestCase):
         """
         product_categories, message = ManageProducts.fetch_all_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on IntegrityError.")
-        self.assertEqual(message, "An error occurred while fetching product categories.", "Error message is incorrect.")
+        self.assertEqual(message, "An unexpected error in Database occurred! Please try again later.", "Error message is incorrect.")
+
+    @mock.patch('products.models.Product_Category.objects.all', side_effect=OperationalError("Operational Error"))
+    def test_fetch_all_product_categories_operational_error(self, mock_all):
+        """
+        Test if the function handles OperationalError correctly.
+        """
+        product_categories, message = ManageProducts.fetch_all_product_categories()
+        self.assertIsNone(product_categories, "Product categories should be None on OperationalError.")
+        self.assertEqual(message, "An unexpected error in Database occurred! Please try again later.", "Error message is incorrect.")
+
+    @mock.patch('products.models.Product_Category.objects.all', side_effect=ProgrammingError("Programming Error"))
+    def test_fetch_all_product_categories_programming_error(self, mock_all):
+        """
+        Test if the function handles ProgrammingError correctly.
+        """
+        product_categories, message = ManageProducts.fetch_all_product_categories()
+        self.assertIsNone(product_categories, "Product categories should be None on ProgrammingError.")
+        self.assertEqual(message, "An unexpected error in Database occurred! Please try again later.", "Error message is incorrect.")
     
     
 #     def test_create_new_product_type_success(self):
