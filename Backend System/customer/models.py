@@ -31,6 +31,7 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.unique_id} - {self.full_name}"
+    
 class Coupon(models.Model):
     '''This model is for discount coupon for customer'''
 
