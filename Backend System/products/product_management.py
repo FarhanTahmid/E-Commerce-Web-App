@@ -650,10 +650,66 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while updating Product Category! Please try again later.")
 
     def delete_product_category(product_category_pk):
-        pass
 
-    def fetch_all_product_categories():
-        pass
+        """
+        Delete a product category from the database with detailed exception handling.
+
+        This function attempts to delete a product category based on the provided primary key (ID).
+        If the category exists, it is deleted. The function handles various errors and logs them for debugging.
+
+        Args:
+            product_category_pk (int): The primary key (ID) of the product category to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product category was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product_category(1)
+            print(message)
+
+        Exception Handling:
+            - **Product_Category.DoesNotExist**: Handles the case where the category to be deleted does not exist.
+                Message: "Product Category does not exist!"
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting Product Category! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting Product Category! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting Product Category! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as foreign key constraints or data corruption.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting Product Category! Please try again later."
+                
+            **All errors are logged in `system.models.ErrorLogs` for debugging and analysis.
+
+        Notes:
+            - The function attempts to fetch the product category using its primary key and deletes it if found.
+            - If the category does not exist, an error message will be returned.
+        """
+
+        try:
+            get_product_category = Product_Category.objects.get(pk=product_category_pk)
+            get_product_category.delete()
+            return True, "Product Type deleted successfully!"
+        except Product_Category.DoesNotExist:
+            return False, "Product Category does not exist!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__
+            error_message = str(error)
+            ManageErrorLog.create_error_log(error_type, error_message)
+            print(f"{error_type} occurred: {error_message}")
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting Product Category! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting Product Category! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting Product Category! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Category! Please try again later.")
     
     # Manage Product Sub Category
     def create_product_sub_category(product_category_pk,sub_category,description):
