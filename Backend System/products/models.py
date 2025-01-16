@@ -22,6 +22,9 @@ class Product_Category(models.Model):
     def __str__(self) -> str:
         # returns the category pk when called via filter or get
         return str(self.pk)
+    
+    def __lt__(self, other):
+        return self.category_name < other.category_name
 
 class Product_Sub_Category(models.Model):
     
@@ -38,8 +41,9 @@ class Product_Sub_Category(models.Model):
 
     def __str__(self) -> str:
         # returns the sub-category pk when called via filter or get
-        return str(self.category_id.all()[0].category_name) + " - " + str(self.sub_category_name)
+        return str(self.sub_category_name)
 
+    
 class Product_Brands(models.Model):
     
     '''This table is for storing brand information related to specific product sub categories'''
