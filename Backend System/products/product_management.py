@@ -301,13 +301,62 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Category! Please try again later.")
     
     # Manage Product Sub Category
-    def create_product_sub_category(product_category_pk,sub_category,description):
+    def fetch_all_product_sub_categories_for_a_category(product_category_pk):
+        try:
+            product_category = Product_Category.objects.get(pk=product_category_pk)
+            product_sub_categories = Product_Sub_Category.objects.filter(category_id=product_category)
+            return product_sub_categories, "Fetched all product sub-categories for a category successfully!"
+
+        # Handle database-related errors
+        except DatabaseError as db_err:
+            print(f"Database error occurred: {db_err}")
+            new_error = ErrorLogs.objects.create(error_type="DatabaseError", error_message=str(db_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle Operational errors, e.g., connection issues
+        except OperationalError as op_err:
+            print(f"Operational error occurred: {op_err}")
+            new_error = ErrorLogs.objects.create(error_type="OperationalError", error_message=str(op_err))
+            new_error.save()
+            return None, "An unexpected error in server occurred! Please try again later."
+
+        # Handle programming errors, e.g., invalid queries
+        except ProgrammingError as prog_err:
+            print(f"Programming error occurred: {prog_err}")
+            new_error = ErrorLogs.objects.create(error_type="ProgrammingError", error_message=str(prog_err))
+            new_error.save()
+            return None, "An unexpected error in server occurred! Please try again later."
+
+        # Handle integrity errors, e.g., data inconsistency
+        except IntegrityError as integrity_err:
+            print(f"Integrity error occurred: {integrity_err}")
+            new_error = ErrorLogs.objects.create(error_type="IntegrityError", error_message=str(integrity_err))
+            new_error.save()
+            return None, "Same type exists in Database!"
+
+        # Handle general exceptions (fallback for unexpected errors)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            new_error = ErrorLogs.objects.create(error_type="UnexpectedError", error_message=str(e))
+            new_error.save()
+            return None, "An unexpected error occurred! Please try again later."
+
+
+    def create_product_sub_category(product_category_pk,sub_category_name,description):
         
         try:
-            # Fetch product_category
-            product_categories = Product_Category.objects.filter(pk=product_category_pk)
-            if product_categories:
-                pass
+            # Fetch product all sub category
+            product_sub_categories = ManageProducts.fetch_all_product_sub_categories_for_a_category(product_category_pk)
+            if product_sub_categories:
+                # Check for duplicate types (case-insensitive)
+                if any(p.sub_category_name.lower() == sub_category_name.lower() for p in product_sub_categories):
+                    return False, "Same type exists in Database!"
+            
+            product_category = Product_Category.objects.get(pk=product_category_pk)
+            sub_category = Product_Sub_Category.objects.create(sub_category_name=sub_category_name,description=description)
+            sub_category.category_id.add(product_category)
+            return True, f"New Product sub-category, {sub_category_name} successfully added!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -318,13 +367,13 @@ class ManageProducts:
 
             # Return appropriate messages based on the error type
             error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while creating Product Category! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while creating Product Category! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while creating Product Category! Please try again later.",
+                "DatabaseError": "An unexpected error in Database occurred while creating Product Sub Category! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating Product Sub Category! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating Product Sub Category! Please try again later.",
                 "IntegrityError": "Same type exists in Database!",
             }
 
-        return False, error_messages.get(error_type, "An unexpected error occurred while creating Product Category! Please try again later.")
+        return False, error_messages.get(error_type, "An unexpected error occurred while creating Product Sub Category! Please try again later.")
     
     
     

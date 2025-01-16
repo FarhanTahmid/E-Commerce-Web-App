@@ -7,7 +7,7 @@ from django.db import *
 from system.models import *
 # Create your tests here.
 
-class TestManageProducts(TestCase):
+class TestManageProductsCategories(TestCase):
     
     def setUp(self):
         # create sample data with timezone-aware datetime
@@ -60,7 +60,62 @@ class TestManageProducts(TestCase):
         product_categories, message = ManageProducts.fetch_all_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on ProgrammingError.")
         self.assertEqual(message, "An unexpected error in Database occurred! Please try again later.", "Error message is incorrect.")
+
+class TestManageProductsSubCategories(TestCase):
     
+    def setUp(self):
+        # create sample data with timezone-aware datetime
+        now = timezone.now()
+        self.category = Product_Category.objects.create(category_name="Electronics", description="Electronic Items", created_at=now)
+        sub_category1 = Product_Sub_Category.objects.create(sub_category_name="Mobile Phones", description="Smartphones", created_at=now)
+        sub_category2 = Product_Sub_Category.objects.create(sub_category_name="Laptops", description="Portable Computers", created_at=now)
+        sub_category1.category_id.set([self.category])
+        sub_category2.category_id.set([self.category])
+    
+    def test_fetch_all_product_sub_categories_for_a_category_success(self):
+        """
+        Test if the function fetches all product sub-categories for a category successfully.
+        """
+        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category.pk)
+        self.assertIsNotNone(sub_categories, "Product sub-categories should not be None.")
+        self.assertEqual(sub_categories.count(), 2, "The function did not return all product sub-categories.")
+        self.assertEqual(message, "Fetched all product sub-categories for a category successfully!", "Success message is incorrect.")
+
+    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=DatabaseError("Database Error"))
+    def test_fetch_all_product_sub_categories_for_a_category_database_error(self, mock_filter):
+        """
+        Test if the function handles DatabaseError correctly.
+        """
+        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category.pk)
+        self.assertIsNone(sub_categories, "Product sub-categories should be None on DatabaseError.")
+        self.assertEqual(message, "An unexpected error in Database occurred! Please try again later.", "Error message is incorrect.")
+
+    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=OperationalError("Operational Error"))
+    def test_fetch_all_product_sub_categories_for_a_category_operational_error(self, mock_filter):
+        """
+        Test if the function handles OperationalError correctly.
+        """
+        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category.pk)
+        self.assertIsNone(sub_categories, "Product sub-categories should be None on OperationalError.")
+        self.assertEqual(message, "An unexpected error in server occurred! Please try again later.", "Error message is incorrect.")
+
+    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=ProgrammingError("Programming Error"))
+    def test_fetch_all_product_sub_categories_for_a_category_programming_error(self, mock_filter):
+        """
+        Test if the function handles ProgrammingError correctly.
+        """
+        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category.pk)
+        self.assertIsNone(sub_categories, "Product sub-categories should be None on ProgrammingError.")
+        self.assertEqual(message, "An unexpected error in server occurred! Please try again later.", "Error message is incorrect.")
+
+    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=IntegrityError("Integrity Error"))
+    def test_fetch_all_product_sub_categories_for_a_category_integrity_error(self, mock_filter):
+        """
+        Test if the function handles IntegrityError correctly.
+        """
+        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category.pk)
+        self.assertIsNone(sub_categories, "Product sub-categories should be None on IntegrityError.")
+        self.assertEqual(message, "Same type exists in Database!", "Error message is incorrect.")
     
 #     def test_create_new_product_type_success(self):
 #         """
