@@ -165,7 +165,7 @@ class TestManageProducts(TestCase):
         """
         Test updating a product sub-category successfully.
         """
-        success, message = ManageProducts.update_product_sub_category(self.sub_category1.pk,[self.category_skincare.pk,self.category_makeup.pk], "Moistorizer", "Moistorizer to make skin soft")
+        success, message = ManageProducts.update_product_sub_category(self.sub_category1.pk,[self.category_skincare.pk,self.category_makeup.pk,self.category_fragrance.pk], "Moistorizer", "Moistorizer to make skin soft")
         self.assertTrue(success, "Product Sub Category updated successfully!")
         self.assertEqual(message, "Product Sub Category updated successfully!", "Success message is incorrect.")
 
