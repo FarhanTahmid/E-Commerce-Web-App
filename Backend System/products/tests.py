@@ -76,27 +76,27 @@ class TestManageProducts(TestCase):
         product_categories, message = ManageProducts.fetch_all_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on ProgrammingError.")
 
-    def create_new_product_category(self):
+    def test_create_new_product_category(self):
         """
         Test creating a new product category successfully.
         """
         success, message = ManageProducts.create_product_category("Perfume", "Perfume Items")
         self.assertTrue(success, "Product category should be created successfully.")
-        self.assertEqual(message, "New Product category, Electronics successfully added!", "Success message is incorrect.")
+        self.assertEqual(message, "New Product category. Perfume successfully added!", "Success message is incorrect.")
 
-    def update_product_category(self):
+    def test_update_product_category(self):
         """
         Test updating a product category successfully.
         """
-        success, message = ManageProducts.update_product_category(5, "Perfumes Updated", "Perfumes Description")
+        success, message = ManageProducts.update_product_category(self.category_fragrance.pk, "Perfumes Updated", "Perfumes Description")
         self.assertTrue(success, "Product category should be updated successfully.")
         self.assertEqual(message, "Product Category updated successfully!", "Success message is incorrect.")
     
-    def delete_product_category(self):
+    def test_delete_product_category(self):
         """
         Test deleting a product category successfully.
         """
-        success, message = ManageProducts.delete_product_category(3)#deleting Haricare
+        success, message = ManageProducts.delete_product_category(self.category_haircare.pk)#deleting Haricare
         self.assertTrue(success, "Product category should be deleted successfully.")
         self.assertEqual(message, "Product Category deleted successfully!", "Success message is incorrect.")
         
@@ -169,6 +169,15 @@ class TestManageProducts(TestCase):
         self.assertTrue(success, "Product Sub Category updated successfully!")
         self.assertEqual(message, "Product Sub Category updated successfully!", "Success message is incorrect.")
 
+    #testcase for delete product sub category
+    def test_delete_product_sub_category_success(self):
+        """
+        Test deleting a product sub-category successfully.
+        """
+        success, message = ManageProducts.delete_product_sub_category(self.sub_category1.pk)
+        self.assertTrue(success,"Product Sub Category deleted successfully!")
+        self.assertEqual(message,"Product Sub Category deleted successfully!", "Delete message is incorrect.")
+        
 
 #     def test_create_new_product_type_success(self):
 #         """

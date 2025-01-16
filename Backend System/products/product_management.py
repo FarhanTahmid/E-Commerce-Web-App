@@ -380,7 +380,6 @@ class ManageProducts:
             ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
             print(f"{error_type} occurred: {error_message}")
             return False, "An unexpected error occurred while creating Product Sub Category! Please try again later."
-
     
     def update_product_sub_category(product_sub_category_pk,category_pk_list,sub_category_name,description):
         try:
@@ -428,5 +427,27 @@ class ManageProducts:
             ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
             print(f"{error_type} occurred: {error_message}")
             return False, "An unexpected error occurred while updating Product Sub Category! Please try again later."
+        
+    def delete_product_sub_category(product_sub_category_pk):
+        try:
+            get_product_sub_category = Product_Sub_Category.objects.get(pk=product_sub_category_pk)
+            get_product_sub_category.delete()
+            return True, "Product Sub Category deleted successfully!"
+        except Product_Sub_Category.DoesNotExist:
+            return False, "Product Sub Category does not exist!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__
+            error_message = str(error)
+            ManageErrorLog.create_error_log(error_type, error_message)
+            print(f"{error_type} occurred: {error_message}")
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting Product Sub Category! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting Product Sub Category! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting Product Sub Category! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Sub Category! Please try again later.")
 
 
