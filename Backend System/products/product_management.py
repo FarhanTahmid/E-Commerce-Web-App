@@ -685,6 +685,7 @@ class ManageProducts:
         """
         Fetch a product brand by its name with detailed exception handling.
 
+        Choose any one argument to retrieve. Providing multiple will return the using first paramter.
         This function attempts to retrieve a product brand from the database based on the provided brand name or pk.
         If no brand name or pk is provided, it retrieves all product brands. It handles various errors that might
         occur during the process, logging each error for further analysis.
@@ -904,6 +905,7 @@ class ManageProducts:
         """
         Fetch a product flavour by its name or primary key with detailed exception handling.
 
+        Choose any one argument to retrieve. Providing multiple will return the using first paramter.
         This function attempts to retrieve a product flavour from the database based on the provided flavour name or primary key.
         If no flavour name or primary key is provided, it retrieves all product flavours. It handles various errors that might
         occur during the process, logging each error for further analysis.
@@ -1150,6 +1152,57 @@ class ManageProducts:
     #Manage Product
     def fetch_product(product_pk=None,product_name=None,product_brand_pk=None,
                       product_category_pk_list=None,product_sub_category_pk_list=None):
+        
+        """
+        Fetch products based on various optional parameters with detailed exception handling.
+
+        Choose any one argument to retrieve. Providing multiple will return the using first paramter.
+        This function attempts to retrieve products from the database based on the provided parameters.
+        It handles various errors that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_pk (int, optional): The primary key (ID) of the product to be fetched. Defaults to None.
+            product_name (str, optional): The name of the product to be fetched. Defaults to None.
+            product_brand_pk (int, optional): The primary key (ID) of the product brand to filter by. Defaults to None.
+            product_category_pk_list (list, optional): A list of primary keys (IDs) of the product categories to filter by. Defaults to None.
+            product_sub_category_pk_list (list, optional): A list of primary keys (IDs) of the product sub-categories to filter by. Defaults to None.
+
+        Returns:
+            tuple:
+                - QuerySet or Product: A QuerySet of products matching the criteria or a single Product object.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            product, message = fetch_product(product_pk=1)
+            print(message)
+
+            products, message = fetch_product(product_name="Shampoo")
+            print(message)
+
+            products, message = fetch_product(product_brand_pk=1)
+            print(message)
+
+            products, message = fetch_product(product_category_pk_list=[1, 2])
+            print(message)
+
+            products, message = fetch_product(product_sub_category_pk_list=[1, 2])
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while fetching product! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while fetching product! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while fetching product! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while fetching product! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         try:
             #fetching products according to provided arguments
             if product_pk:
