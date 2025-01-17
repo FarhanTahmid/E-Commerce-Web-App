@@ -203,18 +203,50 @@ class TestManageProducts(TestCase):
         self.assertEqual(message,"Same brand exists in Database!", "Duplicate message is incorrect.")
 
     def test_fetch_product_brand(self):
+        """
+        Test for fetching a particular product brand.
+        """
 
         success,message = ManageProducts.fetch_product_brand("Loreal")
         self.assertTrue(success,"Product brand should be fetched successfully.")
         self.assertEqual(message,"Product brand fetched successfully!", "Success message is incorrect.")
     
-    def test_fetch_product_brand_not_found(self):
+    def test_fetch_product_brand_all(self):
+        """
+        Test for fetching all product brand.
+        """
 
+        success,message = ManageProducts.fetch_product_brand()
+        self.assertTrue(success,"All Product brand should be fetched successfully.")
+        self.assertEqual(message,"All Product brands fetched successfully!", "Success message is incorrect.")
+    
+    def test_fetch_product_brand_not_found(self):
+        """
+        Test for  product brand not found.
+        """
         success,message = ManageProducts.fetch_product_brand("GorurGhash")
         self.assertFalse(success,"Product brand not found.")
-        self.assertEqual(message,"An unexpected error occurred while fetching Product brand, GorurGhash! Please try again later.", "Error message is incorrect.")
+        self.assertEqual(message,"An unexpected error occurred while fetching Product brand! Please try again later.", "Error message is incorrect.")
+
+
+    def test_update_product_brand_success(self):
+        """
+        Test updating a product brand successfully.
+        """
+        success, message = ManageProducts.update_product_brand(self.brand1.pk, "Loreal Updated", "India", "Loreal Paris Updated", 2005, True)
+        self.assertTrue(success, "Product brand should be updated successfully.")
+        self.assertEqual(message, "Product brand, Loreal Updated updated successfully!", "Success message is incorrect.")
+
+    def test_delete_product_brand_success(self):
+        """
+        Test deleting a product brand successfully.
+        """
+        success, message = ManageProducts.delete_product_brand(self.brand1.pk)
+        self.assertTrue(success, "Product brand should be deleted successfully.")
+        self.assertEqual(message, "Product brand deleted successfully!", "Success message is incorrect.")
 
 #     def test_create_new_product_type_success(self):
+
 #         """
 #         Test creating a new product type successfully.
 #         """

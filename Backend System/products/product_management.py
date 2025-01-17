@@ -2,6 +2,9 @@ from .models import *
 from system.models import *
 from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingError
 from system.manage_error_log import ManageErrorLog
+from e_commerce_app import settings
+import os
+
 class ManageProducts:
     
     # Manage Product Category
@@ -677,24 +680,29 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating Product brand! Please try again later.")
 
-    def fetch_product_brand(brand_name):
+    def fetch_product_brand(brand_name=None,pk=None):
 
         """
         Fetch a product brand by its name with detailed exception handling.
 
-        This function attempts to retrieve a product brand from the database based on the provided brand name.
-        It handles various errors that might occur during the process, logging each error for further analysis.
+        This function attempts to retrieve a product brand from the database based on the provided brand name or pk.
+        If no brand name or pk is provided, it retrieves all product brands. It handles various errors that might
+        occur during the process, logging each error for further analysis.
 
         Args:
-            brand_name (str): The name of the product brand to be fetched.
+            brand_name (str): The name of the product brand to be fetched. If None, fetches all product brands.
+            pk (int): The primary key (ID) of the product brand to be fetched. If provided, brand_name is ignored.
 
         Returns:
             tuple:
-                - Product_Brands: The product brand object if found.
+                - Product_Brands or QuerySet: The product brand object if found, or a QuerySet of all product brands.
                 - str: A message indicating the success or failure of the operation.
 
         Example Usage:
             brand, message = fetch_product_brand("Loreal")
+            print(message)
+
+            brands, message = fetch_product_brand(None)
             print(message)
 
         Exception Handling:
@@ -714,7 +722,12 @@ class ManageProducts:
         """
         
         try:
-            return Product_Brands.objects.get(brand_name=brand_name), "Product brand fetched successfully!"
+            if brand_name:
+                return Product_Brands.objects.get(brand_name=brand_name), "Product brand fetched successfully!"
+            elif pk:
+                return Product_Brands.objects.get(pk=pk), "Product brand fetched successfully!"
+            else:
+                return Product_Brands.objects.all(), "All Product brands fetched successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -724,8 +737,166 @@ class ManageProducts:
 
             # Return appropriate messages based on the error type
             error_messages = {
-                "DatabaseError": f"An unexpected error in Database occurred while fetching Product brand, {brand_name}! Please try again later.",
-                "OperationalError": f"An unexpected error in server occurred while creating Product brand, {brand_name}! Please try again later.",
-                "ProgrammingError": f"An unexpected error in server occurred while creating Product brand, {brand_name}! Please try again later.",
+                "DatabaseError": "An unexpected error in Database occurred while fetching Product brand! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating Product brand! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating Product brand! Please try again later.",
             }
-            return False, error_messages.get(error_type, f"An unexpected error occurred while fetching Product brand, {brand_name}! Please try again later.")
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching Product brand! Please try again later.")
+        
+    def update_product_brand(product_brand_pk,brand_name,brand_country,brand_description,brand_established_year,
+                            is_own_brand,brand_logo=None):
+        """
+        Update an existing product brand with detailed exception handling.
+
+        This function attempts to update the details of a product brand. It checks for changes in
+        the brand name, country, description, established year, ownership status, and logo, and updates them accordingly.
+        If a new logo is provided, the previous logo is deleted. The function includes comprehensive exception handling
+        to log and report any errors that occur.
+
+        Args:
+            product_brand_pk (int): The primary key (ID) of the product brand to be updated.
+            brand_name (str): The new name for the product brand.
+            brand_country (str): The new country of the product brand.
+            brand_description (str): The updated description for the product brand.
+            brand_established_year (int): The updated year the product brand was established.
+            is_own_brand (bool): Indicates if the brand is owned by the company.
+            brand_logo (str, optional): The new logo of the product brand. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the brand was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_product_brand(1, "New Brand Name", "USA", "Updated description", 2000, True, new_logo)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating Product brand! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating Product brand! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating Product brand! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating Product brand! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+            - If a new logo is provided, the previous logo is deleted.
+        """
+        try:
+            #get product brand
+            product_brand = Product_Brands.objects.get(pk=product_brand_pk)
+            #update the product brand name
+            if (product_brand.brand_name.lower() != brand_name.lower()):
+                product_brand.brand_name = brand_name
+            #update the product brand country
+            if (product_brand.brand_country.lower() != brand_country.lower()):
+                product_brand.brand_country = brand_country
+            #update the product brand description
+            if (product_brand.brand_description.lower() != brand_description.lower()):
+                product_brand.brand_description = brand_description
+            #update the product brand established year
+            if (product_brand.brand_established_year != brand_established_year):
+                product_brand.brand_established_year = brand_established_year
+            #update the product brand own status
+            if (product_brand.is_own_brand != is_own_brand):
+                product_brand.is_own_brand = is_own_brand
+            #update the product brand logo
+            if (brand_logo and product_brand.brand_logo != brand_logo):
+                # Delete the previous logo if a new one is provided
+                if product_brand.brand_logo:
+                    # Delete the previous logo file from local directory
+                    path = settings.MEDIA_ROOT+str(product_brand.brand_logo)
+                    if os.path.exists(path):
+                        os.remove(path)
+                    product_brand.brand_logo.delete()
+                product_brand.brand_logo = brand_logo
+            product_brand.save()
+            return True, f"Product brand, {brand_name} updated successfully!"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating Product brand! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating Product brand! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating Product brand! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating Product brand! Please try again later.")
+        
+    def delete_product_brand(product_brand_pk):
+
+        """
+        Delete an existing product brand with detailed exception handling.
+
+        This function attempts to delete a product brand from the database. It first deletes the associated logo file
+        if it exists, and then deletes the product brand. The function includes comprehensive exception handling
+        to log and report any errors that occur.
+
+        Args:
+            product_brand_pk (int): The primary key (ID) of the product brand to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the brand was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product_brand(1)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting Product brand! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting Product brand! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting Product brand! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting Product brand! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+            - If the product brand has an associated logo, the logo file is deleted from the local directory before deleting the brand.
+        """
+        try:
+            #get product brand
+            product_brand = Product_Brands.objects.get(pk=product_brand_pk)
+            #delete the product brand logo first if exists
+            if product_brand.brand_logo:
+                path = settings.MEDIA_ROOT+str(product_brand.brand_logo)
+                if os.path.exists(path):
+                    os.remove(path)
+            product_brand.delete()
+            return True, "Product brand deleted successfully!"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting Product brand! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting Product brand! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting Product brand! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product brand! Please try again later.")
+        
+    #Manage Product Flavour
+    
