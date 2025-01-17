@@ -899,4 +899,250 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product brand! Please try again later.")
         
     #Manage Product Flavour
+    def fetch_product_flavour(product_flavour_name=None,pk=None):
+
+        """
+        Fetch a product flavour by its name or primary key with detailed exception handling.
+
+        This function attempts to retrieve a product flavour from the database based on the provided flavour name or primary key.
+        If no flavour name or primary key is provided, it retrieves all product flavours. It handles various errors that might
+        occur during the process, logging each error for further analysis.
+
+        Args:
+            product_flavour_name (str, optional): The name of the product flavour to be fetched. Defaults to None.
+            pk (int, optional): The primary key (ID) of the product flavour to be fetched. Defaults to None.
+
+        Returns:
+            tuple:
+                - Product_Flavours or QuerySet: The product flavour object if found, or a QuerySet of all product flavours.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            flavour, message = fetch_product_flavour("Vanilla")
+            print(message)
+
+            flavour, message = fetch_product_flavour(pk=1)
+            print(message)
+
+            flavours, message = fetch_product_flavour()
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while fetching product flavour! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while fetching product flavour! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while fetching product flavour! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while fetching product flavour! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+
+        try:
+            if product_flavour_name:
+                return Product_Flavours.objects.get(product_flavour_name=product_flavour_name), "Product flavour fetched successfully!"
+            elif pk:
+                return Product_Flavours.objects.get(pk=pk), "Product flavour fetched successfully!"
+            else:
+                return Product_Flavours.objects.all(), "All Product flavours fetched successfully!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching product flavour! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching product flavour! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching product flavour! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching product flavour! Please try again later.")
     
+    def create_product_flavour(product_flavour_name):
+
+        """
+        Create a new product flavour with detailed exception handling.
+
+        This function attempts to add a new product flavour to the database. It first checks for
+        existing flavours to avoid duplicates. If the flavour does not exist, it is created.
+        The function handles various errors that might occur during the process, logging each
+        error for further analysis.
+
+        Args:
+            product_flavour_name (str): The name of the product flavour to be added.
+
+        Returns:
+            tuple:
+                - bool: `True` if the flavour was created successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = create_product_flavour("Vanilla")
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while creating product flavour! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while creating product flavour! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while creating product flavour! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while creating product flavour! Please try again later."
+
+        Notes:
+            - The function ensures that flavour names are checked in a case-insensitive manner to prevent duplicates.
+            - If a duplicate flavour is found, it will not be added, and an appropriate message will be returned.
+            - All errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+
+        try:
+            product_flavours,message = ManageProducts.fetch_product_flavour()
+            if product_flavours:
+                if any(p.product_flavour_name.lower() == product_flavour_name.lower() for p in product_flavours):
+                    return False, "Same flavour exists in Database!"
+            
+            Product_Flavours.objects.create(product_flavour_name=product_flavour_name)
+            return True, f"New Product flavour, {product_flavour_name} successfully added!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating product flavour! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating product flavour! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating product flavour! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating product flavour! Please try again later.")
+        
+    def update_product_flavour(product_flavour_pk,product_flavour_name):
+
+        """
+        Update an existing product flavour with detailed exception handling.
+
+        This function attempts to update the details of a product flavour. It checks for changes in
+        the flavour name and updates it accordingly. The function includes comprehensive exception handling
+        to log and report any errors that occur.
+
+        Args:
+            product_flavour_pk (int): The primary key (ID) of the product flavour to be updated.
+            product_flavour_name (str): The new name for the product flavour.
+
+        Returns:
+            tuple:
+                - bool: `True` if the flavour was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_product_flavour(1, "Strawberry")
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating product flavour! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating product flavour! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating product flavour! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating product flavour! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        try:
+            #fetch product flavour with pk
+            product_flavour,message = ManageProducts.fetch_product_flavour(pk=product_flavour_pk)
+            #detecting changes
+            if (product_flavour.product_flavour_name.lower() != product_flavour_name.lower()):
+                product_flavour.product_flavour_name = product_flavour_name
+            product_flavour.save()
+            return True, "Product flavour updated successfully!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product flavour! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product flavour! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product flavour! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product flavour! Please try again later.")
+        
+    def delete_product_flavour(product_flavour_pk):
+
+        """
+        Delete an existing product flavour with detailed exception handling.
+
+        This function attempts to delete a product flavour from the database. It handles various
+        exceptions that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_flavour_pk (int): The primary key (ID) of the product flavour to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the flavour was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product_flavour(1)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting product flavour! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting product flavour! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting product flavour! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting product flavour! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        try:
+            #fetch product flavour with pk
+            product_flavour,message = ManageProducts.fetch_product_flavour(pk=product_flavour_pk)
+            product_flavour.delete()
+            return True, "Product flavour deleted successfully!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting product flavour! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting product flavour! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting product flavour! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product flavour! Please try again later.") 

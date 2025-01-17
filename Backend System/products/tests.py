@@ -37,6 +37,9 @@ class TestManageProducts(TestCase):
                                                     brand_established_year= 1909,is_own_brand=False,created_at=now)
         self.brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 2000,is_own_brand=True,created_at=now)
+        
+        self.product_flavour1 = Product_Flavours.objects.create(product_flavour_name="Vanilla", created_at=now)
+        self.product_flavour2 = Product_Flavours.objects.create(product_flavour_name="Strawberry", created_at=now)
     
     def test_fetch_all_product_categories_success(self):
         """
@@ -244,6 +247,63 @@ class TestManageProducts(TestCase):
         success, message = ManageProducts.delete_product_brand(self.brand1.pk)
         self.assertTrue(success, "Product brand should be deleted successfully.")
         self.assertEqual(message, "Product brand deleted successfully!", "Success message is incorrect.")
+
+    #testcase for product flavour
+    def test_fetch_all_product_flavour(self):
+        """
+        Test for fetching all product flavours.
+        """
+        success,message = ManageProducts.fetch_product_flavour()
+        self.assertTrue(success,"All Product flavours should be fetched successfully.")
+        self.assertEqual(message,"All Product flavours fetched successfully!", "Success message is incorrect.")
+
+    def test_fetch_a_product_flavour(self):
+        """
+        Test for fetching a particular product flavour.
+        """
+        success,message = ManageProducts.fetch_product_flavour("Vanilla")
+        self.assertTrue(success,"Product flavour should be fetched successfully.")
+        self.assertEqual(message,"Product flavour fetched successfully!", "Success message is incorrect.")
+    
+    def test_fetch_a_product_flavour_not_found(self):
+        """
+        Test for  product flavour not found.
+        """
+        success,message = ManageProducts.fetch_product_flavour("GorurGhash")
+        self.assertFalse(success,"Product flavour not found.")
+        self.assertEqual(message,"An unexpected error occurred while fetching product flavour! Please try again later.", "Error message is incorrect.")
+
+    def test_create_product_flavour(self):
+        """
+        Test creating a new product flavour successfully.
+        """
+        success, message = ManageProducts.create_product_flavour("Rose")
+        self.assertTrue(success, "Product flavour should be created successfully.")
+        self.assertEqual(message, "New Product flavour, Rose successfully added!", "Success message is incorrect.")
+
+    def test_create_product_flavour_duplicate(self):
+        """
+        Test creating a duplicate product flavour.
+        """
+        success,message = ManageProducts.create_product_flavour("Vanilla")
+        self.assertFalse(success,"Product flavour should not be created if it already exists.")
+        self.assertEqual(message,"Same flavour exists in Database!", "Duplicate message is incorrect.")
+
+    def test_update_product_flavour_success(self):
+        """
+        Test updating a product flavour successfully.
+        """
+        success, message = ManageProducts.update_product_flavour(self.product_flavour1.pk, "Vanilla changed to icecream")
+        self.assertTrue(success, "Product flavour should be updated successfully.")
+        self.assertEqual(message, "Product flavour updated successfully!", "Success message is incorrect.")
+
+    def test_delete_product_flavour(self):
+        """
+        Test deleting a product flavour successfully.
+        """
+        success, message = ManageProducts.delete_product_flavour(self.product_flavour2.pk)
+        self.assertTrue(success, "Product flavour should be deleted successfully.")
+        self.assertEqual(message, "Product flavour deleted successfully!", "Success message is incorrect.")
 
 #     def test_create_new_product_type_success(self):
 
