@@ -408,5 +408,25 @@ class TestManageProducts(TestCase):
         self.assertFalse(success,"Product should not be fetched successfully.")
         self.assertEqual(message,"An unexpected error occurred while fetching product! Please try again later.", "Error message is incorrect")
 
+    def test_create_product(self):
+        """
+        Test creating product, duplicate as well
+        """
+
+        success,message = ManageProducts.create_product("Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
+                                                        [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
+                                                        "Essentials","Very Essentials",[self.product_flavour1.pk],
+                                                        self.brand2.pk,"soup","free to use")
+        self.assertTrue(success,"Product successfully created.")
+        self.assertEqual(message,"Product, Dove Lipstick created!","Success message is incorrect")
+
+
+        success,message = ManageProducts.create_product("Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
+                                                        [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
+                                                        "Essentials","Very Essentials",[self.product_flavour1.pk],
+                                                        self.brand2.pk,"soup","free to use")
+        self.assertFalse(success,"Product should not be created")
+        self.assertEqual(message, "Same product already exists!","Error message is incorrect")
+
    
         

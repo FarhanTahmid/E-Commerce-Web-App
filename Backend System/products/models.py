@@ -89,7 +89,7 @@ class Product(models.Model):
     product_summary=models.TextField(null=False,blank=False)
     product_ingredients=models.TextField(null=True,blank=True)
     product_usage_direction=models.TextField(null=True,blank=True)
-    product_flavours=models.ManyToManyField(Product_Flavours)
+    product_flavours=models.ManyToManyField(Product_Flavours,related_name='product_flavour')
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     

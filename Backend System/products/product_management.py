@@ -657,11 +657,17 @@ class ManageProducts:
                     return False, "Same brand exists in Database!"
             
             # Create a new product brand if no duplicates are found
-            Product_Brands.objects.create(brand_name=brand_name, brand_country=brand_country, 
-                                        brand_description=brand_description, 
-                                        brand_established_year=brand_established_year,
-                                        brand_logo=brand_logo, 
+            product_brand = Product_Brands.objects.create(brand_name=brand_name,
+                                        brand_established_year=brand_established_year, 
                                         is_own_brand=is_own_brand)
+            product_brand.save()
+            if (brand_country):
+                brand_country=brand_country
+            if (brand_description):
+                brand_description=brand_description
+            if (brand_logo):
+                brand_logo=brand_logo
+            product_brand.save()
             return True, f"New Product brand, {brand_name} successfully added!"
                                               
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -795,10 +801,10 @@ class ManageProducts:
             if (product_brand.brand_name.lower() != brand_name.lower()):
                 product_brand.brand_name = brand_name
             #update the product brand country
-            if (product_brand.brand_country.lower() != brand_country.lower()):
+            if (brand_country and product_brand.brand_country.lower() != brand_country.lower()):
                 product_brand.brand_country = brand_country
             #update the product brand description
-            if (product_brand.brand_description.lower() != brand_description.lower()):
+            if (brand_description and product_brand.brand_description.lower() != brand_description.lower()):
                 product_brand.brand_description = brand_description
             #update the product brand established year
             if (product_brand.brand_established_year != brand_established_year):
@@ -1156,7 +1162,7 @@ class ManageProducts:
         """
         Fetch products based on various optional parameters with detailed exception handling.
 
-        Choose any one argument to retrieve. Providing multiple will return the using first paramter.
+        Choose any one argument to retrieve result. Providing multiple will return using first parameter.
         This function attempts to retrieve products from the database based on the provided parameters.
         It handles various errors that might occur during the process, logging each error for further analysis.
 
@@ -1170,6 +1176,7 @@ class ManageProducts:
         Returns:
             tuple:
                 - QuerySet or Product: A QuerySet of products matching the criteria or a single Product object.
+                - Using 'pk' and 'product_name' uses 'get' operation to retrieve. So returns error if not found.
                 - str: A message indicating the success or failure of the operation.
 
         Example Usage:
@@ -1243,3 +1250,107 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product! Please try again later.") 
+        
+    def create_product(product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
+                       product_summary,product_flavours_pk_list,product_brand_pk=None,product_ingredients=None,
+                       product_usage_direction=None):
+        
+        """
+        Create a new product with detailed exception handling.
+
+        This function attempts to add a new product to the database. It first checks for
+        existing product using the product_name to avoid duplicates. If the product does not exist, it is created.
+        The function handles various errors that might occur during the process, logging each
+        error for further analysis.
+
+        Args:
+            product_name (str): The name of the product to be added.
+            product_category_pk_list (list): A list of primary keys (IDs) of the product categories to be associated with the product.
+            product_sub_category_pk_list (list): A list of primary keys (IDs) of the product sub-categories to be associated with the product.
+            product_description (str): A description of the product.
+            product_summary (str): A summary of the product.
+            product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the product.
+            product_brand_pk (int, optional): The primary key (ID) of the product brand to be associated with the product. Defaults to None.
+            product_ingredients (str, optional): The ingredients of the product. Defaults to None.
+            product_usage_direction (str, optional): The usage directions of the product. Defaults to None.
+
+        Returns:
+            tuple:
+                - Product or bool: The created product object if successful, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            product, message = create_product(
+                product_name="Shampoo",
+                product_category_pk_list=[1, 2],
+                product_sub_category_pk_list=[3, 4],
+                product_description="A cleansing shampoo",
+                product_summary="Cleansing shampoo for all hair types",
+                product_flavours_pk_list=[5, 6],
+                product_brand_pk=1,
+                product_ingredients="Water, Sodium Laureth Sulfate",
+                product_usage_direction="Use as needed"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while creating product! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while creating product! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while creating product! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while creating product! Please try again later."
+
+        Notes:
+            - The function ensures that product names are checked in a case-insensitive manner to prevent duplicates.
+            - If a duplicate product is found, it will not be added, and an appropriate message will be returned.
+            - All errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        try:
+            try:
+                #checking to see if product alreadt exists or not. If does returning
+                product,message = ManageProducts.fetch_product(product_name=product_name)
+                if product.product_name.lower() == product_name.lower():
+                    return False, "Same product already exists!"
+            except:
+                product = Product.objects.create(product_name=product_name,product_description=product_description,
+                                    product_summary=product_summary)
+                product.save()
+                #getting all category and sub categories and flavours
+                product_category = [Product_Category.objects.get(pk=p) for p in product_category_pk_list]
+                product_sub_category = [Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list]
+                product_flavours = [Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list]
+                product.product_category.add(*product_category)
+                product.product_sub_category.add(*product_sub_category)
+                product.product_flavours.add(*product_flavours)
+                #checking optional paramters
+                if product_brand_pk:
+                    brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                    product.product_brand = brand
+                if product_ingredients:
+                    product.product_ingredients = product_ingredients
+                if product_usage_direction:
+                    product.product_usage_direction = product_usage_direction
+                product.save()
+
+                return product, f"Product, {product_name} created!"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating product! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating product! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating product! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating product! Please try again later.")
