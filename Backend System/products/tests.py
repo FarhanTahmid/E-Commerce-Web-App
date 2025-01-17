@@ -31,6 +31,12 @@ class TestManageProducts(TestCase):
         self.sub_category3.category_id.set([self.category_haircare])
         self.sub_category4.category_id.set([self.category_fragrance])
         self.sub_category5.category_id.set([self.category_makeup])
+
+        #creating product brand
+        self.brand1 = Product_Brands.objects.create(brand_name="Loreal", brand_country="USA",brand_description="Loreal Paris",
+                                                    brand_established_year= 1909,is_own_brand=False,created_at=now)
+        self.brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",
+                                                    brand_established_year= 2000,is_own_brand=True,created_at=now)
     
     def test_fetch_all_product_categories_success(self):
         """
@@ -100,7 +106,7 @@ class TestManageProducts(TestCase):
         self.assertTrue(success, "Product category should be deleted successfully.")
         self.assertEqual(message, "Product Category deleted successfully!", "Success message is incorrect.")
         
-    
+    #product sub category testcases
     def test_fetch_all_product_sub_categories_for_a_category_success(self):
         """
         Test if the function fetches all product sub-categories for a category successfully.
@@ -143,7 +149,7 @@ class TestManageProducts(TestCase):
         self.assertIsNone(sub_categories, "Product sub-categories should be None on IntegrityError.")
         
     
-    #testcases for create product sub category
+   
     def test_create_product_sub_category_success(self):
         """
         Test creating a new product sub-category successfully.
@@ -160,7 +166,7 @@ class TestManageProducts(TestCase):
         self.assertFalse(success, "Product sub-category should not be created if it already exists.")
         self.assertEqual(message, "Same type exists in Database!", "Duplicate message is incorrect.")
 
-    #testcase for update product sub category
+    
     def test_update_product_sub_category_success(self):
         """
         Test updating a product sub-category successfully.
@@ -169,7 +175,7 @@ class TestManageProducts(TestCase):
         self.assertTrue(success, "Product Sub Category updated successfully!")
         self.assertEqual(message, "Product Sub Category updated successfully!", "Success message is incorrect.")
 
-    #testcase for delete product sub category
+    
     def test_delete_product_sub_category_success(self):
         """
         Test deleting a product sub-category successfully.
@@ -177,7 +183,24 @@ class TestManageProducts(TestCase):
         success, message = ManageProducts.delete_product_sub_category(self.sub_category1.pk)
         self.assertTrue(success,"Product Sub Category deleted successfully!")
         self.assertEqual(message,"Product Sub Category deleted successfully!", "Delete message is incorrect.")
-        
+
+    #testcase for product brand
+    def test_create_product_brand_success(self):
+        """
+        Test creating a new product brand successfully.
+        """
+        success, message = ManageProducts.create_product_brand("Lux", "USA", "Lux Paris", 1889, True)
+        self.assertTrue(success, "Product brand should be created successfully.")
+        self.assertEqual(message, "New Product brand, Lux successfully added!", "Success message is incorrect.")
+    
+    def test_create_product_brand_duplicate(self):
+        """
+        Test creating a duplicate product brand.
+
+        """
+        success,message = ManageProducts.create_product_brand("Loreal", "USA", "Loreal Paris", 1909, False)
+        self.assertFalse(success,"Product brand should not be created if it already exists.")
+        self.assertEqual(message,"Same brand exists in Database!", "Duplicate message is incorrect.")
 
 #     def test_create_new_product_type_success(self):
 #         """

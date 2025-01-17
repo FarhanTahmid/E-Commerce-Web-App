@@ -136,11 +136,10 @@ class ManageProducts:
                 if any(p.category_name.lower() == product_category_name.lower() for p in product_categories):
                     return False, "Same type exists in Database!"
 
-                # Create a new product type if no duplicates are found
-                Product_Category.objects.create(category_name=product_category_name, description=description)
-                return True, f"New Product category. {product_category_name} successfully added!"
+            # Create a new product type if no duplicates are found
+            Product_Category.objects.create(category_name=product_category_name, description=description)
+            return True, f"New Product category. {product_category_name} successfully added!"
 
-            return False, message
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -157,7 +156,7 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
 
-        return False, error_messages.get(error_type, "An unexpected error occurred while creating Product Category! Please try again later.")
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating Product Category! Please try again later.")
 
     def update_product_category(product_category_pk,new_category_name,description):
         """
@@ -599,4 +598,84 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Sub Category! Please try again later.")
 
+    #Manage Product Brand
+    def create_product_brand(brand_name,brand_country,brand_description,brand_established_year,
+                            is_own_brand,brand_logo=None):
+        
+        """
+        Create a new product brand with detailed exception handling.
 
+        This function attempts to add a new product brand to the database. It first checks for
+        existing brands to avoid duplicates. If the brand does not exist, it is created.
+        The function handles various errors that might occur during the process, logging each
+        error for further analysis.
+
+        Args:
+            brand_name (str): The name of the product brand to be added.
+            brand_country (str): The country of the product brand.
+            brand_description (str): A description of the product brand.
+            brand_established_year (int): The year the product brand was established.
+            is_own_brand (bool): Indicates if the brand is owned by the company.
+            brand_logo (str, optional): The logo of the product brand. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the brand was created successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = create_product_brand("Loreal", "USA", "Loreal Paris", 1909, False)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while creating Product brand! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while creating Product brand! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while creating Product brand! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while creating Product brand! Please try again later."
+
+        Notes:
+            - The function ensures that brand names are checked in a case-insensitive manner to prevent duplicates.
+            - If a duplicate brand is found, it will not be added, and an appropriate message will be returned.
+            - All errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        
+        try:
+            # Fetch existing product brands
+            product_brands = Product_Brands.objects.all()
+            if product_brands:
+                # Check for duplicate brands (case-insensitive)
+                if any(p.brand_name.lower() == brand_name.lower() for p in product_brands):
+                    return False, "Same brand exists in Database!"
+            
+            # Create a new product brand if no duplicates are found
+            Product_Brands.objects.create(brand_name=brand_name, brand_country=brand_country, 
+                                        brand_description=brand_description, 
+                                        brand_established_year=brand_established_year,
+                                        brand_logo=brand_logo, 
+                                        is_own_brand=is_own_brand)
+            return True, f"New Product brand, {brand_name} successfully added!"
+                                              
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating Product brand! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating Product brand! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating Product brand! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating Product brand! Please try again later.")
+
+    def fetch_product_brand(brand_name):
+        pass
