@@ -678,4 +678,54 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while creating Product brand! Please try again later.")
 
     def fetch_product_brand(brand_name):
-        pass
+
+        """
+        Fetch a product brand by its name with detailed exception handling.
+
+        This function attempts to retrieve a product brand from the database based on the provided brand name.
+        It handles various errors that might occur during the process, logging each error for further analysis.
+
+        Args:
+            brand_name (str): The name of the product brand to be fetched.
+
+        Returns:
+            tuple:
+                - Product_Brands: The product brand object if found.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            brand, message = fetch_product_brand("Loreal")
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while fetching Product brand, {brand_name}! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while fetching Product brand, {brand_name}! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while fetching Product brand, {brand_name}! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "An unexpected error in Database occurred while fetching Product brand, {brand_name}! Please try again later."
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while fetching Product brand, {brand_name}! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        
+        try:
+            return Product_Brands.objects.get(brand_name=brand_name), "Product brand fetched successfully!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": f"An unexpected error in Database occurred while fetching Product brand, {brand_name}! Please try again later.",
+                "OperationalError": f"An unexpected error in server occurred while creating Product brand, {brand_name}! Please try again later.",
+                "ProgrammingError": f"An unexpected error in server occurred while creating Product brand, {brand_name}! Please try again later.",
+            }
+            return False, error_messages.get(error_type, f"An unexpected error occurred while fetching Product brand, {brand_name}! Please try again later.")

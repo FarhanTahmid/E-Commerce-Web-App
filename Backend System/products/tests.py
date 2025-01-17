@@ -202,6 +202,18 @@ class TestManageProducts(TestCase):
         self.assertFalse(success,"Product brand should not be created if it already exists.")
         self.assertEqual(message,"Same brand exists in Database!", "Duplicate message is incorrect.")
 
+    def test_fetch_product_brand(self):
+
+        success,message = ManageProducts.fetch_product_brand("Loreal")
+        self.assertTrue(success,"Product brand should be fetched successfully.")
+        self.assertEqual(message,"Product brand fetched successfully!", "Success message is incorrect.")
+    
+    def test_fetch_product_brand_not_found(self):
+
+        success,message = ManageProducts.fetch_product_brand("GorurGhash")
+        self.assertFalse(success,"Product brand not found.")
+        self.assertEqual(message,"An unexpected error occurred while fetching Product brand, GorurGhash! Please try again later.", "Error message is incorrect.")
+
 #     def test_create_new_product_type_success(self):
 #         """
 #         Test creating a new product type successfully.
