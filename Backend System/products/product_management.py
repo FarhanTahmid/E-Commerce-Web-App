@@ -302,6 +302,41 @@ class ManageProducts:
     
     # Manage Product Sub Category
     def fetch_all_product_sub_categories_for_a_category(product_category_pk):
+        """
+        Fetch all product sub-categories for a given product category.
+
+        This function retrieves all sub-categories associated with a specified product category.
+        It handles various exceptions that might occur during the database operations and logs
+        the errors for further analysis.
+
+        Args:
+            product_category_pk (int): The primary key (ID) of the product category.
+
+        Returns:
+            tuple:
+                - QuerySet: A QuerySet of Product_Sub_Category objects if the operation is successful.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            sub_categories, message = fetch_all_product_sub_categories_for_a_category(1)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in Database occurred! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in Database occurred! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as data inconsistency.
+                Message: "An unexpected error in Database occurred! Please try again later."
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+
+        """
         try:
             product_category = Product_Category.objects.get(pk=product_category_pk)
             product_sub_categories = Product_Sub_Category.objects.filter(category_id=product_category)
@@ -343,6 +378,46 @@ class ManageProducts:
             return None, "An unexpected error occurred! Please try again later."
         
     def create_product_sub_category(product_category_pk,sub_category_name,description):
+
+        """
+        Create a new product sub-category with detailed exception handling.
+
+        This function attempts to add a new product sub-category to the database. It first checks for
+        existing sub-categories to avoid duplicates. If the sub-category does not exist, it is created.
+        The function handles various errors that might occur during the process, logging each
+        error for further analysis.
+
+        Args:
+            product_category_pk (int): The primary key (ID) of the product category.
+            sub_category_name (str): The name of the product sub-category to be added.
+            description (str): A description of the product sub-category.
+
+        Returns:
+            tuple:
+                - bool: `True` if the sub-category was created successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = create_product_sub_category(1, "Lipstick", "Lipstick Item")
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while creating Product Sub Category! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while creating Product Sub Category! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while creating Product Sub Category! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while creating Product Sub Category! Please try again later."
+
+        Notes:
+            - The function ensures that sub-category names are checked in a case-insensitive manner to prevent duplicates.
+            - If a duplicate sub-category is found, it will not be added, and an appropriate message will be returned.
+            - All errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         
         try:
             # Fetch product all sub category
@@ -382,6 +457,44 @@ class ManageProducts:
             return False, "An unexpected error occurred while creating Product Sub Category! Please try again later."
     
     def update_product_sub_category(product_sub_category_pk,category_pk_list,sub_category_name,description):
+
+        """
+        Update an existing product sub-category with detailed exception handling.
+
+        This function attempts to update the details of a product sub-category. It checks for changes in
+        the associated categories, sub-category name, and description, and updates them accordingly.
+        The function includes comprehensive exception handling to log and report any errors that occur.
+
+        Args:
+            product_sub_category_pk (int): The primary key (ID) of the product sub-category to be updated.
+            category_pk_list (list): A list of primary keys (IDs) of the categories to be associated with the sub-category.
+            sub_category_name (str): The new name for the product sub-category.
+            description (str): The updated description for the product sub-category.
+
+        Returns:
+            tuple:
+                - bool: `True` if the sub-category was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_product_sub_category(1, [1, 2], "Moisturizer", "Updated description")
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating Product Sub Category! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating Product Sub Category! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating Product Sub Category! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating Product Sub Category! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         try:
             user_changed_product_categories = [Product_Category.objects.get(pk=category_id) for category_id in category_pk_list]
             # fetching the product sub category
@@ -429,6 +542,42 @@ class ManageProducts:
             return False, "An unexpected error occurred while updating Product Sub Category! Please try again later."
         
     def delete_product_sub_category(product_sub_category_pk):
+
+        """
+        Delete an existing product sub-category with detailed exception handling.
+
+        This function attempts to delete a product sub-category from the database. It handles various
+        exceptions that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_sub_category_pk (int): The primary key (ID) of the product sub-category to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the sub-category was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product_sub_category(1)
+            print(message)
+
+        Exception Handling:
+            - **Product_Sub_Category.DoesNotExist**: Handles the case where the sub-category does not exist.
+                Message: "Product Sub Category does not exist!"
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting Product Sub Category! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting Product Sub Category! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting Product Sub Category! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting Product Sub Category! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         try:
             get_product_sub_category = Product_Sub_Category.objects.get(pk=product_sub_category_pk)
             get_product_sub_category.delete()
