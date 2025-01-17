@@ -83,8 +83,8 @@ class Product(models.Model):
     
     product_name=models.TextField(null=False,blank=False)
     product_brand=models.ForeignKey(Product_Brands,null=True,blank=True,on_delete=models.CASCADE)
-    product_category=models.ManyToManyField(Product_Category)
-    product_sub_category=models.ManyToManyField(Product_Sub_Category)
+    product_category=models.ManyToManyField(Product_Category,related_name='products')
+    product_sub_category=models.ManyToManyField(Product_Sub_Category,related_name='products')
     product_description=models.TextField(null=False,blank=False)
     product_summary=models.TextField(null=False,blank=False)
     product_ingredients=models.TextField(null=True,blank=True)
@@ -99,6 +99,9 @@ class Product(models.Model):
         
     def __str__(self) -> str:
         return self.product_name
+    
+    def __lt__(self,other):
+        return self.product_name< other.product_name
     
 
 class Product_SKU(models.Model):

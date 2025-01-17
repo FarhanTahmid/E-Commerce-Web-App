@@ -602,8 +602,8 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Sub Category! Please try again later.")
 
     #Manage Product Brand
-    def create_product_brand(brand_name,brand_country,brand_description,brand_established_year,
-                            is_own_brand,brand_logo=None):
+    def create_product_brand(brand_name,brand_established_year,
+                            is_own_brand,brand_country=None,brand_description=None,brand_logo=None):
         
         """
         Create a new product brand with detailed exception handling.
@@ -680,7 +680,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating Product brand! Please try again later.")
 
-    def fetch_product_brand(brand_name=None,pk=None):
+    def fetch_product_brand(pk=None,brand_name=None):
 
         """
         Fetch a product brand by its name with detailed exception handling.
@@ -690,8 +690,8 @@ class ManageProducts:
         occur during the process, logging each error for further analysis.
 
         Args:
-            brand_name (str): The name of the product brand to be fetched. If None, fetches all product brands.
             pk (int): The primary key (ID) of the product brand to be fetched. If provided, brand_name is ignored.
+            brand_name (str): The name of the product brand to be fetched. If None, fetches all product brands.
 
         Returns:
             tuple:
@@ -743,8 +743,8 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching Product brand! Please try again later.")
         
-    def update_product_brand(product_brand_pk,brand_name,brand_country,brand_description,brand_established_year,
-                            is_own_brand,brand_logo=None):
+    def update_product_brand(product_brand_pk,brand_name,brand_established_year,
+                            is_own_brand,brand_country=None,brand_description=None,brand_logo=None):
         """
         Update an existing product brand with detailed exception handling.
 
@@ -1146,3 +1146,47 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product flavour! Please try again later.") 
+        
+    #Manage Product
+    def fetch_product(product_pk=None,product_name=None,product_brand_pk=None,
+                      product_category_pk_list=None,product_sub_category_pk_list=None):
+        try:
+            #fetching products according to provided arguments
+            if product_pk:
+                return Product.objects.get(pk=product_pk), "Products fetched successfully!"
+            elif product_name:
+                return Product.objects.get(product_name=product_name), "Products fetched successfully!"
+            elif product_brand_pk:
+                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                products = Product.objects.filter(product_brand=product_brand)
+                return products, "Products fetched successfully!" if products else "No products found using this brand"
+            elif product_category_pk_list:
+                product_categories = [Product_Category.objects.get(pk=p) for p in product_category_pk_list]
+                products=set()
+                for categories in product_categories:
+                    products.update(categories.products.all())
+                return products, "Products fetched successfully!" if products else "No products found using this categories"
+            elif product_sub_category_pk_list:
+                product_sub_categories = [Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list]
+                products = set()
+                for sub_categories in product_sub_categories:
+                    products.update(sub_categories.products.all())
+                return products,"Products fetched successfully!"if products else "No products found using this sub categories"
+            else:
+                return Product.objects.all(), "All Products fetched successfully!"
+            
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching product! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching product! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching product! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching product! Please try again later.") 
