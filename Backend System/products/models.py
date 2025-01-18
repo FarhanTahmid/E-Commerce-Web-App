@@ -42,6 +42,9 @@ class Product_Sub_Category(models.Model):
     def __str__(self) -> str:
         # returns the sub-category pk when called via filter or get
         return str(self.sub_category_name)
+    
+    def __lt__(self,other):
+        return self.sub_category_name<other.sub_category_name
 
     
 class Product_Brands(models.Model):
@@ -77,6 +80,9 @@ class Product_Flavours(models.Model):
         
     def __str__(self):
         return str(self.pk)
+    
+    def __lt__(self,other):
+        return self.product_flavour_name<other.product_flavour_name
 
 class Product(models.Model):
     '''This table stores the description of Product'''

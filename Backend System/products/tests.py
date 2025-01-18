@@ -428,5 +428,26 @@ class TestManageProducts(TestCase):
         self.assertFalse(success,"Product should not be created")
         self.assertEqual(message, "Same product already exists!","Error message is incorrect")
 
+    def test_update_product(self):
+        """
+        Test update product
+        """
+
+        success, message = ManageProducts.update_product(self.product5.pk,self.product5.product_name,[self.category_fragrance.pk,self.category_makeup.pk],
+                                                         [self.sub_category1.pk],"hii","yoo",[self.product_flavour2.pk,self.product_flavour1.pk],
+                                                         self.brand2.pk,"nothing","ooo")
+        self.assertTrue(success,"Product should be updated!")
+        self.assertEqual(message,"Product updated successfully!","Success message is incorrect")
+
+    def test_delete_product(self):
+        """
+        Test delete product
+        """
+
+        success,message = ManageProducts.delete_product(self.product5.pk)
+        self.assertTrue(success,"Product should be deleted successfully!")
+        self.assertEqual(message,"Product deleted successfully","Success message is incorrect")
+        
+
    
         

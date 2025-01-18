@@ -1354,3 +1354,168 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product! Please try again later.")
+
+    def update_product(product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
+                       product_summary,product_flavours_pk_list,product_brand_pk=None,product_ingredients=None,
+                       product_usage_direction=None):
+
+        """
+        Update an existing product with detailed exception handling.
+
+        This function attempts to update the details of a product. It checks for changes in
+        the product name, categories, sub-categories, description, summary, flavours, brand, ingredients, and usage directions,
+        and updates them accordingly. The function includes comprehensive exception handling to log and report any errors that occur.
+
+        Args:
+            product_pk (int): The primary key (ID) of the product to be updated.
+            product_name (str): The new name for the product.
+            product_category_pk_list (list): A list of primary keys (IDs) of the product categories to be associated with the product.
+            product_sub_category_pk_list (list): A list of primary keys (IDs) of the product sub-categories to be associated with the product.
+            product_description (str): The updated description of the product.
+            product_summary (str): The updated summary of the product.
+            product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the product.
+            product_brand_pk (int, optional): The primary key (ID) of the product brand to be associated with the product. Defaults to None.
+            product_ingredients (str, optional): The updated ingredients of the product. Defaults to None.
+            product_usage_direction (str, optional): The updated usage directions of the product. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_product(
+                product_pk=1,
+                product_name="Updated Shampoo",
+                product_category_pk_list=[1, 2],
+                product_sub_category_pk_list=[3, 4],
+                product_description="An updated cleansing shampoo",
+                product_summary="Updated cleansing shampoo for all hair types",
+                product_flavours_pk_list=[5, 6],
+                product_brand_pk=1,
+                product_ingredients="Updated ingredients",
+                product_usage_direction="Updated usage directions"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating product! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating product! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating product! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating product! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        try:
+            new_product_category = sorted([Product_Category.objects.get(pk=p) for p in product_category_pk_list])
+            new_product_sub_category = sorted([Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list])
+            new_product_flavours = sorted([Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list])
+            #getting the product
+            product,message = ManageProducts.fetch_product(product_pk=product_pk)
+            existing_product_category = sorted(product.product_category.all())
+            existing_product_sub_category = sorted(product.product_sub_category.all())
+            existing_product_flavours = sorted(product.product_flavours.all())
+            #updating only if changed
+            if product.product_name.lower() != product_name.lower():
+                product.product_name = product_name
+            if existing_product_category != new_product_category:
+                product.product_category.set(new_product_category)
+            if existing_product_sub_category != new_product_sub_category:
+                product.product_sub_category.set(new_product_sub_category)
+            if existing_product_flavours != new_product_flavours:
+                product.product_flavours.set(new_product_flavours)
+            if product.product_description.lower() != product_description.lower():
+                product.product_description = product_description
+            if product.product_summary.lower() != product_summary.lower():
+                product.product_summary = product_summary
+            if product_brand_pk and product_brand_pk != product.product_brand.pk:
+                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                product.product_brand = product_brand
+            if product.product_ingredients.lower() != product_ingredients.lower():
+                product.product_ingredients =  product_ingredients
+            if product.product_usage_direction.lower() != product_usage_direction.lower():
+                product.product_usage_direction = product_usage_direction
+            product.save()
+
+            return True, "Product updated successfully!"
+            
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product! Please try again later.")
+        
+    def delete_product(product_pk):
+
+        """
+        Delete an existing product with detailed exception handling.
+
+        This function attempts to delete a product from the database. It handles various
+        exceptions that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_pk (int): The primary key (ID) of the product to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product(1)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting product! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting product! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting product! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting product! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+
+        try:
+            #getting the product
+            product,message = ManageProducts.fetch_product(product_pk=product_pk)
+            product.delete()
+            return True, "Product deleted successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting product! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting product! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting product! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product! Please try again later.")
