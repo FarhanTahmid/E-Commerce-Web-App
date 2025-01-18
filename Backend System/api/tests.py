@@ -1,14 +1,17 @@
-from django.test import TestCase
 from rest_framework.test import APITestCase
 from rest_framework import status
-from products import product_management
 from django.utils import timezone
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 
 # Create your tests here.
 class ProductAPITestCases(APITestCase):
     
     def setUp(self):
         self.now = timezone.now()
+        self.user = User.objects.create_user(username='testuser', password='password')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
     def test_create_product(self):
         """
