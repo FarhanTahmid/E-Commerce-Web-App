@@ -1519,3 +1519,6 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product! Please try again later.")
+    
+    #Manage product sku
+    
