@@ -8,6 +8,23 @@ from rest_framework.views import APIView
 from products.product_management import ManageProducts
 
 # Create your views here.
+class FetchProductCategoryView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,format=None):
+
+        product_categories,message = ManageProducts.fetch_all_product_categories()
+        product_category_data = product_serializers.Product_Category_Serializer(product_categories,many=True)
+        if product_categories:
+            return Response(
+                {"message": message,"product_category": product_category_data.data},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
 class CreateProductCategoryView(APIView):
    
     """
@@ -70,3 +87,32 @@ class CreateProductCategoryView(APIView):
             )
         else:
             return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+class UpdateProductCategoryView(APIView):
+
+    serializer_class = product_serializers.Product_Category_Serializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request,pk, format=None):
+
+        product_category_pk = pk
+        product_category_name = self.request.data['category_name']
+        product_category_description = self.request.data['description']
+        if not product_category_name or not product_category_description:
+            return Response(
+                {"error": "Both 'name' and 'description' are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        updated_product_category, message = ManageProducts.update_product_category(product_category_pk=product_category_pk,new_category_name=product_category_name,description=product_category_description)
+        if updated_product_category:
+            return Response(
+                {"message": message},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
