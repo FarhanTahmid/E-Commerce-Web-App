@@ -1,3 +1,4 @@
+
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
@@ -8,6 +9,7 @@ from rest_framework.views import APIView
 from products.product_management import ManageProducts
 
 # Create your views here.
+#product categories
 class FetchProductCategoryView(APIView):
 
     authentication_classes = [TokenAuthentication]
@@ -130,5 +132,22 @@ class DeleteProductCategoryView(APIView):
             )
         else:
             return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        
+#product sub categories
+class FetchProductSubCategoryView(APIView):
 
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,format=None):
+
+        product_categories,message = ManageProducts.fetch_all_product_categories()
+        product_category_data = product_serializers.Product_Category_Serializer(product_categories,many=True)
+        if product_categories:
+            return Response(
+                {"message": message,"product_category": product_category_data.data},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 

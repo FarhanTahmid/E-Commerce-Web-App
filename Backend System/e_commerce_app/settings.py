@@ -48,14 +48,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'api',
     'storages',
     'system',
     'business_company',
     'products',
     'inventory',
     'customer',
-    'orders'
+    'orders',
+    'server_api',
     
 ]
 
