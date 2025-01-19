@@ -76,7 +76,11 @@ class TestManageProducts(TestCase):
         self.product5.product_category.set([self.category_makeup])
         self.product5.product_sub_category.set([self.sub_category5])
         self.product5.product_flavours.set([self.product_flavour2])
-    
+
+        #creating product sku
+        self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
+        self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
+
     def test_fetch_all_product_categories_success(self):
         """
         Test if the function fetches all product categories successfully.
@@ -447,6 +451,31 @@ class TestManageProducts(TestCase):
         success,message = ManageProducts.delete_product(self.product5.pk)
         self.assertTrue(success,"Product should be deleted successfully!")
         self.assertEqual(message,"Product deleted successfully","Success message is incorrect")
+
+    #test product sku
+    def test_fetch_product_sku(self):
+        """
+        Test for fetching product sky
+        """
+        #fetch using pk
+        success, message = ManageProducts.fetch_product_sku(pk=self.product_sku2.pk)
+        self.assertTrue(success,"Product should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
+
+        #fetch using product id
+        success, message = ManageProducts.fetch_product_sku(product_id=self.product1.pk)
+        self.assertTrue(success,"Product should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
+
+        #fetch using product name
+        success, message = ManageProducts.fetch_product_sku(product_name=self.product1.product_name)
+        self.assertTrue(success,"Product should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
+
+        #fetch using product sku if not found
+        success, message = ManageProducts.fetch_product_sku(product_sku="sAmi5")
+        self.assertFalse(success,"Product should not be fetched successfully!")
+        self.assertEqual(message,"No sku with this code!","Error is incorrect")
         
 
    

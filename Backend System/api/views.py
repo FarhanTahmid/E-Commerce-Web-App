@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from products import products_serializers
+from products import product_serializers
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -48,7 +48,7 @@ class CreateProductCategoryView(APIView):
         }
     """
 
-    serializer_class = products_serializers.Product_Category_Serializer
+    serializer_class = product_serializers.Product_Category_Serializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     

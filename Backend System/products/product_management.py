@@ -1521,4 +1521,34 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product! Please try again later.")
     
     #Manage product sku
-    
+    def fetch_product_sku(pk=None,product_id=None,product_name=None,product_sku=None):
+
+        try:
+            if pk:
+                return Product_SKU.objects.get(pk=pk), "Fetched successfully"
+            elif product_id:
+                product,message = ManageProducts.fetch_product(product_pk=product_id)
+                return Product_SKU.objects.filter(product_id=product), "Fetched successfully"
+            elif product_name:
+                product,message = ManageProducts.fetch_product(product_name=product_name)
+                return Product_SKU.objects.filter(product_id=product), "Fetched successfully"
+            elif product_sku:
+                try:
+                    return Product_SKU.objects.get(product_sku=product_sku.upper()), "Fetched successfully"
+                except:
+                    return False, "No sku with this code!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating product sku! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating product sku! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating product sku! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating product sku! Please try again later.")
