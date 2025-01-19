@@ -7,7 +7,7 @@ from products.models import *
 from products import product_serializers
 
 # Create your tests here.
-class ProductAPITestCases(APITestCase):
+class ProductCategoryAPITestCases(APITestCase):
     
     def setUp(self):
         self.now = timezone.now()
@@ -16,6 +16,11 @@ class ProductAPITestCases(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         self.product_category1 = Product_Category.objects.create(category_name="Skincare", description="Products for skincare", created_at=self.now)
         self.product_category2= Product_Category.objects.create(category_name="Makeup", description="Products for makeup", created_at=self.now)
+        self.product_sub_category1 = Product_Sub_Category.objects.create(sub_category_name="Moisturizers", description="Products to moisturize skin", created_at=self.now)
+        self.product_sub_category2= Product_Sub_Category.objects.create(sub_category_name="Cleansers", description="Products to cleanse skin", created_at=self.now)
+
+        self.product_sub_category1.category_id.set([self.product_category1,self.product_category2])
+        self.product_sub_category2.category_id.set([self.product_category2])
 
     def test_fetch_all_product_categories(self):
         """
@@ -70,3 +75,19 @@ class ProductAPITestCases(APITestCase):
         response = self.client.delete(f'/server_api/product/categories/delete/{self.product_category2.pk}/')
         self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Product Category does not exist!")
+
+    def test_fetch_all_product_sub_category_for_a_category(self):
+
+        response = self.client.get(f'/server_api/product/sub_categories/fetch_all_product_sub_categories_for_a_category/{self.product_category2.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(response.data['product_sub_category']),2)
+        expected_data = Product_Sub_Category.objects.filter(category_id = self.product_category2)
+        returned_data = response.data['product_sub_category']
+        expected_data_serialized = product_serializers.Product_Sub_Category_Serializer(expected_data, many=True).data
+        self.assertEqual(returned_data, expected_data_serialized)
+
+
+        
+
+    
+

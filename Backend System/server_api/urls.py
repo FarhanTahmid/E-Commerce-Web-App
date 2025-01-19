@@ -11,5 +11,5 @@ urlpatterns = [
     path('product/categories/delete/<int:pk>/',views.DeleteProductCategoryView.as_view(),name='delete_product_categories'),
 
     #product sub categories CRUD
-    
+    path('product/sub_categories/fetch_all_product_sub_categories_for_a_category/<int:pk>/', views.FetchProductSubCategoryView.as_view(), name='fetch_all_product_sub_categories_for_a_category'),
 ]

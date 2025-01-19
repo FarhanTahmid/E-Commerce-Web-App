@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from products.product_management import ManageProducts
+from system import permissions
 
 # Create your views here.
 #product categories
@@ -139,13 +140,14 @@ class FetchProductSubCategoryView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self,request,format=None):
+    def get(self,request,pk,format=None):
 
-        product_categories,message = ManageProducts.fetch_all_product_categories()
-        product_category_data = product_serializers.Product_Category_Serializer(product_categories,many=True)
-        if product_categories:
+        product_category_pk = pk
+        product_sub_categories,message = ManageProducts.fetch_all_product_sub_categories_for_a_category(product_category_pk=product_category_pk)
+        product_sub_categories_data = product_serializers.Product_Sub_Category_Serializer(product_sub_categories,many=True)
+        if product_sub_categories_data:
             return Response(
-                {"message": message,"product_category": product_category_data.data},
+                {"message": message,"product_sub_category": product_sub_categories_data.data},
                 status=status.HTTP_200_OK
             )
         else:
