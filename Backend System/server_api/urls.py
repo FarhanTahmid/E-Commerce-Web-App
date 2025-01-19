@@ -12,4 +12,6 @@ urlpatterns = [
 
     #product sub categories CRUD
     path('product/sub_categories/fetch_all_product_sub_categories_for_a_category/<int:pk>/', views.FetchProductSubCategoryView.as_view(), name='fetch_all_product_sub_categories_for_a_category'),
+    path('product/sub_categories/create/<int:pk>/',views.CreateProductSubCategoryView.as_view(),name='create_product_sub_categories'),
+    path('product/sub_categories/update/<int:pk>/',views.UpdateProductSubCategoryView.as_view(),name='update_product_sub_categories'),
 ]

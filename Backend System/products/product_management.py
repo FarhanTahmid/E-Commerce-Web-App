@@ -214,9 +214,11 @@ class ManageProducts:
             # Get the product type object
             product_category = Product_Category.objects.get(pk=product_category_pk)
 
-            # Update the product type
-            product_category.category_name = new_category_name  # Ensure this is a string
-            product_category.description = description
+            # Update the product type if changed
+            if product_category.category_name != new_category_name:
+                product_category.category_name = new_category_name  # Ensure this is a string
+            if product_category.description != description:
+                product_category.description = description
             product_category.save()
 
             return True, "Product Category updated successfully!"

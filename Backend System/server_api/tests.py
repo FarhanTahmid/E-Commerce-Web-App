@@ -76,7 +76,12 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Product Category does not exist!")
 
+    #test for product sub categories
     def test_fetch_all_product_sub_category_for_a_category(self):
+        """
+        Test
+        for fetching product sub categories
+        """
 
         response = self.client.get(f'/server_api/product/sub_categories/fetch_all_product_sub_categories_for_a_category/{self.product_category2.pk}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -86,8 +91,36 @@ class ProductCategoryAPITestCases(APITestCase):
         expected_data_serialized = product_serializers.Product_Sub_Category_Serializer(expected_data, many=True).data
         self.assertEqual(returned_data, expected_data_serialized)
 
-
+    def test_create_product_sub_category(self):
+        """
+        Test
+        for creating product sub categories
+        """
+        data = {"sub_category_name": "Foundation", "description": "Foundation Description"}
+        response = self.client.post(f'/server_api/product/sub_categories/create/{self.product_category2.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"New Product sub-category, Foundation successfully added!","Success message is incorrect")
         
+        #if duplicate
+        response = self.client.post(f'/server_api/product/sub_categories/create/{self.product_category2.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Same type exists in Database!","Success message is incorrect")
+   
 
-    
+    def test_update_product_sub_category(self):
 
+        """
+          Test
+        for updating product sub categories
+        """
+
+        data = {"category_pk_list":[self.product_category1.pk],"sub_category_name": "Moisturizers lop", "description": "Moisturizers Description"}
+        print(data)
+        response = self.client.put(f'/server_api/product/sub_categories/update/{self.product_sub_category1.pk}/',data,format='json')
+        print(response.data)
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product Sub Category updated successfully!","Success message is incorrect")
+
+
+    def test_delete_product_sub_category(self):
+        pass

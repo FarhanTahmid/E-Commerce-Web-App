@@ -152,4 +152,47 @@ class FetchProductSubCategoryView(APIView):
             )
         else:
             return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        
+class CreateProductSubCategoryView(APIView):
 
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,pk,format=None):
+
+        product_category_pk = pk
+        product_sub_category_name = request.data['sub_category_name']
+        product_sub_category_description = request.data['description']
+        product_sub_category,message = ManageProducts.create_product_sub_category(product_category_pk=product_category_pk,sub_category_name=product_sub_category_name,description=product_sub_category_description)
+        if product_sub_category:
+            return Response(
+                {"message": message},
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        
+class UpdateProductSubCategoryView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,pk,format=None):
+
+        print("herere")
+
+        product_sub_category_pk = pk
+        category_pk_list = request.data['category_pk_list']
+        sub_category_name = request.data['sub_category_name']
+        description = request.data['description']
+
+        updated_product_sub_category,message = ManageProducts.update_product_sub_category(product_sub_category_pk=product_sub_category_pk,
+                                                                                          category_pk_list=category_pk_list,sub_category_name=sub_category_name,
+                                                                                          description=description)
+        if updated_product_sub_category:
+            return Response(
+                {"message": message},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
