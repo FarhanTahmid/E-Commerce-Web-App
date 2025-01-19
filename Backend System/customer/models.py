@@ -19,19 +19,36 @@ class Customer(models.Model):
     ]
 
     full_name=models.CharField(max_length=100,verbose_name="Full name")
-    unique_id=models.CharField(max_length=50,unique=True,verbose_name="Unique ID")
+    unique_id=models.CharField(max_length=50,unique=True,verbose_name="Unique ID",primary_key=True)
     profile_picture = models.ImageField(upload_to=get_customer_avatar, null=True, blank=True,verbose_name="Profile Picture")
     username = models.CharField(max_length=50,unique=True,verbose_name="Username")
     skinType=models.CharField(max_length=20,choices=SKIN_TYPE_CHOICES,blank=True,verbose_name="Skin Type")
     email=models.EmailField(max_length=254,unique=True,verbose_name="Email Address")
-    address=models.TextField(verbose_name="Address")
-    phone=models.CharField(max_length=15,verbose_name="Phone") 
+    phone_no=models.CharField(max_length=15,verbose_name="Phone") 
     block=models.BooleanField(default=False,verbose_name="Block Customer")
     created_at=models.DateTimeField(auto_now_add=True,verbose_name="Created At")
     updated_at=models.DateTimeField(auto_now=True,verbose_name="Updated At")
 
     def __str__(self):
-        return f"{self.unique_id} - {self.full_name}"
+        return self.unique_id
+
+class CustomerAddress(models.Model):
+    customer_id=models.ForeignKey(Customer,on_delete=models.CASCADE)
+    address_title=models.CharField(null=True,blank=True,max_length=100)
+    address_line1=models.CharField(null=True,blank=True,max_length=200)
+    address_line2=models.CharField(null=True,blank=True,max_length=200)
+    country=models.CharField(null=True,blank=True,max_length=100)
+    city=models.CharField(null=True,blank=True,max_length=100)
+    postal_code=models.CharField(null=True,blank=True,max_length=50)
+    created_at=models.DateTimeField(null=False,blank=False,auto_now_add=True)
+    updated_at=models.DateTimeField(null=False,blank=False,auto_now_add=True)
+
+    class Meta:
+        verbose_name="Customer Address"
+    
+    def __str__(self):
+        return self.customer_id
+
     
 class Coupon(models.Model):
     '''This model is for discount coupon for customer'''
