@@ -94,7 +94,7 @@ class UpdateProductCategoryView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request,pk, format=None):
+    def put(self, request,pk, format=None):
 
         product_category_pk = pk
         product_category_name = self.request.data['category_name']
@@ -113,6 +113,22 @@ class UpdateProductCategoryView(APIView):
         else:
             return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
+class DeleteProductCategoryView(APIView):
 
+    serializer_class = product_serializers.Product_Category_Serializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,pk,format=None):
+        
+        product_category_pk = pk
+        deleted,message = ManageProducts.delete_product_category(product_category_pk=product_category_pk)
+        if deleted:
+            return Response(
+                {"message": message},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
 

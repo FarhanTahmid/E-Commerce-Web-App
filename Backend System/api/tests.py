@@ -51,6 +51,22 @@ class ProductAPITestCases(APITestCase):
         """
         
         data = {"category_name": "Glass Skincare", "description": "Products for glass skincare"}
-        response = self.client.post(f'/api/product/categories/update/{self.product_category1.pk}/', data,format='json')
+        response = self.client.put(f'/api/product/categories/update/{self.product_category1.pk}/', data,format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product Category updated successfully!")
+
+    def test_delete_product_categories(self):
+        """
+        Test
+        for deleting product categories
+        """
+
+        response = self.client.delete(f'/api/product/categories/delete/{self.product_category2.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Product Category deleted successfully!")
+        self.assertFalse(Product_Category.objects.filter(pk=self.product_category2.pk).exists(),False)
+
+        #deleting again
+        response = self.client.delete(f'/api/product/categories/delete/{self.product_category2.pk}/')
+        self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Product Category does not exist!")
