@@ -492,6 +492,15 @@ class TestManageProducts(TestCase):
         success, message = ManageProducts.update_product_sku(product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_color="red",product_size=80)
         self.assertTrue(success,"Product sku should be updated successfully!")
         self.assertEqual(message,"Product sku updated with new sku id","Success message is incorrect")
+
+    def delete_product_sku(self):
+        """
+        Test for deleting product
+        """
+        success, message = ManageProducts.delete_product_sku(product_sku_pk=self.product_sku1.pk)
+        self.assertTrue(success,"Product sku should be deleted successfully!")
+        self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
+
         
    
         

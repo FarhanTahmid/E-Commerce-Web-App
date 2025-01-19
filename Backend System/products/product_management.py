@@ -1764,4 +1764,59 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product sku! Please try again later.")
         
     def delete_product_sku(product_sku_pk):
-        pass
+
+        """
+        Delete an existing product SKU with detailed exception handling.
+
+        This function attempts to delete a product SKU from the database. It handles various
+        exceptions that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_sku_pk (int): The primary key (ID) of the product SKU to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product SKU was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product_sku(1)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting product sku! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting product sku! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting product sku! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting product sku! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        
+        try:
+            #getting the product sku
+            product_sku, message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
+            product_sku.delete()
+            return True, "Product sku successfully deleted!"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting product sku! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting product sku! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting product sku! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product sku! Please try again later.")
