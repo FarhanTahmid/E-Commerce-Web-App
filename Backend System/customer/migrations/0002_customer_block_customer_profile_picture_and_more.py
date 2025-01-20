@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='customer',
             name='profile_picture',
-            field=models.ImageField(blank=True, null=True, upload_to=customer.models.get_customer_avatar, verbose_name='Profile Picture'),
+            field=models.ImageField(blank=True, null=True, upload_to=customer.models.get_customer_avatar_path, verbose_name='Profile Picture'),
         ),
         migrations.AddField(
             model_name='customer',

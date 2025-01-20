@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'products',
     'inventory',
     'customer',
-    'orders'
+    'orders',
+    'business_admin',
     
 ]
 

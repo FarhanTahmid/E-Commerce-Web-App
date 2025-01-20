@@ -1,11 +1,12 @@
 from django.db import models
 from django.core.validators import MinValueValidator,MaxValueValidator
 from django.utils import timezone
+from django_resized import ResizedImageField
 
 # Create your models here.
 
 
-def get_customer_avatar(instance, filename):
+def get_customer_avatar_path(instance, filename):
     return f'customer_profile_picture/{instance.customer_id}/{filename}'
 class Customer(models.Model):
     '''This model is for storing customer data'''
@@ -20,7 +21,7 @@ class Customer(models.Model):
 
     full_name=models.CharField(max_length=100,verbose_name="Full name")
     unique_id=models.CharField(max_length=50,unique=True,verbose_name="Unique ID",primary_key=True)
-    profile_picture = models.ImageField(upload_to=get_customer_avatar, null=True, blank=True,verbose_name="Profile Picture")
+    profile_picture = ResizedImageField(size=[244,244],upload_to=get_customer_avatar_path,blank=True, null=True)
     username = models.CharField(max_length=50,unique=True,verbose_name="Username")
     skinType=models.CharField(max_length=20,choices=SKIN_TYPE_CHOICES,blank=True,verbose_name="Skin Type")
     email=models.EmailField(max_length=254,unique=True,verbose_name="Email Address")
