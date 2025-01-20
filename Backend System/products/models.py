@@ -4,6 +4,8 @@ from django.utils import timezone
 from inventory.models import *
 from django.core.validators import MaxValueValidator
 from customer.models import Customer
+import hashlib
+
 # Create your models here.
 
 
@@ -42,6 +44,9 @@ class Product_Sub_Category(models.Model):
     def __str__(self) -> str:
         # returns the sub-category pk when called via filter or get
         return str(self.sub_category_name)
+    
+    def __lt__(self,other):
+        return self.sub_category_name<other.sub_category_name
 
     
 class Product_Brands(models.Model):
@@ -77,6 +82,9 @@ class Product_Flavours(models.Model):
         
     def __str__(self):
         return str(self.pk)
+    
+    def __lt__(self,other):
+        return self.product_flavour_name<other.product_flavour_name
 
 class Product(models.Model):
     '''This table stores the description of Product'''
@@ -114,6 +122,49 @@ class Product_SKU(models.Model):
     product_stock = models.IntegerField(null=False, blank=False, default=0)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name="Product SKU"
+        verbose_name_plural="Products SKU"
+
+    def generate_and_save_sku(self):
+        # Filter existing SKUs with the same product, color, and size
+        existing_skus = Product_SKU.objects.filter(
+            product_id=self.product_id,
+            product_color=self.product_color,
+            product_size=self.product_size
+        ).count()
+        
+        sequential_number = existing_skus + 1
+
+        product_name = self.product_id.product_name.replace(' ', '_')
+        base_sku = f"{product_name.upper()}_{self.product_color.upper() if self.product_color else 'no_color'.upper()}_{self.product_size.upper() if self.product_size else 'no_size'.upper()}_{sequential_number}"
+        unique_hash = hashlib.md5(base_sku.encode()).hexdigest()[:6]
+        self.product_sku = f"{base_sku}_{unique_hash}"
+
+    def save(self, *args, **kwargs):
+        #if newly created only then
+        if not self.pk or self._is_sku_related_field_updated():
+            self.generate_and_save_sku()
+        
+        super(Product_SKU, self).save(*args, **kwargs)
+    
+    def _is_sku_related_field_updated(self):
+        """Check if fields affecting SKU generation have been updated."""
+        if not self.pk:
+            return False
+
+        # Get the current state from the database
+        current = Product_SKU.objects.get(pk=self.pk)
+        return (
+            current.product_color != self.product_color or
+            current.product_size != self.product_size
+        )
+    
+
+    def __str__(self) -> str:
+        return f"pk:{self.pk} - {self.product_id.product_name}, sku - {self.product_sku}"
+
 
 def get_product_image_path(instance, filename):
     return f'product_images/{instance.product_id}/{filename}'

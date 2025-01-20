@@ -214,9 +214,11 @@ class ManageProducts:
             # Get the product type object
             product_category = Product_Category.objects.get(pk=product_category_pk)
 
-            # Update the product type
-            product_category.category_name = new_category_name  # Ensure this is a string
-            product_category.description = description
+            # Update the product type if changed
+            if product_category.category_name != new_category_name:
+                product_category.category_name = new_category_name  # Ensure this is a string
+            if product_category.description != description:
+                product_category.description = description
             product_category.save()
 
             return True, "Product Category updated successfully!"
@@ -1354,3 +1356,469 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product! Please try again later.")
+
+    def update_product(product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
+                       product_summary,product_flavours_pk_list,product_brand_pk=None,product_ingredients=None,
+                       product_usage_direction=None):
+
+        """
+        Update an existing product with detailed exception handling.
+
+        This function attempts to update the details of a product. It checks for changes in
+        the product name, categories, sub-categories, description, summary, flavours, brand, ingredients, and usage directions,
+        and updates them accordingly. The function includes comprehensive exception handling to log and report any errors that occur.
+
+        Args:
+            product_pk (int): The primary key (ID) of the product to be updated.
+            product_name (str): The new name for the product.
+            product_category_pk_list (list): A list of primary keys (IDs) of the product categories to be associated with the product.
+            product_sub_category_pk_list (list): A list of primary keys (IDs) of the product sub-categories to be associated with the product.
+            product_description (str): The updated description of the product.
+            product_summary (str): The updated summary of the product.
+            product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the product.
+            product_brand_pk (int, optional): The primary key (ID) of the product brand to be associated with the product. Defaults to None.
+            product_ingredients (str, optional): The updated ingredients of the product. Defaults to None.
+            product_usage_direction (str, optional): The updated usage directions of the product. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_product(
+                product_pk=1,
+                product_name="Updated Shampoo",
+                product_category_pk_list=[1, 2],
+                product_sub_category_pk_list=[3, 4],
+                product_description="An updated cleansing shampoo",
+                product_summary="Updated cleansing shampoo for all hair types",
+                product_flavours_pk_list=[5, 6],
+                product_brand_pk=1,
+                product_ingredients="Updated ingredients",
+                product_usage_direction="Updated usage directions"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating product! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating product! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating product! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating product! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        try:
+            new_product_category = sorted([Product_Category.objects.get(pk=p) for p in product_category_pk_list])
+            new_product_sub_category = sorted([Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list])
+            new_product_flavours = sorted([Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list])
+            #getting the product
+            product,message = ManageProducts.fetch_product(product_pk=product_pk)
+            existing_product_category = sorted(product.product_category.all())
+            existing_product_sub_category = sorted(product.product_sub_category.all())
+            existing_product_flavours = sorted(product.product_flavours.all())
+            #updating only if changed
+            if product.product_name.lower() != product_name.lower():
+                product.product_name = product_name
+            if existing_product_category != new_product_category:
+                product.product_category.set(new_product_category)
+            if existing_product_sub_category != new_product_sub_category:
+                product.product_sub_category.set(new_product_sub_category)
+            if existing_product_flavours != new_product_flavours:
+                product.product_flavours.set(new_product_flavours)
+            if product.product_description.lower() != product_description.lower():
+                product.product_description = product_description
+            if product.product_summary.lower() != product_summary.lower():
+                product.product_summary = product_summary
+            if product_brand_pk and product_brand_pk != product.product_brand.pk:
+                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                product.product_brand = product_brand
+            if product_ingredients and product.product_ingredients.lower() != product_ingredients.lower():
+                product.product_ingredients =  product_ingredients
+            if product_usage_direction and product.product_usage_direction.lower() != product_usage_direction.lower():
+                product.product_usage_direction = product_usage_direction
+            product.save()
+
+            return True, "Product updated successfully!"
+            
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product! Please try again later.")
+        
+    def delete_product(product_pk):
+
+        """
+        Delete an existing product with detailed exception handling.
+
+        This function attempts to delete a product from the database. It handles various
+        exceptions that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_pk (int): The primary key (ID) of the product to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product(1)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting product! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting product! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting product! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting product! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+
+        try:
+            #getting the product
+            product,message = ManageProducts.fetch_product(product_pk=product_pk)
+            product.delete()
+            return True, "Product deleted successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting product! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting product! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting product! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product! Please try again later.")
+    
+    #Manage product sku
+    def fetch_product_sku(pk=None,product_id=None,product_name=None,product_sku=None):
+
+        """
+        Fetch product SKUs based on various optional parameters with detailed exception handling.
+
+        Must provide any one argument
+        This function attempts to retrieve product SKUs from the database based on the provided parameters.
+        It handles various errors that might occur during the process, logging each error for further analysis.
+
+        Args:
+            pk (int, optional): The primary key (ID) of the product SKU to be fetched. Defaults to None.
+            product_id (int, optional): The primary key (ID) of the product to filter SKUs by. Defaults to None.
+            product_name (str, optional): The name of the product to filter SKUs by. Defaults to None.
+            product_sku (str, optional): The SKU code of the product SKU to be fetched. Defaults to None.
+
+        Returns:
+            tuple:
+                - QuerySet or Product_SKU: A QuerySet of product SKUs matching the criteria or a single Product_SKU object.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            sku, message = fetch_product_sku(pk=1)
+            print(message)
+
+            skus, message = fetch_product_sku(product_id=1)
+            print(message)
+
+            skus, message = fetch_product_sku(product_name="Shampoo")
+            print(message)
+
+            sku, message = fetch_product_sku(product_sku="SKU123")
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while creating product sku! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while creating product sku! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while creating product sku! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while creating product sku! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+
+        try:
+            if pk:
+                return Product_SKU.objects.get(pk=pk), "Fetched successfully"
+            elif product_id:
+                product,message = ManageProducts.fetch_product(product_pk=product_id)
+                return Product_SKU.objects.filter(product_id=product), "Fetched successfully"
+            elif product_name:
+                product,message = ManageProducts.fetch_product(product_name=product_name)
+                return Product_SKU.objects.filter(product_id=product), "Fetched successfully"
+            elif product_sku:
+                try:
+                    return Product_SKU.objects.get(product_sku=product_sku.upper()), "Fetched successfully"
+                except:
+                    return False, "No sku with this code!"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching product sku! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching product sku! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching product sku! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching product sku! Please try again later.")
+        
+    def create_product_sku(product_pk,product_price,product_stock,product_color=None,product_size=None):
+
+        """
+        Create a new product SKU with detailed exception handling.
+
+        This function attempts to add a new product SKU to the database for a given product. It handles various errors
+        that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_pk (int): The primary key (ID) of the product to which the SKU will be associated.
+            product_price (float): The price of the product SKU.
+            product_stock (int): The stock quantity of the product SKU.
+            product_color (str, optional): The color of the product SKU. Defaults to None.
+            product_size (str or int, optional): The size of the product SKU. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product SKU was created successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = create_product_sku(
+                product_pk=1,
+                product_price=19.99,
+                product_stock=100,
+                product_color="Red",
+                product_size="M"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while creating product sku! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while creating product sku! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while creating product sku! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while creating product sku! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        try:
+            product,message = ManageProducts.fetch_product(product_pk=product_pk)
+            #creating product sku for this product
+            product_sku = Product_SKU.objects.create(product_id=product,product_price=product_price,product_stock=product_stock)
+            product_sku.save()
+            if product_color:
+                product_sku.product_color = product_color
+            if product_size:
+                if type(product_size) == int:
+                    product_sku.product_size = str(product_size)
+                else:
+                    product_sku.product_size = product_size
+            product_sku.save()
+            return True, "Product sku created successfully"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating product sku! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating product sku! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating product sku! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating product sku! Please try again later.")
+
+    def update_product_sku(product_sku_pk,product_id,product_price,product_stock,product_color=None,product_size=None):
+
+        """
+        Update an existing product SKU with detailed exception handling.
+
+        This function attempts to update the details of a product SKU. It checks for changes in
+        the product ID, price, stock, color, and size, and updates them accordingly. The function includes comprehensive
+        exception handling to log and report any errors that occur. Product sku code gets updated auto.
+
+        Args:
+            product_sku_pk (int): The primary key (ID) of the product SKU to be updated.
+            product_id (int): The primary key (ID) of the product to which the SKU is associated.
+            product_price (float): The updated price of the product SKU.
+            product_stock (int): The updated stock quantity of the product SKU.
+            product_color (str, optional): The updated color of the product SKU. Defaults to None.
+            product_size (str or int, optional): The updated size of the product SKU. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product SKU was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_product_sku(
+                product_sku_pk=1,
+                product_id=1,
+                product_price=19.99,
+                product_stock=100,
+                product_color="Red",
+                product_size="M"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating product sku! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating product sku! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating product sku! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating product sku! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        try:
+            #new product_id
+            product,message = ManageProducts.fetch_product(product_pk=product_id)
+            #getting the product sku
+            product_sku,message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
+            #sku gets updated automatically, no logic needed
+            if product_sku.product_id != product:
+                product_sku.product_id = product
+            if product_sku.product_price != product_price:
+                product_sku.product_price = product_price
+            if product_sku.product_stock != product_stock:
+                product_sku.product_stock = product_stock
+            if product_color and product_sku.product_color != product_color:
+                product_sku.product_color = product_color
+            if product_size  and product_sku.product_size != product_size:
+                if type(product_size) == int:
+                    product_sku.product_size = str(product_size)
+                else:
+                    product_sku.product_size = product_size
+            product_sku.save()
+            
+            return True, f"Product sku updated with new sku id"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product sku! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product sku! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product sku! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product sku! Please try again later.")
+        
+    def delete_product_sku(product_sku_pk):
+
+        """
+        Delete an existing product SKU with detailed exception handling.
+
+        This function attempts to delete a product SKU from the database. It handles various
+        exceptions that might occur during the process, logging each error for further analysis.
+
+        Args:
+            product_sku_pk (int): The primary key (ID) of the product SKU to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the product SKU was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_product_sku(1)
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting product sku! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting product sku! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting product sku! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting product sku! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+        
+        try:
+            #getting the product sku
+            product_sku, message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
+            product_sku.delete()
+            return True, "Product sku successfully deleted!"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting product sku! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting product sku! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting product sku! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product sku! Please try again later.")

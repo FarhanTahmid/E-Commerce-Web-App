@@ -76,7 +76,11 @@ class TestManageProducts(TestCase):
         self.product5.product_category.set([self.category_makeup])
         self.product5.product_sub_category.set([self.sub_category5])
         self.product5.product_flavours.set([self.product_flavour2])
-    
+
+        #creating product sku
+        self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
+        self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
+
     def test_fetch_all_product_categories_success(self):
         """
         Test if the function fetches all product categories successfully.
@@ -428,5 +432,75 @@ class TestManageProducts(TestCase):
         self.assertFalse(success,"Product should not be created")
         self.assertEqual(message, "Same product already exists!","Error message is incorrect")
 
+    def test_update_product(self):
+        """
+        Test update product
+        """
+
+        success, message = ManageProducts.update_product(self.product5.pk,self.product5.product_name,[self.category_fragrance.pk,self.category_makeup.pk],
+                                                         [self.sub_category1.pk],"hii","yoo",[self.product_flavour2.pk,self.product_flavour1.pk],
+                                                         self.brand2.pk,"nothing","ooo")
+        self.assertTrue(success,"Product should be updated!")
+        self.assertEqual(message,"Product updated successfully!","Success message is incorrect")
+
+    def test_delete_product(self):
+        """
+        Test delete product
+        """
+
+        success,message = ManageProducts.delete_product(self.product5.pk)
+        self.assertTrue(success,"Product should be deleted successfully!")
+        self.assertEqual(message,"Product deleted successfully","Success message is incorrect")
+
+    #test product sku
+    def test_fetch_product_sku(self):
+        """
+        Test for fetching product sky
+        """
+        #fetch using pk
+        success, message = ManageProducts.fetch_product_sku(pk=self.product_sku2.pk)
+        self.assertTrue(success,"Product sku should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
+
+        #fetch using product id
+        success, message = ManageProducts.fetch_product_sku(product_id=self.product1.pk)
+        self.assertTrue(success,"Product sku should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
+
+        #fetch using product name
+        success, message = ManageProducts.fetch_product_sku(product_name=self.product1.product_name)
+        self.assertTrue(success,"Product sku should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
+
+        #fetch using product sku if not found
+        success, message = ManageProducts.fetch_product_sku(product_sku="sAmi5")
+        self.assertFalse(success,"Product sku should not be fetched successfully!")
+        self.assertEqual(message,"No sku with this code!","Error is incorrect")
+
+    def test_create_product_sku(self):
+        """
+        Test for creating product sku
+        """
+        success, message = ManageProducts.create_product_sku(product_pk=self.product2.pk,product_price=25,product_stock=100,product_size=10)
+        self.assertTrue(success,"Product sku should be created successfully!")
+        self.assertEqual(message,"Product sku created successfully","Success message is incorrect")
+
+    def test_update_product_sku(self):
+        """
+        Test for updating product sku
+        """
+        success, message = ManageProducts.update_product_sku(product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_color="red",product_size=80)
+        self.assertTrue(success,"Product sku should be updated successfully!")
+        self.assertEqual(message,"Product sku updated with new sku id","Success message is incorrect")
+
+    def delete_product_sku(self):
+        """
+        Test for deleting product
+        """
+        success, message = ManageProducts.delete_product_sku(product_sku_pk=self.product_sku1.pk)
+        self.assertTrue(success,"Product sku should be deleted successfully!")
+        self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
+
+        
    
         
