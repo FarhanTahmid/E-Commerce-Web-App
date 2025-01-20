@@ -8,7 +8,7 @@ import os
 class ManageProducts:
     
     # Manage Product Category
-    def fetch_all_product_categories():
+    def fetch_product_categories(product_category_pk=None):
 
         """
         Retrieve all product categories from the database with detailed exception handling.
@@ -51,8 +51,11 @@ class ManageProducts:
             - The `message` provides user-friendly feedback on the success or failure of the operation.
         """
         try:
-            product_category = Product_Category.objects.all()
-            return product_category, "Fetched all product categories successfully!"
+            if product_category_pk:
+                return Product_Category.objects.get(pk=product_category_pk), "Product categories successfully!"
+            else:
+                product_category = Product_Category.objects.all()
+                return product_category, "Fetched all product categories successfully!"
 
         # Handle database-related errors
         except DatabaseError as db_err:
@@ -133,7 +136,7 @@ class ManageProducts:
 
         try:
             # Fetch existing product categories
-            product_categories, message = ManageProducts.fetch_all_product_categories()
+            product_categories, message = ManageProducts.fetch_product_categories()
             if product_categories:
                 # Check for duplicate types (case-insensitive)
                 if any(p.category_name.lower() == product_category_name.lower() for p in product_categories):
@@ -205,7 +208,7 @@ class ManageProducts:
         """
         try:
             # Fetch existing product types
-            product_categories, message = ManageProducts.fetch_all_product_categories()
+            product_categories, message = ManageProducts.fetch_product_categories()
             if product_categories:
                 # Check for duplicate types (case-insensitive)
                 if any(p.category_name.lower() == new_category_name.lower() for p in product_categories):

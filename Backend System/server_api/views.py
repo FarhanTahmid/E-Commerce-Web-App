@@ -18,9 +18,27 @@ class FetchProductCategoryView(APIView):
 
     def get(self,request,format=None):
 
-        product_categories,message = ManageProducts.fetch_all_product_categories()
+        product_categories,message = ManageProducts.fetch_product_categories()
         product_category_data = product_serializers.Product_Category_Serializer(product_categories,many=True)
         if product_categories:
+            return Response(
+                {"message": message,"product_category": product_category_data.data},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+class FetchProductCategoryWithPkView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,pk,format=None):
+
+        product_category_pk = pk
+        product_category,message = ManageProducts.fetch_product_categories(product_category_pk=product_category_pk)
+        product_category_data = product_serializers.Product_Category_Serializer(product_category,many=False)
+        if product_category:
             return Response(
                 {"message": message,"product_category": product_category_data.data},
                 status=status.HTTP_200_OK

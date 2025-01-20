@@ -81,21 +81,31 @@ class TestManageProducts(TestCase):
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
 
-    def test_fetch_all_product_categories_success(self):
+    def test_fetch_product_categories_success(self):
         """
         Test if the function fetches all product categories successfully.
         """
-        product_categories, message = ManageProducts.fetch_all_product_categories()
+        product_categories, message = ManageProducts.fetch_product_categories()
         self.assertIsNotNone(product_categories, "Product categories should not be None.")
         self.assertEqual(product_categories.count(), 4, "The function did not return all product categories.")
         self.assertEqual(message, "Fetched all product categories successfully!", "Success message is incorrect.")
+
+    def test_fetch_a_product_category(self):
+
+        """
+        Test if the function fetches all product categories successfully.
+        """
+        product_category, message = ManageProducts.fetch_product_categories(product_category_pk=self.category_haircare.pk)
+        self.assertIsNotNone(product_category, "Product category should not be None.")
+        self.assertEqual(message, "Product categories successfully!", "Success message is incorrect.")
+
 
     @mock.patch('products.models.Product_Category.objects.all', side_effect=DatabaseError("Database Error"))
     def test_fetch_all_product_categories_database_error(self, mock_all):
         """
         Test if the function handles DatabaseError correctly.
         """
-        product_categories, message = ManageProducts.fetch_all_product_categories()
+        product_categories, message = ManageProducts.fetch_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on DatabaseError.")
         
 
@@ -104,7 +114,7 @@ class TestManageProducts(TestCase):
         """
         Test if the function handles IntegrityError correctly.
         """
-        product_categories, message = ManageProducts.fetch_all_product_categories()
+        product_categories, message = ManageProducts.fetch_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on IntegrityError.")
     
 
@@ -113,7 +123,7 @@ class TestManageProducts(TestCase):
         """
         Test if the function handles OperationalError correctly.
         """
-        product_categories, message = ManageProducts.fetch_all_product_categories()
+        product_categories, message = ManageProducts.fetch_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on OperationalError.")
     
 
@@ -122,7 +132,7 @@ class TestManageProducts(TestCase):
         """
         Test if the function handles ProgrammingError correctly.
         """
-        product_categories, message = ManageProducts.fetch_all_product_categories()
+        product_categories, message = ManageProducts.fetch_product_categories()
         self.assertIsNone(product_categories, "Product categories should be None on ProgrammingError.")
 
     def test_create_new_product_category(self):

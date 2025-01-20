@@ -35,6 +35,21 @@ class ProductCategoryAPITestCases(APITestCase):
         expected_data_serialized = product_serializers.Product_Category_Serializer(expected_data, many=True).data
         self.assertEqual(returned_data, expected_data_serialized)
 
+    def test_fetch_a_product_category(self):
+
+        """
+        Test
+        for fetching a product category
+        """
+        response = self.client.get(f'/server_api/product/categories/{self.product_category1.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        expected_data = Product_Category.objects.get(pk=self.product_category1.pk)
+        returned_data = response.data['product_category']
+        expected_data_serialized = product_serializers.Product_Category_Serializer(expected_data, many=False).data
+        self.assertEqual(returned_data, expected_data_serialized)
+
+
+
     def test_create_product_categories(self):
         """
         Test
@@ -115,9 +130,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
 
         data = {"category_pk_list":[self.product_category1.pk],"sub_category_name": "Moisturizers lop", "description": "Moisturizers Description"}
-        print(data)
         response = self.client.put(f'/server_api/product/sub_categories/update/{self.product_sub_category1.pk}/',data,format='json')
-        print(response.data)
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product Sub Category updated successfully!","Success message is incorrect")
 
