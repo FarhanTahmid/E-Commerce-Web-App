@@ -159,8 +159,6 @@ class UpdateProductSubCategoryView(APIView):
 
     def put(self,request,pk,format=None):
 
-        print("herere")
-
         product_sub_category_pk = pk
         category_pk_list = request.data['category_pk_list']
         sub_category_name = request.data['sub_category_name']
@@ -176,3 +174,21 @@ class UpdateProductSubCategoryView(APIView):
             )
         else:
             return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        
+class DeleteProductSubCategoryView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,pk,format=None):
+
+        product_sub_category_pk = pk
+        deleted,message = ManageProducts.delete_product_sub_category(product_sub_category_pk=product_sub_category_pk)
+        if deleted:
+            return Response(
+                {"message": message},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+

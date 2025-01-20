@@ -136,4 +136,16 @@ class ProductCategoryAPITestCases(APITestCase):
 
 
     def test_delete_product_sub_category(self):
-        pass
+        """
+          Test
+        for deleting product sub categories
+        """
+        response = self.client.delete(f'/server_api/product/sub_categories/delete/{self.product_sub_category1.pk}/')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Product Sub Category deleted successfully!","Success message is incorrect")
+
+        #deleting again
+        response = self.client.delete(f'/server_api/product/sub_categories/delete/{self.product_sub_category1.pk}/')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Product Sub Category does not exist!","Success message is incorrect")
+
