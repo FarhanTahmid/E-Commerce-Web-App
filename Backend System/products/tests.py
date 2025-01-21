@@ -138,7 +138,10 @@ class TestManageProducts(TestCase):
         """
         Test deleting a product category successfully.
         """
-        success, message = ManageProducts.delete_product_category(self.category_haircare.pk)#deleting Haricare
+        request = self.factory.post('/product/category/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.delete_product_category(request,self.category_haircare.pk)#deleting Haricare
         self.assertTrue(success, "Product category should be deleted successfully.")
         self.assertEqual(message, "Product Category deleted successfully!", "Success message is incorrect.")
         
@@ -193,7 +196,10 @@ class TestManageProducts(TestCase):
         """
         Test deleting a product sub-category successfully.
         """
-        success, message = ManageProducts.delete_product_sub_category(self.sub_category1.pk)
+        request = self.factory.post('/product/subcategory/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.delete_product_sub_category(request,self.sub_category1.pk)
         self.assertTrue(success,"Product Sub Category deleted successfully!")
         self.assertEqual(message,"Product Sub Category deleted successfully!", "Delete message is incorrect.")
 
@@ -263,7 +269,10 @@ class TestManageProducts(TestCase):
         """
         Test deleting a product brand successfully.
         """
-        success, message = ManageProducts.delete_product_brand(self.brand1.pk)
+        request = self.factory.post('/product/product_brand/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.delete_product_brand(request,self.brand1.pk)
         self.assertTrue(success, "Product brand should be deleted successfully.")
         self.assertEqual(message, "Product brand deleted successfully!", "Success message is incorrect.")
 
@@ -329,7 +338,10 @@ class TestManageProducts(TestCase):
         """
         Test deleting a product flavour successfully.
         """
-        success, message = ManageProducts.delete_product_flavour(self.product_flavour2.pk)
+        request = self.factory.post('/product/product_flavour/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.delete_product_flavour(request,self.product_flavour2.pk)
         self.assertTrue(success, "Product flavour should be deleted successfully.")
         self.assertEqual(message, "Product flavour deleted successfully!", "Success message is incorrect.")
 
@@ -439,8 +451,10 @@ class TestManageProducts(TestCase):
         """
         Test delete product
         """
-
-        success,message = ManageProducts.delete_product(self.product5.pk)
+        request = self.factory.post('/product/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.delete_product(request,self.product5.pk)
         self.assertTrue(success,"Product should be deleted successfully!")
         self.assertEqual(message,"Product deleted successfully","Success message is incorrect")
 
@@ -495,7 +509,10 @@ class TestManageProducts(TestCase):
         """
         Test for deleting product
         """
-        success, message = ManageProducts.delete_product_sku(product_sku_pk=self.product_sku1.pk)
+        request = self.factory.post('/product/product_sku/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.delete_product_sku(request,product_sku_pk=self.product_sku1.pk)
         self.assertTrue(success,"Product sku should be deleted successfully!")
         self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
 

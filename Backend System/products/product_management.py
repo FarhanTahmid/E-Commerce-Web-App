@@ -147,6 +147,7 @@ class ManageProducts:
             product_category = Product_Category.objects.create(category_name=product_category_name, description=description)
             product_category.save()
             updated,message = SystemLogs.updated_by(request,product_category)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Category {product_category_name}",message="Created")
             return True, f"New Product category. {product_category_name} successfully added!"
 
 
@@ -227,6 +228,7 @@ class ManageProducts:
                 product_category.description = description
             product_category.save()
             updated, message = SystemLogs.updated_by(request,product_category)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Category, {new_category_name}",message="Updated")
             return True, "Product Category updated successfully!"
         
         except Product_Category.DoesNotExist:
@@ -248,7 +250,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating Product Category! Please try again later.")
 
-    def delete_product_category(product_category_pk):
+    def delete_product_category(request,product_category_pk):
 
         """
         Delete a product category from the database with detailed exception handling.
@@ -291,6 +293,7 @@ class ManageProducts:
 
         try:
             get_product_category = Product_Category.objects.get(pk=product_category_pk)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Category {get_product_category.category_name}",message="Deleted")
             get_product_category.delete()
             return True, "Product Category deleted successfully!"
         except Product_Category.DoesNotExist:
@@ -441,6 +444,7 @@ class ManageProducts:
             sub_category = Product_Sub_Category.objects.create(sub_category_name=sub_category_name,description=description)
             sub_category.category_id.add(product_category)
             updated, message = SystemLogs.updated_by(request,sub_category)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Sub Category {sub_category_name}",message="Created")
             return True, f"New Product sub-category, {sub_category_name} successfully added!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -527,6 +531,7 @@ class ManageProducts:
             #saving the changes made
             product_sub_categories.save()
             updated, message = SystemLogs.updated_by(request,product_sub_categories)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Sub Category {product_sub_categories.sub_category_name}",message="Updated")
             return True, "Product Sub Category updated successfully!"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -553,7 +558,7 @@ class ManageProducts:
             print(f"{error_type} occurred: {error_message}")
             return False, "An unexpected error occurred while updating Product Sub Category! Please try again later."
         
-    def delete_product_sub_category(product_sub_category_pk):
+    def delete_product_sub_category(request,product_sub_category_pk):
 
         """
         Delete an existing product sub-category with detailed exception handling.
@@ -592,6 +597,7 @@ class ManageProducts:
         """
         try:
             get_product_sub_category = Product_Sub_Category.objects.get(pk=product_sub_category_pk)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Sub Category {get_product_sub_category.sub_category_name}",message="Deleted")
             get_product_sub_category.delete()
             return True, "Product Sub Category deleted successfully!"
         except Product_Sub_Category.DoesNotExist:
@@ -679,6 +685,7 @@ class ManageProducts:
                 brand_logo=brand_logo
             product_brand.save()
             updated, message = SystemLogs.updated_by(request,product_brand)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Brand {brand_name}",message="Created")
             return True, f"New Product brand, {brand_name} successfully added!"
                                               
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -835,6 +842,7 @@ class ManageProducts:
                 product_brand.brand_logo = brand_logo
             product_brand.save()
             updated,message = SystemLogs.updated_by(request,product_brand)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
             return True, f"Product brand, {brand_name} updated successfully!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -853,7 +861,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating Product brand! Please try again later.")
         
-    def delete_product_brand(product_brand_pk):
+    def delete_product_brand(request,product_brand_pk):
 
         """
         Delete an existing product brand with detailed exception handling.
@@ -898,6 +906,7 @@ class ManageProducts:
                 path = settings.MEDIA_ROOT+str(product_brand.brand_logo)
                 if os.path.exists(path):
                     os.remove(path)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Brand {product_brand.brand_name}",message="Deleted")
             product_brand.delete()
             return True, "Product brand deleted successfully!"
 
@@ -1034,6 +1043,7 @@ class ManageProducts:
             
             product_flavour = Product_Flavours.objects.create(product_flavour_name=product_flavour_name)
             updated,message = SystemLogs.updated_by(request,product_flavour)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Flavour {product_flavour_name}",message="Created")
             return True, f"New Product flavour, {product_flavour_name} successfully added!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1096,6 +1106,7 @@ class ManageProducts:
                 product_flavour.product_flavour_name = product_flavour_name
             product_flavour.save()
             updated,message = SystemLogs.updated_by(request,product_flavour)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Flavour {product_flavour.product_flavour_name}",message="Updated")
             return True, "Product flavour updated successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1113,7 +1124,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product flavour! Please try again later.")
         
-    def delete_product_flavour(product_flavour_pk):
+    def delete_product_flavour(request,product_flavour_pk):
 
         """
         Delete an existing product flavour with detailed exception handling.
@@ -1151,6 +1162,7 @@ class ManageProducts:
         try:
             #fetch product flavour with pk
             product_flavour,message = ManageProducts.fetch_product_flavour(pk=product_flavour_pk)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Flavour {product_flavour.product_flavour_name}",message="Deleted")
             product_flavour.delete()
             return True, "Product flavour deleted successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1351,6 +1363,7 @@ class ManageProducts:
                     product.product_usage_direction = product_usage_direction
                 product.save()
                 updated, message = SystemLogs.updated_by(request,product)
+                activity_updated, message = SystemLogs.admin_activites(request,f"Created Product {product_name}",message="Created")
                 return product, f"Product, {product_name} created!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1458,6 +1471,7 @@ class ManageProducts:
                 product.product_usage_direction = product_usage_direction
             product.save()
             updated,message = SystemLogs.updated_by(request,product)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
             return True, "Product updated successfully!"
             
         
@@ -1477,7 +1491,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product! Please try again later.")
         
-    def delete_product(product_pk):
+    def delete_product(request,product_pk):
 
         """
         Delete an existing product with detailed exception handling.
@@ -1516,6 +1530,7 @@ class ManageProducts:
         try:
             #getting the product
             product,message = ManageProducts.fetch_product(product_pk=product_pk)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product {product.product_name}",message="Deleted")
             product.delete()
             return True, "Product deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1673,6 +1688,7 @@ class ManageProducts:
                     product_sku.product_size = product_size
             product_sku.save()
             updated, message = SystemLogs.updated_by(request,product_sku)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product sku with sku - {product_sku.product_sku}",message="Created")
             return True, "Product sku created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1760,6 +1776,7 @@ class ManageProducts:
                     product_sku.product_size = product_size
             product_sku.save()
             updated,message = SystemLogs.updated_by(request,product_sku)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product sku with sku - {product_sku.product_sku}",message="Updated")
             return True, f"Product sku updated with new sku id"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1778,7 +1795,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product sku! Please try again later.")
         
-    def delete_product_sku(product_sku_pk):
+    def delete_product_sku(request,product_sku_pk):
 
         """
         Delete an existing product SKU with detailed exception handling.
@@ -1817,6 +1834,7 @@ class ManageProducts:
         try:
             #getting the product sku
             product_sku, message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product sku with sku - {product_sku.product_sku}",message="Deleted")
             product_sku.delete()
             return True, "Product sku successfully deleted!"
 
