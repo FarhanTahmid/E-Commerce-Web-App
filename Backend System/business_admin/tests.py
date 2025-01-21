@@ -11,6 +11,10 @@ class BusinessAdminTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.adminposition1 = AdminPositions.objects.create(name="Manager",description="Manage of company")
+        self.adminposition2 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
+        self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create(username='testuser10', is_superuser=False),
+                                                               admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition2
+                                                               )
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
@@ -43,7 +47,7 @@ class BusinessAdminTest(TestCase):
         request = self.factory.post('/admin_positions/create/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = AdminManagement.create_admin_position(request,name="Owner",description="Is Owner")
+        success, message = AdminManagement.create_admin_position(request,name="Owner55",description="Is Owner55")
         self.assertTrue(success,"Admin Position should be created successfully")
         self.assertEqual(message,"Admin position created successfully","Success message is incorrect")
 
@@ -56,3 +60,65 @@ class BusinessAdminTest(TestCase):
         success, message = AdminManagement.create_admin_position(request,name="Owner",description="Is Owner")
         self.assertFalse(success,"Admin Position should not be created successfully")
         self.assertEqual(message,"Admin position with this name already exists!","Error message is incorrect")
+
+    def test_update_admin_position(self):
+        """
+        Test for updating admin position
+        """
+        request = self.factory.post('/admin_positions/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = AdminManagement.update_admin_position(request,admin_position_pk=self.adminposition1.pk,name="Manager2")
+        self.assertTrue(success,"Admin Position should be updated successfully")
+        self.assertTrue(self.adminposition1.name,"Manager2")
+        self.assertEqual(message,"Admin position successfully updated","Success message is incorrect")
+
+    def test_delete_admin_position(self):
+        """
+        Test for deleting admin position
+        """
+        request = self.factory.post('/admin_positions/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = AdminManagement.delete_admin_position(request,self.adminposition2.pk)
+        self.assertTrue(success,"Admin Position should be deleted successfully")
+        self.assertEqual(message,"Admin position deleted successfully")
+
+        #deleting again
+        # success, message = AdminManagement.delete_admin_position(request,self.adminposition2.pk)
+        # self.assertFalse(success,"Admin Position should not be deleted successfully")
+        # self.assertEqual(message,"An unexpected error occurred while deleting admin position! Please try again later.")
+
+    #Business admin test
+    def test_fetch_business_admin(self):
+        """
+        Test for fetching business admins
+        """
+
+        #all
+        request = self.factory.post('/admins/fetch/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = AdminManagement.fetch_business_admin_user()
+        self.assertTrue(success,"Admin should be fetched successfully")
+        self.assertEqual(message,"All Business Admin users fetched successfully","Success message is incorrect")
+
+    def test_create_business_admin(self):
+        """
+        Test for creatint business admins
+        """
+        request = self.factory.post('/admins/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = AdminManagement.create_business_admin_user(request,admin_full_name="SAMI",admin_user_name="pp",
+                                                                      password='2186',admin_position_pk=self.adminposition2.pk)
+        self.assertTrue(success,"Business Admin should be created successfully")
+        self.assertEqual(message,"Business Admin created successfully","Success message is incorrect")
+
+        #same username
+        success, message = AdminManagement.create_business_admin_user(request,admin_full_name="SAMI",admin_user_name="sami2186",
+                                                                      password='2186',admin_position_pk=self.adminposition2.pk)
+        self.assertFalse(success,"Business Admin should not be created successfully")
+        self.assertEqual(message,"Admin with this username exists","Error message is incorrect")
+
+

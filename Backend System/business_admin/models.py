@@ -26,11 +26,11 @@ class BusinessAdminUser(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     admin_unique_id=models.CharField(null=False,blank=False,max_length=50,primary_key=True)
     admin_full_name=models.CharField(null=False,blank=False,max_length=100)
+    admin_user_name = models.CharField(null=False,blank=False,max_length=100)
     admin_avatar=ResizedImageField(size=[244,244],upload_to=get_admin_avatar_path,blank=True, null=True)
-    admin_position=models.OneToOneField(AdminPositions,null=False,blank=False,on_delete=models.CASCADE)
+    admin_position=models.ForeignKey(AdminPositions,null=False,blank=False,on_delete=models.CASCADE)
     admin_email=models.EmailField(null=True,blank=True)
     admin_contact_no=models.CharField(null=True,blank=True,max_length=20)
-    admin_is_staff=models.BooleanField(null=False,blank=False,default=False)
     admin_is_superuser=models.BooleanField(null=False,blank=False,default=False)
     admin_account_created_at=models.DateTimeField(null=False,blank=False,auto_now_add=True)
     last_login_at=models.DateTimeField(null=True,blank=True)
@@ -47,7 +47,7 @@ class BusinessAdminUser(models.Model):
         
         existing_admins_count = BusinessAdminUser.objects.all().count()
 
-        base_sku = f"{self.admin_full_name.upper()}_{existing_admins_count+1}"
+        base_sku = f"{self.admin_full_name.upper()}_{self.admin_user_name.upper()}_{existing_admins_count+1}"
         unique_hash = hashlib.md5(base_sku.encode()).hexdigest()[:6]
         self.admin_unique_id = f"{base_sku}_{unique_hash}"
     
