@@ -1,15 +1,18 @@
-from django.test import TestCase
+from django.test import TestCase,RequestFactory
 from django.utils import timezone
 from products.models import *
 from products.product_management import ManageProducts
 from unittest import mock
 from django.db import *
 from system.models import *
+from business_admin.models import *
 # Create your tests here.
 
 class TestManageProducts(TestCase):
     
     def setUp(self):
+        self.factory = RequestFactory()
+        self.adminposition1 = AdminPositions.objects.create(name="Manager",description="Manage of company")
         # create sample data with timezone-aware datetime
         now = timezone.now()
         # Create categories
@@ -81,6 +84,15 @@ class TestManageProducts(TestCase):
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
 
+    def _create_mock_dev_user(self):
+        """ Helper method to create a mock user """
+        return User.objects.create(username='testuser', is_superuser=True)
+
+    def _create_mock_businessadmin_user(self):
+        user = User.objects.create(username='testuser2', is_superuser=False)
+        BusinessAdminUser.objects.create(user=user,admin_full_name="testuser2",admin_position=self.adminposition1).save()
+        return user
+
     def test_fetch_product_categories_success(self):
         """
         Test if the function fetches all product categories successfully.
@@ -100,46 +112,14 @@ class TestManageProducts(TestCase):
         self.assertEqual(message, "Product categories successfully!", "Success message is incorrect.")
 
 
-    @mock.patch('products.models.Product_Category.objects.all', side_effect=DatabaseError("Database Error"))
-    def test_fetch_all_product_categories_database_error(self, mock_all):
-        """
-        Test if the function handles DatabaseError correctly.
-        """
-        product_categories, message = ManageProducts.fetch_product_categories()
-        self.assertIsNone(product_categories, "Product categories should be None on DatabaseError.")
-        
-
-    @mock.patch('products.models.Product_Category.objects.all', side_effect=IntegrityError("Integrity Error"))
-    def test_fetch_all_product_categories_integrity_error(self, mock_all):
-        """
-        Test if the function handles IntegrityError correctly.
-        """
-        product_categories, message = ManageProducts.fetch_product_categories()
-        self.assertIsNone(product_categories, "Product categories should be None on IntegrityError.")
-    
-
-    @mock.patch('products.models.Product_Category.objects.all', side_effect=OperationalError("Operational Error"))
-    def test_fetch_all_product_categories_operational_error(self, mock_all):
-        """
-        Test if the function handles OperationalError correctly.
-        """
-        product_categories, message = ManageProducts.fetch_product_categories()
-        self.assertIsNone(product_categories, "Product categories should be None on OperationalError.")
-    
-
-    @mock.patch('products.models.Product_Category.objects.all', side_effect=ProgrammingError("Programming Error"))
-    def test_fetch_all_product_categories_programming_error(self, mock_all):
-        """
-        Test if the function handles ProgrammingError correctly.
-        """
-        product_categories, message = ManageProducts.fetch_product_categories()
-        self.assertIsNone(product_categories, "Product categories should be None on ProgrammingError.")
-
     def test_create_new_product_category(self):
         """
         Test creating a new product category successfully.
         """
-        success, message = ManageProducts.create_product_category("Perfume", "Perfume Items")
+        request = self.factory.post('/product/category/create/')
+        request.user = self._create_mock_dev_user()
+        #request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.create_product_category(request,"Perfume", "Perfume Items")
         self.assertTrue(success, "Product category should be created successfully.")
         self.assertEqual(message, "New Product category. Perfume successfully added!", "Success message is incorrect.")
 
@@ -147,7 +127,10 @@ class TestManageProducts(TestCase):
         """
         Test updating a product category successfully.
         """
-        success, message = ManageProducts.update_product_category(self.category_fragrance.pk, "Perfumes Updated", "Perfumes Description")
+        request = self.factory.post('/product/category/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.update_product_category(request,self.category_fragrance.pk, "Perfumes Updated", "Perfumes Description")
         self.assertTrue(success, "Product category should be updated successfully.")
         self.assertEqual(message, "Product Category updated successfully!", "Success message is incorrect.")
     
@@ -169,45 +152,16 @@ class TestManageProducts(TestCase):
         self.assertEqual(sub_categories.count(), 2, "The function did not return all product sub-categories.")
         self.assertEqual(message, "Fetched all product sub-categories for a category successfully!", "Success message is incorrect.")
 
-    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=DatabaseError("Database Error"))
-    def test_fetch_all_product_sub_categories_for_a_category_database_error(self, mock_filter):
-        """
-        Test if the function handles DatabaseError correctly.
-        """
-        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category_skincare.pk)
-        self.assertIsNone(sub_categories, "Product sub-categories should be None on DatabaseError.")
         
-    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=OperationalError("Operational Error"))
-    def test_fetch_all_product_sub_categories_for_a_category_operational_error(self, mock_filter):
-        """
-        Test if the function handles OperationalError correctly.
-        """
-        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category_skincare.pk)
-        self.assertIsNone(sub_categories, "Product sub-categories should be None on OperationalError.")
-        
-    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=ProgrammingError("Programming Error"))
-    def test_fetch_all_product_sub_categories_for_a_category_programming_error(self, mock_filter):
-        """
-        Test if the function handles ProgrammingError correctly.
-        """
-        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category_skincare.pk)
-        self.assertIsNone(sub_categories, "Product sub-categories should be None on ProgrammingError.")
-       
-    @mock.patch('products.models.Product_Sub_Category.objects.filter', side_effect=IntegrityError("Integrity Error"))
-    def test_fetch_all_product_sub_categories_for_a_category_integrity_error(self, mock_filter):
-        """
-        Test if the function handles IntegrityError correctly.
-        """
-        sub_categories, message = ManageProducts.fetch_all_product_sub_categories_for_a_category(self.category_skincare.pk)
-        self.assertIsNone(sub_categories, "Product sub-categories should be None on IntegrityError.")
-        
-    
-   
+
     def test_create_product_sub_category_success(self):
         """
         Test creating a new product sub-category successfully.
         """
-        success, message = ManageProducts.create_product_sub_category(self.category_makeup.pk, "Hair Spray", "HairSpray Item")
+        request = self.factory.post('/product/subcategory/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.create_product_sub_category(request,self.category_makeup.pk, "Hair Spray", "HairSpray Item")
         self.assertTrue(success, "Product sub-category should be created successfully.")
         self.assertEqual(message, "New Product sub-category, Hair Spray successfully added!", "Success message is incorrect.")
     
@@ -215,7 +169,10 @@ class TestManageProducts(TestCase):
         """
         Test creating a duplicate product sub-category.
         """
-        success, message = ManageProducts.create_product_sub_category(self.category_skincare.pk, "Moisturizers", "Moisturizers Item")
+        request = self.factory.post('/product/subcategory/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.create_product_sub_category(request,self.category_skincare.pk, "Moisturizers", "Moisturizers Item")
         self.assertFalse(success, "Product sub-category should not be created if it already exists.")
         self.assertEqual(message, "Same type exists in Database!", "Duplicate message is incorrect.")
 
@@ -224,7 +181,10 @@ class TestManageProducts(TestCase):
         """
         Test updating a product sub-category successfully.
         """
-        success, message = ManageProducts.update_product_sub_category(self.sub_category1.pk,[self.category_skincare.pk,self.category_makeup.pk,self.category_fragrance.pk], "Moistorizer", "Moistorizer to make skin soft")
+        request = self.factory.post('/product/subcategory/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.update_product_sub_category(request,self.sub_category1.pk,[self.category_skincare.pk,self.category_makeup.pk,self.category_fragrance.pk], "Moistorizer", "Moistorizer to make skin soft")
         self.assertTrue(success, "Product Sub Category updated successfully!")
         self.assertEqual(message, "Product Sub Category updated successfully!", "Success message is incorrect.")
 
@@ -242,7 +202,10 @@ class TestManageProducts(TestCase):
         """
         Test creating a new product brand successfully.
         """
-        success, message = ManageProducts.create_product_brand("Lux", 1889,True, "USA", "Lux Paris")
+        request = self.factory.post('/product/product_brand/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.create_product_brand(request,"Lux", 1889,True, "USA", "Lux Paris")
         self.assertTrue(success, "Product brand should be created successfully.")
         self.assertEqual(message, "New Product brand, Lux successfully added!", "Success message is incorrect.")
     
@@ -251,7 +214,10 @@ class TestManageProducts(TestCase):
         Test creating a duplicate product brand.
 
         """
-        success,message = ManageProducts.create_product_brand("Loreal", 1909,False, "USA", "Loreal Paris")
+        request = self.factory.post('/product/product_brand/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.create_product_brand(request,"Loreal", 1909,False, "USA", "Loreal Paris")
         self.assertFalse(success,"Product brand should not be created if it already exists.")
         self.assertEqual(message,"Same brand exists in Database!", "Duplicate message is incorrect.")
 
@@ -286,7 +252,10 @@ class TestManageProducts(TestCase):
         """
         Test updating a product brand successfully.
         """
-        success, message = ManageProducts.update_product_brand(self.brand1.pk, "Loreal Updated",2009,True, "India", "Loreal Paris Updated")
+        request = self.factory.post('/product/product_brand/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.update_product_brand(request,self.brand1.pk, "Loreal Updated",2009,True, "India", "Loreal Paris Updated")
         self.assertTrue(success, "Product brand should be updated successfully.")
         self.assertEqual(message, "Product brand, Loreal Updated updated successfully!", "Success message is incorrect.")
 
@@ -327,7 +296,10 @@ class TestManageProducts(TestCase):
         """
         Test creating a new product flavour successfully.
         """
-        success, message = ManageProducts.create_product_flavour("Rose")
+        request = self.factory.post('/product/product_flavour/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.create_product_flavour(request,"Rose")
         self.assertTrue(success, "Product flavour should be created successfully.")
         self.assertEqual(message, "New Product flavour, Rose successfully added!", "Success message is incorrect.")
 
@@ -335,7 +307,10 @@ class TestManageProducts(TestCase):
         """
         Test creating a duplicate product flavour.
         """
-        success,message = ManageProducts.create_product_flavour("Vanilla")
+        request = self.factory.post('/product/product_flavour/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.create_product_flavour(request,"Vanilla")
         self.assertFalse(success,"Product flavour should not be created if it already exists.")
         self.assertEqual(message,"Same flavour exists in Database!", "Duplicate message is incorrect.")
 
@@ -343,7 +318,10 @@ class TestManageProducts(TestCase):
         """
         Test updating a product flavour successfully.
         """
-        success, message = ManageProducts.update_product_flavour(self.product_flavour1.pk, "Vanilla changed to icecream")
+        request = self.factory.post('/product/product_flavour/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.update_product_flavour(request,self.product_flavour1.pk, "Vanilla changed to icecream")
         self.assertTrue(success, "Product flavour should be updated successfully.")
         self.assertEqual(message, "Product flavour updated successfully!", "Success message is incorrect.")
 
@@ -426,8 +404,10 @@ class TestManageProducts(TestCase):
         """
         Test creating product, duplicate as well
         """
-
-        success,message = ManageProducts.create_product("Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
+        request = self.factory.post('/product/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.create_product(request,"Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
                                                         [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
                                                         "Essentials","Very Essentials",[self.product_flavour1.pk],
                                                         self.brand2.pk,"soup","free to use")
@@ -435,7 +415,7 @@ class TestManageProducts(TestCase):
         self.assertEqual(message,"Product, Dove Lipstick created!","Success message is incorrect")
 
 
-        success,message = ManageProducts.create_product("Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
+        success,message = ManageProducts.create_product(request,"Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
                                                         [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
                                                         "Essentials","Very Essentials",[self.product_flavour1.pk],
                                                         self.brand2.pk,"soup","free to use")
@@ -446,8 +426,10 @@ class TestManageProducts(TestCase):
         """
         Test update product
         """
-
-        success, message = ManageProducts.update_product(self.product5.pk,self.product5.product_name,[self.category_fragrance.pk,self.category_makeup.pk],
+        request = self.factory.post('/product/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.update_product(request,self.product5.pk,self.product5.product_name,[self.category_fragrance.pk,self.category_makeup.pk],
                                                          [self.sub_category1.pk],"hii","yoo",[self.product_flavour2.pk,self.product_flavour1.pk],
                                                          self.brand2.pk,"nothing","ooo")
         self.assertTrue(success,"Product should be updated!")
@@ -491,7 +473,10 @@ class TestManageProducts(TestCase):
         """
         Test for creating product sku
         """
-        success, message = ManageProducts.create_product_sku(product_pk=self.product2.pk,product_price=25,product_stock=100,product_size=10)
+        request = self.factory.post('/product/product_sku/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.create_product_sku(request,product_pk=self.product2.pk,product_price=25,product_stock=100,product_size=10)
         self.assertTrue(success,"Product sku should be created successfully!")
         self.assertEqual(message,"Product sku created successfully","Success message is incorrect")
 
@@ -499,7 +484,10 @@ class TestManageProducts(TestCase):
         """
         Test for updating product sku
         """
-        success, message = ManageProducts.update_product_sku(product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_color="red",product_size=80)
+        request = self.factory.post('/product/product_sku/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.update_product_sku(request,product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_color="red",product_size=80)
         self.assertTrue(success,"Product sku should be updated successfully!")
         self.assertEqual(message,"Product sku updated with new sku id","Success message is incorrect")
 

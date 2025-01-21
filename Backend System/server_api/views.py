@@ -61,7 +61,7 @@ class CreateProductCategoryView(APIView):
                 {"error": "Both 'name' and 'description' are required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        product_category, message = ManageProducts.create_product_category(product_category_name=product_category_name,description=product_category_description)
+        product_category, message = ManageProducts.create_product_category(request,product_category_name=product_category_name,description=product_category_description)
         if product_category:
             # product_category_data = products_serializers.Product_Category_Serializer(product_category)
             return Response(
@@ -87,7 +87,7 @@ class UpdateProductCategoryView(APIView):
                 {"error": "Both 'name' and 'description' are required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        updated_product_category, message = ManageProducts.update_product_category(product_category_pk=product_category_pk,new_category_name=product_category_name,description=product_category_description)
+        updated_product_category, message = ManageProducts.update_product_category(request,product_category_pk=product_category_pk,new_category_name=product_category_name,description=product_category_description)
         if updated_product_category:
             return Response(
                 {"message": message},
@@ -143,7 +143,7 @@ class CreateProductSubCategoryView(APIView):
         product_category_pk = pk
         product_sub_category_name = request.data['sub_category_name']
         product_sub_category_description = request.data['description']
-        product_sub_category,message = ManageProducts.create_product_sub_category(product_category_pk=product_category_pk,sub_category_name=product_sub_category_name,description=product_sub_category_description)
+        product_sub_category,message = ManageProducts.create_product_sub_category(request,product_category_pk=product_category_pk,sub_category_name=product_sub_category_name,description=product_sub_category_description)
         if product_sub_category:
             return Response(
                 {"message": message},
@@ -164,7 +164,7 @@ class UpdateProductSubCategoryView(APIView):
         sub_category_name = request.data['sub_category_name']
         description = request.data['description']
 
-        updated_product_sub_category,message = ManageProducts.update_product_sub_category(product_sub_category_pk=product_sub_category_pk,
+        updated_product_sub_category,message = ManageProducts.update_product_sub_category(request,product_sub_category_pk=product_sub_category_pk,
                                                                                           category_pk_list=category_pk_list,sub_category_name=sub_category_name,
                                                                                           description=description)
         if updated_product_sub_category:

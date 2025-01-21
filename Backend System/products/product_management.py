@@ -4,6 +4,7 @@ from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingE
 from system.manage_error_log import ManageErrorLog
 from e_commerce_app import settings
 import os
+from system.system_log import SystemLogs
 
 class ManageProducts:
     
@@ -92,7 +93,7 @@ class ManageProducts:
             new_error.save()
             return None, "An unexpected error occurred! Please try again later."
 
-    def create_product_category(product_category_name,description):
+    def create_product_category(request,product_category_name,description):
 
         """
         Create a new product category with detailed exception handling.
@@ -143,7 +144,9 @@ class ManageProducts:
                     return False, "Same type exists in Database!"
 
             # Create a new product type if no duplicates are found
-            Product_Category.objects.create(category_name=product_category_name, description=description)
+            product_category = Product_Category.objects.create(category_name=product_category_name, description=description)
+            product_category.save()
+            updated,message = SystemLogs.updated_by(request,product_category)
             return True, f"New Product category. {product_category_name} successfully added!"
 
 
@@ -164,7 +167,7 @@ class ManageProducts:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating Product Category! Please try again later.")
 
-    def update_product_category(product_category_pk,new_category_name,description):
+    def update_product_category(request,product_category_pk,new_category_name,description):
         """
         Update an existing product category with detailed exception handling.
 
@@ -223,7 +226,7 @@ class ManageProducts:
             if product_category.description != description:
                 product_category.description = description
             product_category.save()
-
+            updated, message = SystemLogs.updated_by(request,product_category)
             return True, "Product Category updated successfully!"
         
         except Product_Category.DoesNotExist:
@@ -384,7 +387,7 @@ class ManageProducts:
             new_error.save()
             return None, "An unexpected error occurred! Please try again later."
         
-    def create_product_sub_category(product_category_pk,sub_category_name,description):
+    def create_product_sub_category(request,product_category_pk,sub_category_name,description):
 
         """
         Create a new product sub-category with detailed exception handling.
@@ -437,6 +440,7 @@ class ManageProducts:
             product_category = Product_Category.objects.get(pk=product_category_pk)
             sub_category = Product_Sub_Category.objects.create(sub_category_name=sub_category_name,description=description)
             sub_category.category_id.add(product_category)
+            updated, message = SystemLogs.updated_by(request,sub_category)
             return True, f"New Product sub-category, {sub_category_name} successfully added!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -463,7 +467,7 @@ class ManageProducts:
             print(f"{error_type} occurred: {error_message}")
             return False, "An unexpected error occurred while creating Product Sub Category! Please try again later."
     
-    def update_product_sub_category(product_sub_category_pk,category_pk_list,sub_category_name,description):
+    def update_product_sub_category(request,product_sub_category_pk,category_pk_list,sub_category_name,description):
 
         """
         Update an existing product sub-category with detailed exception handling.
@@ -522,6 +526,7 @@ class ManageProducts:
                 product_sub_categories.description = description
             #saving the changes made
             product_sub_categories.save()
+            updated, message = SystemLogs.updated_by(request,product_sub_categories)
             return True, "Product Sub Category updated successfully!"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -607,7 +612,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Sub Category! Please try again later.")
 
     #Manage Product Brand
-    def create_product_brand(brand_name,brand_established_year,
+    def create_product_brand(request,brand_name,brand_established_year,
                             is_own_brand,brand_country=None,brand_description=None,brand_logo=None):
         
         """
@@ -673,6 +678,7 @@ class ManageProducts:
             if (brand_logo):
                 brand_logo=brand_logo
             product_brand.save()
+            updated, message = SystemLogs.updated_by(request,product_brand)
             return True, f"New Product brand, {brand_name} successfully added!"
                                               
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -755,7 +761,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching Product brand! Please try again later.")
         
-    def update_product_brand(product_brand_pk,brand_name,brand_established_year,
+    def update_product_brand(request,product_brand_pk,brand_name,brand_established_year,
                             is_own_brand,brand_country=None,brand_description=None,brand_logo=None):
         """
         Update an existing product brand with detailed exception handling.
@@ -828,6 +834,7 @@ class ManageProducts:
                     product_brand.brand_logo.delete()
                 product_brand.brand_logo = brand_logo
             product_brand.save()
+            updated,message = SystemLogs.updated_by(request,product_brand)
             return True, f"Product brand, {brand_name} updated successfully!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -979,7 +986,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product flavour! Please try again later.")
     
-    def create_product_flavour(product_flavour_name):
+    def create_product_flavour(request,product_flavour_name):
 
         """
         Create a new product flavour with detailed exception handling.
@@ -1025,7 +1032,8 @@ class ManageProducts:
                 if any(p.product_flavour_name.lower() == product_flavour_name.lower() for p in product_flavours):
                     return False, "Same flavour exists in Database!"
             
-            Product_Flavours.objects.create(product_flavour_name=product_flavour_name)
+            product_flavour = Product_Flavours.objects.create(product_flavour_name=product_flavour_name)
+            updated,message = SystemLogs.updated_by(request,product_flavour)
             return True, f"New Product flavour, {product_flavour_name} successfully added!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1043,7 +1051,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product flavour! Please try again later.")
         
-    def update_product_flavour(product_flavour_pk,product_flavour_name):
+    def update_product_flavour(request,product_flavour_pk,product_flavour_name):
 
         """
         Update an existing product flavour with detailed exception handling.
@@ -1087,6 +1095,7 @@ class ManageProducts:
             if (product_flavour.product_flavour_name.lower() != product_flavour_name.lower()):
                 product_flavour.product_flavour_name = product_flavour_name
             product_flavour.save()
+            updated,message = SystemLogs.updated_by(request,product_flavour)
             return True, "Product flavour updated successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1256,7 +1265,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product! Please try again later.") 
         
-    def create_product(product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
+    def create_product(request,product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
                        product_summary,product_flavours_pk_list,product_brand_pk=None,product_ingredients=None,
                        product_usage_direction=None):
         
@@ -1341,7 +1350,7 @@ class ManageProducts:
                 if product_usage_direction:
                     product.product_usage_direction = product_usage_direction
                 product.save()
-
+                updated, message = SystemLogs.updated_by(request,product)
                 return product, f"Product, {product_name} created!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1360,7 +1369,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product! Please try again later.")
 
-    def update_product(product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
+    def update_product(request,product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
                        product_summary,product_flavours_pk_list,product_brand_pk=None,product_ingredients=None,
                        product_usage_direction=None):
 
@@ -1448,7 +1457,7 @@ class ManageProducts:
             if product_usage_direction and product.product_usage_direction.lower() != product_usage_direction.lower():
                 product.product_usage_direction = product_usage_direction
             product.save()
-
+            updated,message = SystemLogs.updated_by(request,product)
             return True, "Product updated successfully!"
             
         
@@ -1605,7 +1614,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product sku! Please try again later.")
         
-    def create_product_sku(product_pk,product_price,product_stock,product_color=None,product_size=None):
+    def create_product_sku(request,product_pk,product_price,product_stock,product_color=None,product_size=None):
 
         """
         Create a new product SKU with detailed exception handling.
@@ -1663,6 +1672,7 @@ class ManageProducts:
                 else:
                     product_sku.product_size = product_size
             product_sku.save()
+            updated, message = SystemLogs.updated_by(request,product_sku)
             return True, "Product sku created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1681,7 +1691,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product sku! Please try again later.")
 
-    def update_product_sku(product_sku_pk,product_id,product_price,product_stock,product_color=None,product_size=None):
+    def update_product_sku(request,product_sku_pk,product_id,product_price,product_stock,product_color=None,product_size=None):
 
         """
         Update an existing product SKU with detailed exception handling.
@@ -1749,7 +1759,7 @@ class ManageProducts:
                 else:
                     product_sku.product_size = product_size
             product_sku.save()
-            
+            updated,message = SystemLogs.updated_by(request,product_sku)
             return True, f"Product sku updated with new sku id"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

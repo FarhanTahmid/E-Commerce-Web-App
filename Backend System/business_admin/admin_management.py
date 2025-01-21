@@ -47,7 +47,6 @@ class AdminManagement:
             print(admin_position.updated_by)
             return True, "Admin position created successfully"
     
-
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -64,3 +63,7 @@ class AdminManagement:
             }
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin position! Please try again later.")
+        
+    
+    def update_admin_position():
+        pass
