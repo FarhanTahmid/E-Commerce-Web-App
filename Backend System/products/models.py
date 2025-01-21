@@ -4,6 +4,7 @@ from django.utils import timezone
 from inventory.models import *
 from django.core.validators import MaxValueValidator
 from customer.models import Customer
+from django_resized import ResizedImageField
 import hashlib
 
 # Create your models here.
@@ -16,6 +17,7 @@ class Product_Category(models.Model):
     description=models.TextField(null=False,blank=False,verbose_name="Description of Product Category")
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
     
     class Meta:
         verbose_name="Product Category"
@@ -36,6 +38,7 @@ class Product_Sub_Category(models.Model):
     description=models.TextField(null=False,blank=False,verbose_name="Description of Product Sub-Category")
     created_at=models.DateTimeField(auto_now_add=True)#auto saves when the object is created
     updated_at=models.DateTimeField(auto_now=True)#auto updates everytime the object is saved
+    updated_by = models.JSONField(blank=True, null=True)
     
     class Meta:
         verbose_name="Product Sub-Category"
@@ -57,10 +60,11 @@ class Product_Brands(models.Model):
     brand_country=models.CharField(null=True,blank=True,max_length=100,verbose_name="Brand Origin Country")
     brand_description=models.TextField(null=True,blank=True,verbose_name="Brand Description")
     brand_established_year=models.IntegerField(null=False,blank=False)
-    brand_logo=models.ImageField(null=True,blank=True,upload_to='brand_logos/')
+    brand_logo=ResizedImageField(size=[244,244],null=True,blank=True,upload_to='brand_logos/')
     is_own_brand=models.BooleanField(null=False,blank=False,default=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
     
     class Meta:
         verbose_name="Brand"
@@ -75,6 +79,7 @@ class Product_Flavours(models.Model):
     product_flavour_name=models.CharField(null=False,blank=False,max_length=100)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name="Product Flavour"
@@ -100,6 +105,7 @@ class Product(models.Model):
     product_flavours=models.ManyToManyField(Product_Flavours,related_name='product_flavour')
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
     
     class Meta:
         verbose_name="Product"
@@ -122,6 +128,7 @@ class Product_SKU(models.Model):
     product_stock = models.IntegerField(null=False, blank=False, default=0)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name="Product SKU"
@@ -177,6 +184,7 @@ class Product_Images(models.Model):
     size = models.CharField(null=False, blank=False, max_length=100)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
     
     class Meta:
         verbose_name="Product Image"
@@ -196,6 +204,7 @@ class Product_Videos(models.Model):
     size = models.CharField(null=False, blank=False, max_length=100)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
     
     class Meta:
         verbose_name="Product Video"
@@ -214,6 +223,7 @@ class Product_Discount(models.Model):
     end_date = models.DateTimeField(null=False, blank=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name="Product Discount"
@@ -241,6 +251,7 @@ class Product_Review(models.Model):
     product_rating = models.PositiveIntegerField(validators=[MaxValueValidator(5)], null=False, blank=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name="Product Review"
