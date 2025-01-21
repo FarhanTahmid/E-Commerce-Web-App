@@ -109,7 +109,7 @@ class ActivityLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.admin.admin_email} - {self.action}"
+        return f"{self.activity_done_by_admin.admin_full_name} - {self.activity_done_by_admin.admin_unique_id} - {self.action}"
 
 
 # Session Model

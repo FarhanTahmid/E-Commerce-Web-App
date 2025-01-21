@@ -41,8 +41,8 @@ class BusinessAdminTest(TestCase):
         Test for creating admin position
         """
         request = self.factory.post('/admin_positions/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = AdminManagement.create_admin_position(request,name="Owner",description="Is Owner")
         self.assertTrue(success,"Admin Position should be created successfully")
         self.assertEqual(message,"Admin position created successfully","Success message is incorrect")

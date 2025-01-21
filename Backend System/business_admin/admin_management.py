@@ -44,7 +44,7 @@ class AdminManagement:
                 admin_position.description = description
             admin_position.save()
             updated,message = SystemLogs.updated_by(request,admin_position)
-            print(admin_position.updated_by)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created admin position {admin_position.name}",message="created")
             return True, "Admin position created successfully"
     
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
