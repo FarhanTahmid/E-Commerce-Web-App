@@ -2,6 +2,8 @@ from .models import *
 from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingError
 from system.models import *
 from system.system_log import SystemLogs
+from e_commerce_app import settings
+import os
 
 class AdminManagement:
 
@@ -190,7 +192,11 @@ class AdminManagement:
         """
         try:
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
+            all_admin_position,message = AdminManagement.fetch_admin_position()
             if admin_position.name.lower() != name.lower():
+                for p in all_admin_position:
+                    if p != admin_position and p.name.lower() == name.lower():
+                        return False, "Same name already exists!"
                 admin_position.name = name
             if description and admin_position.description != description.lower():
                 admin_position.description = description
@@ -255,7 +261,6 @@ class AdminManagement:
         try:
             #get the position
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-            updated,message = SystemLogs.updated_by(request,admin_position)
             activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin position {admin_position.name}",message="deleted")
             admin_position.delete()
             return True, "Admin position deleted successfully"
@@ -343,3 +348,92 @@ class AdminManagement:
             }
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin user! Please try again later.")
+
+    def update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+                                   admin_contact_no=None,admin_email=None,admin_avatar=None,old_password=None,
+                                   password=None,admin_user_name=None):
+        
+        try:
+            #getting the admin user
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+            all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
+            admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
+            #checking conditions to update as necessarily
+            if password:
+                user = business_admin_user.user
+                if user.check_password(old_password):
+                    if not user.check_password(password):
+                        user.set_password(password)
+                        user.save()
+                else:
+                    return False, "Old password is incorrect"
+            if business_admin_user.admin_full_name.lower() != admin_full_name.lower():
+                business_admin_user.admin_full_name = admin_full_name
+            if admin_user_name and business_admin_user.admin_user_name.lower() != admin_user_name.lower():
+                for p in all_business_admin_user:
+                    if p != business_admin_user and p.admin_user_name.lower() == admin_user_name.lower():
+                        return False, "This user name is taken"
+                business_admin_user.admin_user_name = admin_user_name
+            if business_admin_user.admin_position != admin_position:
+                business_admin_user.admin_position = admin_position
+            if admin_contact_no and business_admin_user.admin_contact_no != admin_contact_no:
+                business_admin_user.admin_contact_no = admin_contact_no
+            if admin_email and business_admin_user.admin_email != admin_email:
+                business_admin_user.admin_email = admin_email
+            if admin_avatar and business_admin_user.admin_avatar != admin_avatar:
+                if business_admin_user.admin_avatar:
+                    path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
+                    if os.path.exists(path):
+                        os.remove(path)
+                    business_admin_user.admin_avatar.delete()
+                business_admin_user.admin_avatar = admin_avatar
+            business_admin_user.save()
+            updated,message = SystemLogs.updated_by(request,business_admin_user)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
+            return True, "Business Admin successfully updated"
+            
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating admin user! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating admin user! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating admin user! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating admin user! Please try again later.")
+        
+    def delete_business_admin_user(request,admin_unique_id):
+        try:
+            #getting the admin
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+            if business_admin_user.admin_avatar:
+                path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
+                if os.path.exists(path):
+                    os.remove(path)
+                business_admin_user.admin_avatar.delete()
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin {business_admin_user.admin_user_name}",message="Deleted")
+            business_admin_user.delete()
+            return True, "Admin deleted successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting admin user! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting admin user! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting admin user! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin user! Please try again later.")

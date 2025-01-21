@@ -816,8 +816,12 @@ class ManageProducts:
         try:
             #get product brand
             product_brand = Product_Brands.objects.get(pk=product_brand_pk)
+            all_product_brand,message = ManageProducts.fetch_product_brand()
             #update the product brand name
             if (product_brand.brand_name.lower() != brand_name.lower()):
+                for p in all_product_brand:
+                    if p != product_brand and p.brand_name.lower() == brand_name.lower():
+                        return False, "Same brand already exists!"
                 product_brand.brand_name = brand_name
             #update the product brand country
             if (brand_country and product_brand.brand_country.lower() != brand_country.lower()):
@@ -1103,8 +1107,12 @@ class ManageProducts:
         try:
             #fetch product flavour with pk
             product_flavour,message = ManageProducts.fetch_product_flavour(pk=product_flavour_pk)
+            all_product_flavour , message = ManageProducts.fetch_product_flavour()
             #detecting changes
             if (product_flavour.product_flavour_name.lower() != product_flavour_name.lower()):
+                for p in all_product_flavour:
+                    if p != product_flavour and p.product_flavour_name.lower() == product_flavour_name.lower():
+                        return False, "Same product flavour already exists!"
                 product_flavour.product_flavour_name = product_flavour_name
             product_flavour.save()
             updated,message = SystemLogs.updated_by(request,product_flavour)
@@ -1452,8 +1460,12 @@ class ManageProducts:
             existing_product_category = sorted(product.product_category.all())
             existing_product_sub_category = sorted(product.product_sub_category.all())
             existing_product_flavours = sorted(product.product_flavours.all())
+            all_products, message = ManageProducts.fetch_product()
             #updating only if changed
             if product.product_name.lower() != product_name.lower():
+                for p in all_products:
+                    if p!=product and p.product_name.lower() == product_name.lower():
+                        return False,"Same product name already exists!"
                 product.product_name = product_name
             if existing_product_category != new_product_category:
                 product.product_category.set(new_product_category)

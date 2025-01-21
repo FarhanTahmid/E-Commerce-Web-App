@@ -105,7 +105,7 @@ class BusinessAdminTest(TestCase):
 
     def test_create_business_admin(self):
         """
-        Test for creatint business admins
+        Test for creating business admins
         """
         request = self.factory.post('/admins/create/')
         #request.user = self._create_mock_dev_user()
@@ -120,5 +120,36 @@ class BusinessAdminTest(TestCase):
                                                                       password='2186',admin_position_pk=self.adminposition2.pk)
         self.assertFalse(success,"Business Admin should not be created successfully")
         self.assertEqual(message,"Admin with this username exists","Error message is incorrect")
+
+    def test_update_business_admin(self):
+        """
+        Test for updating business admins
+        """
+        #RAFI_SAMI2186_3_f462a9 - id
+        request = self.factory.post('/admins/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = AdminManagement.update_business_admin_user(request,admin_unique_id="SAMI_SAMI2186_1_a98961",
+                                                                 admin_full_name="rafi",admin_position_pk=self.adminposition2.pk,
+                                                                 admin_contact_no="01306413841")
+        self.assertTrue(success,"business admin should be successfully updated")
+        self.assertEqual(message,"Business Admin successfully updated","Success message is incorrect")
+
+    def test_delete_business_admin(self):
+        """
+        Test for deleting business admins
+        """
+        request = self.factory.post('/admins/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAMI2186_1_a98961")
+        self.assertTrue(success,"business admin should be successfully deleted")
+        self.assertEqual(message,"Admin deleted successfully","Success message is incorrect")
+
+        #deleteing again
+        # success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAMI2186_1_a98961")
+        # self.assertFalse(success,"business admin should not be found")
+        # self.assertEqual(message,"An unexpected error occurred while deleting admin user! Please try again later.","Error message is incorrect")
+
 
 
