@@ -282,11 +282,14 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
     #business admin users
-    def fetch_business_admin_user(admin_unique_id=None):
+    def fetch_business_admin_user(admin_unique_id=None,admin_user_name=None):
 
         try:
             if admin_unique_id:
                 admin_user = BusinessAdminUser.objects.get(admin_unique_id = admin_unique_id)
+                return admin_user, "Business Admin user fetched successfully"
+            elif admin_user_name:
+                admin_user = BusinessAdminUser.objects.get(admin_user_name = admin_user_name)
                 return admin_user, "Business Admin user fetched successfully"
             else:
                 all_admin_users = BusinessAdminUser.objects.all()
@@ -362,9 +365,8 @@ class AdminManagement:
             if password:
                 user = business_admin_user.user
                 if user.check_password(old_password):
-                    if not user.check_password(password):
-                        user.set_password(password)
-                        user.save()
+                    user.set_password(password)
+                    user.save()
                 else:
                     return False, "Old password is incorrect"
             if business_admin_user.admin_full_name.lower() != admin_full_name.lower():
@@ -380,6 +382,9 @@ class AdminManagement:
                 business_admin_user.admin_contact_no = admin_contact_no
             if admin_email and business_admin_user.admin_email != admin_email:
                 business_admin_user.admin_email = admin_email
+                user = business_admin_user.user
+                user.email = admin_email
+                user.save()
             if admin_avatar and business_admin_user.admin_avatar != admin_avatar:
                 if business_admin_user.admin_avatar:
                     path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
@@ -408,6 +413,63 @@ class AdminManagement:
             }
 
             return False, error_messages.get(error_type, "An unexpected error occurred while updating admin user! Please try again later.")
+        
+    def update_business_admin_user_password(request,admin_unique_id,old_password,new_password):
+
+        try:
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+            user = business_admin_user.user
+            if user.check_password(old_password):
+                user.set_password(new_password)
+                user.save()
+            else:
+                return False, "Old password is incorrect"
+            return True, "Password updated successfully"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating admin password! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating admin password! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating admin password! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating admin password! Please try again later.")
+    
+    def reset_business_admin_user_password(request,admin_user_name,new_password):
+
+        try:
+
+            #fetching the Business Admin useru using user name
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
+            user = business_admin_user.user
+            user.set_password(new_password)
+            user.save()
+            return True, "Password reset successfull"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while resetting admin password! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while resetting admin password! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while resetting admin password! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while resetting admin password! Please try again later.")
         
     def delete_business_admin_user(request,admin_unique_id):
         try:
