@@ -26,4 +26,5 @@ urlpatterns = [                                                                 
 
     #product brand
     path('product/product_brand/fetch_product_brands/',views.FetchProductBrands.as_view(),name='fetch_product_brands'),#pass parameters /?pk= OR /?brand_name= OR no parameter to fetch all
+    path('product/product_brand/create/',views.CreateProductBrands.as_view(),name='create_product_brand'),
 ]

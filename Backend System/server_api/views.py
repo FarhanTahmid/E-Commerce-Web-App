@@ -55,11 +55,32 @@ class SignupBusinessAdminUser(APIView):
             admin_email = self.request.data.get('admin_email',None)
             admin_avatar = self.request.data.get('admin_avatar', None)
 
+            missing_fields = []
+            if not admin_full_name:
+                missing_fields.append('admin full name')
+            if not admin_user_name:
+                missing_fields.append('admin user name')
+            if not password:
+                missing_fields.append('password')
+            if not confirm_password:
+                missing_fields.append('confirm password')
+            if not admin_position_pk:
+                missing_fields.append('admin position')
+
+            if missing_fields:
+                return Response(
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             if password != confirm_password:
                 return Response(
                     {"error": "Password does not match. Try again!"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            
             business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
                                                                                     password=password,admin_position_pk=admin_position_pk,
                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
@@ -215,9 +236,14 @@ class CreateProductCategoryView(APIView):
 
             product_category_name = self.request.data.get('category_name',None)
             product_category_description = self.request.data.get('description',None)
-            if not product_category_name or not product_category_description:
+            if not product_category_name:
                 return Response(
-                    {"error": "Both 'name' and 'description' are required."},
+                    {"error": "Product category name is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif not product_category_description:
+                return Response(
+                    {"error": "Product category description is required"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             product_category, message = ManageProducts.create_product_category(request,product_category_name=product_category_name,description=product_category_description)
@@ -249,9 +275,14 @@ class UpdateProductCategoryView(APIView):
             product_category_pk = pk
             product_category_name = self.request.data.get('category_name',None)
             product_category_description = self.request.data.get('description',None)
-            if not product_category_name or not product_category_description:
+            if not product_category_name:
                 return Response(
-                    {"error": "Both 'name' and 'description' are required."},
+                    {"error": "Product category name is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif not product_category_description:
+                return Response(
+                    {"error": "Product category description is required"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             updated_product_category, message = ManageProducts.update_product_category(request,product_category_pk=product_category_pk,new_category_name=product_category_name,description=product_category_description)
@@ -332,6 +363,20 @@ class CreateProductSubCategoryView(APIView):
             product_category_pk = product_category_pk
             product_sub_category_name = request.data.get('sub_category_name',None)
             product_sub_category_description = request.data.get('description',None)
+            if not product_sub_category_name:
+                return Response(
+                    {
+                        "error": "Product Sub Category name is needed"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif not product_sub_category_description:
+                return Response(
+                    {
+                        "error": "Product Sub Category description is needed"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             product_sub_category,message = ManageProducts.create_product_sub_category(request,product_category_pk=product_category_pk,sub_category_name=product_sub_category_name,description=product_sub_category_description)
             if product_sub_category:
                 return Response(
@@ -359,7 +404,28 @@ class UpdateProductSubCategoryView(APIView):
             category_pk_list = request.data.get('category_pk_list',None)
             sub_category_name = request.data.get('sub_category_name',None)
             description = request.data.get('description',None)
-
+            if not category_pk_list:
+                return Response(
+                    {
+                        "error": "Product Category list is needed"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif not sub_category_name:
+                return Response(
+                    {
+                        "error": "Product Sub Category name is needed"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif not description:
+                return Response(
+                    {
+                        "error": "Product Sub Category descrpition is needed"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             updated_product_sub_category,message = ManageProducts.update_product_sub_category(request,product_sub_category_pk=product_sub_category_pk,
                                                                                             category_pk_list=category_pk_list,sub_category_name=sub_category_name,
                                                                                             description=description)
@@ -444,7 +510,47 @@ class CreateProductBrands(APIView):
 
     def post(self,request,format=None):
         try:
-            pass
+            
+            brand_name = self.request.data.get('brand_name',None)
+            brand_established_year = self.request.data.get('brand_established_year',None)
+            is_own_brand = self.request.data.get('is_own_brand',None)
+            brand_country = self.request.data.get('brand_country',None)
+            brand_description = self.request.data.get('brand_description',None)
+            brand_logo = self.request.data.get('brand_logo',None)
+
+            if not brand_name:
+                return Response(
+                    {
+                        "error": "Brand name is required"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif not brand_established_year:
+                return Response(
+                    {
+                        "error": "Brand established year is required"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif not is_own_brand:
+                return Response(
+                    {
+                        "error": "Brand ownership detail is required"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            product_brand,message = ManageProducts.create_product_brand(request,brand_name,brand_established_year,is_own_brand,
+                                                                        brand_country,brand_description,brand_logo)
+            if product_brand:
+                return Response(
+                    {
+                        "message": "Brand created"
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response({

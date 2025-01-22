@@ -279,3 +279,18 @@ class ProductCategoryAPITestCases(APITestCase):
         returned_data = response.data['product_brands']
         expected_data_serialized = product_serializers.Product_Brands_Serializer(expected_data, many=False).data
         self.assertEqual(returned_data, expected_data_serialized)
+
+    def test_create_product_brand(self):
+        """
+        Test for creating product brand
+        """
+        data = {'brand_name':"simu",'brand_established_year':2008,'is_own_brand':True}
+        response = self.client.post(f'/server_api/product/product_brand/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Brand created")
+
+        #duplicate
+        data = {'brand_name':"Loreal",'brand_established_year':2008,'is_own_brand':True}
+        response = self.client.post(f'/server_api/product/product_brand/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Same brand exists in Database!")
