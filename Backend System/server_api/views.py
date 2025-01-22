@@ -109,8 +109,9 @@ class LogOutBusinessAdminUser(APIView):
 #product categories
 class FetchProductCategoryView(APIView):
 
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     def get(self,request,format=None):
 
