@@ -285,6 +285,47 @@ class AdminManagement:
         
     #business admin users
     def fetch_token(username=None,admin_unique_id=None):
+
+        """
+        Fetch tokens based on various optional parameters with detailed exception handling.
+
+        This function attempts to retrieve tokens from the database based on the provided parameters.
+        It handles various errors that might occur during the process, logging each error for further analysis.
+
+        Args:
+            username (str, optional): The username of the user to fetch the token for. Defaults to None.
+            admin_unique_id (str, optional): The unique ID of the admin to fetch the token for. Defaults to None.
+
+        Returns:
+            tuple:
+                - Token or QuerySet: A single Token object or a QuerySet of tokens matching the criteria.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            token, message = fetch_token(username="admin")
+            print(message)
+
+            token, message = fetch_token(admin_unique_id="12345")
+            print(message)
+
+            tokens, message = fetch_token()
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while fetching admin user token! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while fetching admin user token! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while fetching admin user token! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while fetching admin users! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         
         try:
             if username:
@@ -317,6 +358,47 @@ class AdminManagement:
         
     def fetch_business_admin_user(admin_unique_id=None,admin_user_name=None):
 
+        """
+        Fetch business admin users based on various optional parameters with detailed exception handling.
+
+        This function attempts to retrieve business admin users from the database based on the provided parameters.
+        It handles various errors that might occur during the process, logging each error for further analysis.
+
+        Args:
+            admin_unique_id (str, optional): The unique ID of the admin to be fetched. Defaults to None.
+            admin_user_name (str, optional): The username of the admin to be fetched. Defaults to None.
+
+        Returns:
+            tuple:
+                - BusinessAdminUser or QuerySet: A single BusinessAdminUser object or a QuerySet of business admin users matching the criteria.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            admin_user, message = fetch_business_admin_user(admin_unique_id="12345")
+            print(message)
+
+            admin_user, message = fetch_business_admin_user(admin_user_name="admin")
+            print(message)
+
+            admin_users, message = fetch_business_admin_user()
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while fetching admin users! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while fetching admin users! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while fetching admin users! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while fetching admin users! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+
         try:
             if admin_unique_id:
                 admin_user = BusinessAdminUser.objects.get(admin_unique_id = admin_unique_id)
@@ -346,6 +428,56 @@ class AdminManagement:
     
     def create_business_admin_user(admin_full_name,admin_user_name,password,admin_position_pk,
                                    admin_contact_no=None,admin_email=None,admin_avatar=None):
+        
+        """
+        Create a new business admin user with detailed exception handling.
+
+        This function attempts to add a new business admin user to the database. It first checks for
+        existing admin users to avoid duplicates. If the admin user does not exist, it is created.
+        The function handles various errors that might occur during the process, logging each
+        error for further analysis.
+
+        Args:
+            admin_full_name (str): The full name of the admin user to be added.
+            admin_user_name (str): The username of the admin user to be added.
+            password (str): The password for the admin user.
+            admin_position_pk (int): The primary key (ID) of the admin position to be associated with the admin user.
+            admin_contact_no (str, optional): The contact number of the admin user. Defaults to None.
+            admin_email (str, optional): The email address of the admin user. Defaults to None.
+            admin_avatar (str, optional): The avatar image of the admin user. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the admin user was created successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = create_business_admin_user(
+                admin_full_name="John Doe",
+                admin_user_name="johndoe",
+                password="securepassword",
+                admin_position_pk=1,
+                admin_contact_no="1234567890",
+                admin_email="johndoe@example.com",
+                admin_avatar="path/to/avatar.jpg"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while creating admin user! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while creating admin user! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while creating admin user! Please try again later."
+            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while creating admin user! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         try:
             #fetching all to check if this user
             all_admins,message = AdminManagement.fetch_business_admin_user()
