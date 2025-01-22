@@ -107,16 +107,14 @@ class BusinessAdminTest(TestCase):
         """
         Test for creating business admins
         """
-        request = self.factory.post('/admins/create/')
-        #request.user = self._create_mock_dev_user()
-        request.user = self._create_mock_businessadmin_user()
-        success, message = AdminManagement.create_business_admin_user(request,admin_full_name="SAMI",admin_user_name="sami218686",
+        
+        success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",admin_user_name="sami218686",
                                                                       password='2186',admin_position_pk=self.adminposition2.pk)
         self.assertTrue(success,"Business Admin should be created successfully")
         self.assertEqual(message,"Business Admin created successfully","Success message is incorrect")
 
         #same username
-        success, message = AdminManagement.create_business_admin_user(request,admin_full_name="SAMI",admin_user_name="sami218686",
+        success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",admin_user_name="sami218686",
                                                                       password='2186',admin_position_pk=self.adminposition2.pk)
         self.assertFalse(success,"Business Admin should not be created successfully")
         self.assertEqual(message,"Admin with this username exists","Error message is incorrect")

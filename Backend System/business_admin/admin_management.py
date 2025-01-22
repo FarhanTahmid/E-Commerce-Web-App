@@ -3,6 +3,7 @@ from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingE
 from system.models import *
 from system.system_log import SystemLogs
 from e_commerce_app import settings
+from rest_framework.authtoken.models import Token
 import os
 
 class AdminManagement:
@@ -311,7 +312,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin users! Please try again later.")
     
-    def create_business_admin_user(request,admin_full_name,admin_user_name,password,admin_position_pk,
+    def create_business_admin_user(admin_full_name,admin_user_name,password,admin_position_pk,
                                    admin_contact_no=None,admin_email=None,admin_avatar=None):
         try:
             #fetching all to check if this user
@@ -320,6 +321,8 @@ class AdminManagement:
                 return False, "Admin with this username exists"
             
             user = User.objects.create_user(username=admin_user_name,password=password)
+            token = Token.objects.create(user=user)
+            token.save()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             business_admin = BusinessAdminUser.objects.create(user=user,admin_full_name=admin_full_name,admin_user_name=admin_user_name,
                                                               admin_position = admin_position)
@@ -331,8 +334,6 @@ class AdminManagement:
             if admin_avatar:
                 business_admin.admin_avatar = admin_avatar
             business_admin.save()
-            updated,message = SystemLogs.updated_by(request,business_admin)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created admin {business_admin.admin_user_name}",message="Created")
             return True, "Business Admin created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -424,6 +425,8 @@ class AdminManagement:
                 user.save()
             else:
                 return False, "Old password is incorrect"
+            updated,message = SystemLogs.updated_by(request,business_admin_user)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin password {business_admin_user.admin_user_name}",message="Updated password")
             return True, "Password updated successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -447,11 +450,13 @@ class AdminManagement:
 
         try:
 
-            #fetching the Business Admin useru using user name
+            #fetching the Business Admin user using user name
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
             user = business_admin_user.user
             user.set_password(new_password)
             user.save()
+            updated,message = SystemLogs.updated_by(request,business_admin_user)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Reset admin password {business_admin_user.admin_user_name}",message="Reset password")
             return True, "Password reset successfull"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

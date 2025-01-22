@@ -1,5 +1,4 @@
 
-from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from products import product_serializers
@@ -7,9 +6,106 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from products.product_management import ManageProducts
-from system import permissions
-
+from business_admin.admin_management import AdminManagement
+from django.contrib.auth import authenticate, login,logout
+from rest_framework.permissions import AllowAny
+from rest_framework.authtoken.models import Token
+from system.system_log import SystemLogs
 # Create your views here.
+
+#business admin
+class SignupBusinessAdminUser(APIView):
+    
+    permission_classes = [AllowAny]
+    def post(self,request,format=None):
+
+        admin_full_name = self.request.data.get('admin_full_name',None)
+        admin_user_name = self.request.data.get('admin_user_name',None)
+        password = self.request.data.get('password',None)
+        confirm_password = self.request.data.get('confirm_password',None)
+        admin_position_pk = self.request.data.get('admin_position_pk',None)
+        admin_contact_no = self.request.data.get('admin_contact_no',None)
+        admin_email = self.request.data.get('admin_email',None)
+        admin_avatar = self.request.data.get('admin_avatar', None)
+
+        if password != confirm_password:
+            return Response(
+                {"error": "Password does not match. Try again!"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
+                                                                                 password=password,admin_position_pk=admin_position_pk,
+                                                                                 admin_contact_no=admin_contact_no,admin_email=admin_email,
+                                                                                 admin_avatar=admin_avatar)
+        if business_admin_user:
+            authenticated_user = authenticate(username=admin_user_name, password=password)
+            if authenticated_user:
+                login(request, authenticated_user)
+                return Response(
+                    {"message": "Business Admin created successfully. Redirecting to dashboard...", 
+                     "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
+                    status=status.HTTP_201_CREATED
+                )
+            else:
+                return Response(
+                    {"error": "Business Admin created, but login failed. Please log in manually."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response(
+                {"error": message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+class LoginInBusinessAdminUser(APIView):
+
+    permission_classes = [AllowAny]
+    def post(self,request,format=None):
+
+        username = self.request.data.get('username',None)
+        password = self.request.data.get('password',None)
+
+        if username == None or password == None:
+            return Response(
+                {"error": "Username or Password must be provided!"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        authenticated_user = authenticate(username=username, password=password)
+        if authenticated_user:
+            login(request, authenticated_user)
+            return Response(
+                {"message": "Logged In", 
+                "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"error": "Username or Password incorrect!"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+class LogOutBusinessAdminUser(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+
+    def post(self,request,format=None):
+
+        try:
+            # Delete the user's token
+            user = SystemLogs.get_logged_in_user(request)
+            token = Token.objects.get(user=user)
+            token.delete()
+        except Token.DoesNotExist:
+            pass
+
+        return Response({
+            "message": "Successfully logged out.",
+            "redirect_url": "/server_api/business_admin/login/"
+        }, status=status.HTTP_200_OK)
+
 #product categories
 class FetchProductCategoryView(APIView):
 
@@ -54,8 +150,8 @@ class CreateProductCategoryView(APIView):
     
     def post(self, request, format=None):
         
-        product_category_name = self.request.data['category_name']
-        product_category_description = self.request.data['description']
+        product_category_name = self.request.data.get('category_name',None)
+        product_category_description = self.request.data.get('description',None)
         if not product_category_name or not product_category_description:
             return Response(
                 {"error": "Both 'name' and 'description' are required."},
@@ -80,8 +176,8 @@ class UpdateProductCategoryView(APIView):
     def put(self, request,pk, format=None):
 
         product_category_pk = pk
-        product_category_name = self.request.data['category_name']
-        product_category_description = self.request.data['description']
+        product_category_name = self.request.data.get('category_name',None)
+        product_category_description = self.request.data.get('description',None)
         if not product_category_name or not product_category_description:
             return Response(
                 {"error": "Both 'name' and 'description' are required."},
@@ -105,7 +201,7 @@ class DeleteProductCategoryView(APIView):
     def delete(self,request,pk,format=None):
         
         product_category_pk = pk
-        deleted,message = ManageProducts.delete_product_category(product_category_pk=product_category_pk)
+        deleted,message = ManageProducts.delete_product_category(request,product_category_pk=product_category_pk)
         if deleted:
             return Response(
                 {"message": message},
@@ -141,8 +237,8 @@ class CreateProductSubCategoryView(APIView):
     def post(self,request,pk,format=None):
 
         product_category_pk = pk
-        product_sub_category_name = request.data['sub_category_name']
-        product_sub_category_description = request.data['description']
+        product_sub_category_name = request.data.get('sub_category_name',None)
+        product_sub_category_description = request.data.get('description',None)
         product_sub_category,message = ManageProducts.create_product_sub_category(request,product_category_pk=product_category_pk,sub_category_name=product_sub_category_name,description=product_sub_category_description)
         if product_sub_category:
             return Response(
@@ -160,9 +256,9 @@ class UpdateProductSubCategoryView(APIView):
     def put(self,request,pk,format=None):
 
         product_sub_category_pk = pk
-        category_pk_list = request.data['category_pk_list']
-        sub_category_name = request.data['sub_category_name']
-        description = request.data['description']
+        category_pk_list = request.data.get('category_pk_list',None)
+        sub_category_name = request.data.get('sub_category_name',None)
+        description = request.data.get('description',None)
 
         updated_product_sub_category,message = ManageProducts.update_product_sub_category(request,product_sub_category_pk=product_sub_category_pk,
                                                                                           category_pk_list=category_pk_list,sub_category_name=sub_category_name,
@@ -183,7 +279,7 @@ class DeleteProductSubCategoryView(APIView):
     def delete(self,request,pk,format=None):
 
         product_sub_category_pk = pk
-        deleted,message = ManageProducts.delete_product_sub_category(product_sub_category_pk=product_sub_category_pk)
+        deleted,message = ManageProducts.delete_product_sub_category(request,product_sub_category_pk=product_sub_category_pk)
         if deleted:
             return Response(
                 {"message": message},

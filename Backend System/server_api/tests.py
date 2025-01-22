@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from products.models import *
 from products import product_serializers
+from business_admin.models import *
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 # Create your tests here.
 class ProductCategoryAPITestCases(APITestCase):
@@ -21,6 +23,8 @@ class ProductCategoryAPITestCases(APITestCase):
 
         self.product_sub_category1.category_id.set([self.product_category1,self.product_category2])
         self.product_sub_category2.category_id.set([self.product_category2])
+
+        self.adminposition1 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
 
     def test_fetch_all_product_categories(self):
         """
@@ -148,4 +152,77 @@ class ProductCategoryAPITestCases(APITestCase):
         response = self.client.delete(f'/server_api/product/sub_categories/delete/{self.product_sub_category1.pk}/')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Product Sub Category does not exist!","Success message is incorrect")
+
+    #business_admin login in/signup
+    def test_business_admin_signup(self):
+        """
+        Test for signing up business admin
+        """
+        data = {
+            "admin_full_name": "John Doe",
+            "admin_user_name": "johndoe",
+            "password": "securepassword",
+            "confirm_password": "securepassword",
+            "admin_position_pk": self.adminposition1.pk,
+            "admin_contact_no": "1234567890",
+            "admin_email": "john.doe@example.com",
+        }
+        response = self.client.post(f'/server_api/business_admin/signup/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Business Admin created successfully. Redirecting to dashboard...","Success messsage is incorrect")
+        self.assertEqual(response.data['redirect_url'],"/dashboard","Success messsage is incorrect")
+        self.assertTrue(User.objects.filter(username="johndoe").exists())
+        self.assertTrue(BusinessAdminUser.objects.filter(admin_full_name="John Doe").exists())
+
+    def test_business_admin_log_in(self):
+        """
+        Test for loggin in 
+        """
+        data = {
+            "username":"testuser",
+            "password":"password"
+        }
+        response = self.client.post(f'/server_api/business_admin/login/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Logged In","Success message is incorrect")
+
+        #incorrect data
+        data = {
+            "username":"testuser2",
+            "password":"password22"
+        }
+        response = self.client.post(f'/server_api/business_admin/login/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data['error'],"Username or Password incorrect!","Success message is incorrect")
+
+        #no data
+        data ={
+            "username":None,
+            "password":None
+        }
+        response = self.client.post(f'/server_api/business_admin/login/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Username or Password must be provided!","Success message is incorrect")
+
+    def test_logout_successful(self):
+        """
+        Test that a user can successfully log out and is redirected to the login page.
+        """
+        response = self.client.post(f'/server_api/business_admin/logout/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('redirect_url', response.data) 
+        self.assertEqual(response.data['redirect_url'], '/server_api/business_admin/logout/') 
+        # Check that the token is deleted
+        with self.assertRaises(Token.DoesNotExist):
+            Token.objects.get(user=self.user)
+
+    def test_logout_unauthenticated(self):
+        """
+        Test that an unauthenticated user cannot access the logout endpoint.
+        """
+        self.client.credentials()  
+        response = self.client.post(f'/server_api/business_admin/logout/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('detail', response.data) 
+        self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
 

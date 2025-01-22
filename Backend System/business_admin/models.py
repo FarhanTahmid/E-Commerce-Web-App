@@ -34,6 +34,7 @@ class BusinessAdminUser(models.Model):
     admin_is_superuser=models.BooleanField(null=False,blank=False,default=False)
     admin_account_created_at=models.DateTimeField(null=False,blank=False,auto_now_add=True)
     last_login_at=models.DateTimeField(null=True,blank=True)
+    updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
@@ -76,6 +77,7 @@ class AdminPermissions(models.Model):
     permission_name = models.CharField(max_length=100, unique=True)
     permission_description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
 
     def __str__(self):
@@ -88,6 +90,7 @@ class AdminRolePermission(models.Model):
     role = models.ForeignKey(AdminPositions, on_delete=models.CASCADE, related_name='role_permissions')
     permission = models.ForeignKey(AdminPermissions, on_delete=models.CASCADE, related_name='role_permissions')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
