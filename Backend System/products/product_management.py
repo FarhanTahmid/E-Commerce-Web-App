@@ -56,7 +56,7 @@ class ManageProducts:
                 return Product_Category.objects.get(pk=product_category_pk), "Product categories successfully!"
             else:
                 product_category = Product_Category.objects.all()
-                return product_category, "Fetched all product categories successfully!"
+                return product_category, "Fetched all product categories successfully!" if len(product_category) > 0 else "No product categories found"
 
         # Handle database-related errors
         except DatabaseError as db_err:
@@ -353,7 +353,7 @@ class ManageProducts:
         try:
             product_category = Product_Category.objects.get(pk=product_category_pk)
             product_sub_categories = Product_Sub_Category.objects.filter(category_id=product_category)
-            return product_sub_categories, "Fetched all product sub-categories for a category successfully!"
+            return product_sub_categories, "Fetched all product sub-categories for a category successfully!" if len(product_sub_categories)>0 else "No product sub-categories found"
 
         # Handle database-related errors
         except DatabaseError as db_err:
@@ -752,7 +752,8 @@ class ManageProducts:
             elif pk:
                 return Product_Brands.objects.get(pk=pk), "Product brand fetched successfully!"
             else:
-                return Product_Brands.objects.all(), "All Product brands fetched successfully!"
+                product_brand = Product_Brands.objects.all()
+                return product_brand, "All Product brands fetched successfully!" if len(product_brand)>0 else "No Product brands found"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -815,8 +816,12 @@ class ManageProducts:
         try:
             #get product brand
             product_brand = Product_Brands.objects.get(pk=product_brand_pk)
+            all_product_brand,message = ManageProducts.fetch_product_brand()
             #update the product brand name
             if (product_brand.brand_name.lower() != brand_name.lower()):
+                for p in all_product_brand:
+                    if p != product_brand and p.brand_name.lower() == brand_name.lower():
+                        return False, "Same brand already exists!"
                 product_brand.brand_name = brand_name
             #update the product brand country
             if (brand_country and product_brand.brand_country.lower() != brand_country.lower()):
@@ -978,7 +983,8 @@ class ManageProducts:
             elif pk:
                 return Product_Flavours.objects.get(pk=pk), "Product flavour fetched successfully!"
             else:
-                return Product_Flavours.objects.all(), "All Product flavours fetched successfully!"
+                product_flavour = Product_Flavours.objects.all()
+                return product_flavour, "All Product flavours fetched successfully!" if len(product_flavour)>0 else "No Product flavour found"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -1101,8 +1107,12 @@ class ManageProducts:
         try:
             #fetch product flavour with pk
             product_flavour,message = ManageProducts.fetch_product_flavour(pk=product_flavour_pk)
+            all_product_flavour , message = ManageProducts.fetch_product_flavour()
             #detecting changes
             if (product_flavour.product_flavour_name.lower() != product_flavour_name.lower()):
+                for p in all_product_flavour:
+                    if p != product_flavour and p.product_flavour_name.lower() == product_flavour_name.lower():
+                        return False, "Same product flavour already exists!"
                 product_flavour.product_flavour_name = product_flavour_name
             product_flavour.save()
             updated,message = SystemLogs.updated_by(request,product_flavour)
@@ -1259,7 +1269,8 @@ class ManageProducts:
                     products.update(sub_categories.products.all())
                 return products,"Products fetched successfully!"if products else "No products found using this sub categories"
             else:
-                return Product.objects.all(), "All Products fetched successfully!"
+                products = Product.objects.all()
+                return products, "All Products fetched successfully!" if len(products)>0 else "No products founds"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1449,8 +1460,12 @@ class ManageProducts:
             existing_product_category = sorted(product.product_category.all())
             existing_product_sub_category = sorted(product.product_sub_category.all())
             existing_product_flavours = sorted(product.product_flavours.all())
+            all_products, message = ManageProducts.fetch_product()
             #updating only if changed
             if product.product_name.lower() != product_name.lower():
+                for p in all_products:
+                    if p!=product and p.product_name.lower() == product_name.lower():
+                        return False,"Same product name already exists!"
                 product.product_name = product_name
             if existing_product_category != new_product_category:
                 product.product_category.set(new_product_category)
