@@ -3,6 +3,7 @@ from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingE
 from system.models import *
 from system.system_log import SystemLogs
 from e_commerce_app import settings
+from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 import os
 
@@ -283,6 +284,37 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
     #business admin users
+    def fetch_token(username=None,admin_unique_id=None):
+        
+        try:
+            if username:
+                user = User.objects.get(username=username)
+                token = Token.objects.get(user=user)
+                return token, "Token fetched successfully"
+            elif admin_unique_id:
+                business_admin_user, message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+                user = User.objects.get(username = business_admin_user.admin_user_name)
+                token = Token.objects.get(user=user)
+                return token, "Token fetched successfully"
+            else:
+                return Token.objects.all(), "All tokens fetched successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching admin user token! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching admin user token! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching admin user token! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin users! Please try again later.")  
+        
     def fetch_business_admin_user(admin_unique_id=None,admin_user_name=None):
 
         try:
@@ -321,8 +353,6 @@ class AdminManagement:
                 return False, "Admin with this username exists"
             
             user = User.objects.create_user(username=admin_user_name,password=password)
-            token = Token.objects.create(user=user)
-            token.save()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             business_admin = BusinessAdminUser.objects.create(user=user,admin_full_name=admin_full_name,admin_user_name=admin_user_name,
                                                               admin_position = admin_position)

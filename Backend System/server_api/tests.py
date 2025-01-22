@@ -6,7 +6,6 @@ from rest_framework.authtoken.models import Token
 from products.models import *
 from products import product_serializers
 from business_admin.models import *
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 # Create your tests here.
 class ProductCategoryAPITestCases(APITestCase):
@@ -154,6 +153,18 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(response.data['error'],"Product Sub Category does not exist!","Success message is incorrect")
 
     #business_admin login in/signup
+    def test_token_fetch(self):
+        """
+        Test for fetching token
+        """
+
+        data = {
+            'username':self.user.username
+        }
+        response = self.client.post(f'/server_api/business_admin/fetch_token/',data,format='json')
+        self.assertEqual(response.data['message'],"Token fetched successfully")
+        self.assertIn('token', response.data) 
+
     def test_business_admin_signup(self):
         """
         Test for signing up business admin
@@ -211,7 +222,7 @@ class ProductCategoryAPITestCases(APITestCase):
         response = self.client.post(f'/server_api/business_admin/logout/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('redirect_url', response.data) 
-        self.assertEqual(response.data['redirect_url'], '/server_api/business_admin/logout/') 
+        self.assertEqual(response.data['redirect_url'], '/server_api/business_admin/login/') 
         # Check that the token is deleted
         with self.assertRaises(Token.DoesNotExist):
             Token.objects.get(user=self.user)

@@ -7,13 +7,35 @@ from rest_framework import status
 from rest_framework.views import APIView
 from products.product_management import ManageProducts
 from business_admin.admin_management import AdminManagement
-from django.contrib.auth import authenticate, login,logout
+from business_admin.serializers import TokenSerializer
+from django.contrib.auth import authenticate, login
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from system.system_log import SystemLogs
+from django.contrib.auth.models import User
+
 # Create your views here.
 
 #business admin
+class FetchToken(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,format=None):
+
+        username = self.request.data.get('username',None)
+        token,message = AdminManagement.fetch_token(username=username)
+        token_data = TokenSerializer(token,many=False)
+        if token_data:
+            return Response(
+                {"message": message,"token": token_data.data},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class SignupBusinessAdminUser(APIView):
     
     permission_classes = [AllowAny]
@@ -73,6 +95,10 @@ class LoginInBusinessAdminUser(APIView):
         
         authenticated_user = authenticate(username=username, password=password)
         if authenticated_user:
+            user = User.objects.get(username = username)
+            Token.objects.filter(user=user).delete()
+            token = Token.objects.create(user=user)
+            token.save()
             login(request, authenticated_user)
             return Response(
                 {"message": "Logged In", 
@@ -96,8 +122,7 @@ class LogOutBusinessAdminUser(APIView):
         try:
             # Delete the user's token
             user = SystemLogs.get_logged_in_user(request)
-            token = Token.objects.get(user=user)
-            token.delete()
+            Token.objects.filter(user=user).delete()
         except Token.DoesNotExist:
             pass
 

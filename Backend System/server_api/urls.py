@@ -6,8 +6,10 @@ app_name='server_api'
 urlpatterns = [
 
     #business admin
+    path('business_admin/fetch_token/',views.FetchToken.as_view(),name='fetch_token'),
     path('business_admin/signup/',views.SignupBusinessAdminUser.as_view(),name='create_business_admin_user'),
     path('business_admin/login/',views.LoginInBusinessAdminUser.as_view(),name='login_business_admin_user'),
+    path('business_admin/logout/',views.LogOutBusinessAdminUser.as_view(),name='logout_business_admin_user'),
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
     path('product/categories/fetch_all/',views.FetchProductCategoryView.as_view(),name='fetch_all_product_categories'),
