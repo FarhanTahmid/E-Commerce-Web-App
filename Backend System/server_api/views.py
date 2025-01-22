@@ -13,7 +13,7 @@ from system import permissions
 #product categories
 class FetchProductCategoryView(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    # authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self,request,format=None):
