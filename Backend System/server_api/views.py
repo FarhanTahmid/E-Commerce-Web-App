@@ -14,7 +14,8 @@ from system import permissions
 class FetchProductCategoryView(APIView):
 
     # authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     def get(self,request,format=None):
 

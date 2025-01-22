@@ -5,10 +5,8 @@ function App() {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
 
-  const fetchCategories = async (productCategoryPk = null) => {
-    const url = productCategoryPk
-      ? `http://127.0.0.1:8000/server_api/product/categories/fetch_all/?product_category_pk=${productCategoryPk}`
-      : 'http://127.0.0.1:8000/server_api/product/categories/fetch_all/';
+  const fetchCategories = async () => {
+    const url = 'http://127.0.0.1:8000/server_api/product/categories/fetch_all/';
 
     try {
       const response = await fetch(url, {
@@ -24,7 +22,7 @@ function App() {
       }
 
       const data = await response.json();
-      setCategories(data.product_category);
+      setCategories(data.product_category); // Ensure this matches the API structure
     } catch (err) {
       setError(err.message);
     }
@@ -40,7 +38,10 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <ul>
         {categories.map((category) => (
-          <li key={category.id}>{category.name}</li> // Adjust fields based on your API response
+          <li key={category.id}>
+            <h3>{category.category_name}</h3>
+            <p>{category.description}</p>
+          </li>
         ))}
       </ul>
     </div>
