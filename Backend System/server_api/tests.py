@@ -24,6 +24,10 @@ class ProductCategoryAPITestCases(APITestCase):
         self.product_sub_category2.category_id.set([self.product_category2])
 
         self.adminposition1 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
+        self.product_brand1 = Product_Brands.objects.create(brand_name="Loreal", brand_country="USA",brand_description="Loreal Paris",
+                                                    brand_established_year= 1909,is_own_brand=False,created_at=self.now)
+        self.product_brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",
+                                                    brand_established_year= 2000,is_own_brand=True,created_at=self.now)
 
     def test_fetch_all_product_categories(self):
         """
@@ -37,6 +41,15 @@ class ProductCategoryAPITestCases(APITestCase):
         returned_data = response.data['product_category']
         expected_data_serialized = product_serializers.Product_Category_Serializer(expected_data, many=True).data
         self.assertEqual(returned_data, expected_data_serialized)
+
+        #single
+        response = self.client.get(f'/server_api/product/categories/fetch_all/?{self.product_category1.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        expected_data = Product_Category.objects.get(pk=self.product_category1.pk)
+        returned_data = response.data['product_category'][0]
+        expected_data_serialized = product_serializers.Product_Category_Serializer(expected_data, many=False).data
+        self.assertEqual(returned_data, expected_data_serialized)
+
 
     def test_fetch_a_product_category(self):
 
@@ -237,3 +250,32 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertIn('detail', response.data) 
         self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
 
+    #product brands
+    def test_fetch_product_brand(self):
+        """
+        Test for creating product brand
+        """
+        #fetching all
+        response = self.client.get(f'/server_api/product/product_brand/fetch_product_brands/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(response.data['product_brands']),2)
+        expected_data = Product_Brands.objects.all()
+        returned_data = response.data['product_brands']
+        expected_data_serialized = product_serializers.Product_Brands_Serializer(expected_data, many=True).data
+        self.assertEqual(returned_data, expected_data_serialized)
+
+        #fetching single
+        response = self.client.get(f'/server_api/product/product_brand/fetch_product_brands/?pk={self.product_brand1.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        expected_data = Product_Brands.objects.get(pk=self.product_brand1.pk)
+        returned_data = response.data['product_brands']
+        expected_data_serialized = product_serializers.Product_Brands_Serializer(expected_data, many=False).data
+        self.assertEqual(returned_data, expected_data_serialized)
+
+        #fetching using name
+        response = self.client.get(f'/server_api/product/product_brand/fetch_product_brands/?brand_name={self.product_brand1.brand_name}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        expected_data = Product_Brands.objects.get(pk=self.product_brand1.pk)
+        returned_data = response.data['product_brands']
+        expected_data_serialized = product_serializers.Product_Brands_Serializer(expected_data, many=False).data
+        self.assertEqual(returned_data, expected_data_serialized)
