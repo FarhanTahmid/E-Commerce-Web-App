@@ -594,7 +594,7 @@ class UpdateProductBrands(APIView):
                 "message": "An error occurred while updating product brand."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class DeleteUpdateProductBrands(APIView):
+class DeleteProductBrands(APIView):
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -618,3 +618,128 @@ class DeleteUpdateProductBrands(APIView):
                 "error": str(e),
                 "message": "An error occurred while updating product brand."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+#product flavour
+class FetchProductFlavour(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            pk = request.query_params.get('pk')
+            product_flavour_name = request.query_params.get('product_flavour_name')
+
+            if pk:
+                product_flavours,message = ManageProducts.fetch_product_flavour(pk=pk)
+                product_flavours_data = product_serializers.Product_Flavour_Serializer(product_flavours,many=False)
+            elif product_flavour_name:
+                product_flavours,message = ManageProducts.fetch_product_flavour(product_flavour_name=product_flavour_name)
+                product_flavours_data = product_serializers.Product_Flavour_Serializer(product_flavours,many=False)
+            else:
+                product_flavours,message = ManageProducts.fetch_product_flavour()
+                product_flavours_data = product_serializers.Product_Flavour_Serializer(product_flavours,many=True)
+            
+            if product_flavours:
+                return Response(
+                    {"message": message,"product_flavours_data":product_flavours_data.data},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while fetching product flavour."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class CreateProductFlavour(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,format=None):
+
+        try:
+            product_flavour_name = self.request.data.get('product_flavour_name',None)
+            if not product_flavour_name:
+                return Response(
+                    {
+                        'error':'Product flavour name required'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            product_flavour,message = ManageProducts.create_product_flavour(request,product_flavour_name)
+            if product_flavour:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while creating product flavour."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UpdateProductFlavour(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,product_flavour_pk,format=None):
+        try:
+            product_flavour_pk=product_flavour_pk
+            product_flavour_name = self.request.data.get('product_flavour_name',None)
+            if not product_flavour_name:
+                return Response({
+                    'error':"Product flavour name required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            product_flavour_updated,message = ManageProducts.update_product_flavour(request,product_flavour_pk,product_flavour_name)
+            if product_flavour_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product flavour."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class DeleteProductFlavour(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,product_flavour_pk,format=None):
+        try:
+            product_flavour_pk = product_flavour_pk
+            deleted,message = ManageProducts.delete_product_flavour(request,product_flavour_pk=product_flavour_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting product flavour."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+#product
+class FetchProduct(APIView):
+    pass

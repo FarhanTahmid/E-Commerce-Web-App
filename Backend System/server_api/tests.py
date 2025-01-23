@@ -28,6 +28,9 @@ class ProductCategoryAPITestCases(APITestCase):
                                                     brand_established_year= 1909,is_own_brand=False,created_at=self.now)
         self.product_brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 2000,is_own_brand=True,created_at=self.now)
+        
+        self.product_flavour1 = Product_Flavours.objects.create(product_flavour_name="Vanilla", created_at=self.now)
+        self.product_flavour2 = Product_Flavours.objects.create(product_flavour_name="Strawberry", created_at=self.now)
 
     def test_fetch_all_product_categories(self):
         """
@@ -317,3 +320,62 @@ class ProductCategoryAPITestCases(APITestCase):
         response = self.client.delete(f'/server_api/product/product_brand/delete/{self.product_brand1.pk}') 
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         self.assertEqual(response.data['message'],"Product brand deleted successfully!")
+
+    #test product flavours
+    def test_fetch_product_flavours(self):
+        """
+        Test to fetch product flavours
+        """
+        #all fetch
+        response = self.client.get(f'/server_api/product/product_flavour/fetch_product_flavour/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(len(response.data['product_flavours_data']),2) 
+        expected_data = Product_Flavours.objects.all()
+        expected_data = product_serializers.Product_Flavour_Serializer(expected_data,many=True).data
+        returned_data = response.data['product_flavours_data']
+        self.assertEqual(returned_data,expected_data)
+
+        #pk
+        response = self.client.get(f'/server_api/product/product_flavour/fetch_product_flavour/?pk={self.product_flavour1.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(len(response.data),2) 
+        expected_data = Product_Flavours.objects.get(pk=self.product_flavour1.pk)
+        expected_data = product_serializers.Product_Flavour_Serializer(expected_data,many=False).data
+        returned_data = response.data['product_flavours_data']
+        self.assertEqual(returned_data,expected_data)
+
+    def test_create_product_flavour(self):
+        """
+        Test for creating product flavour
+        """
+        data = {'product_flavour_name':"anana"}
+        response = self.client.post(f'/server_api/product/product_flavour/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"New Product flavour, anana successfully added!")
+
+        #duplicate
+        data = {'product_flavour_name':self.product_flavour2.product_flavour_name}
+        response = self.client.post(f'/server_api/product/product_flavour/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Same flavour exists in Database!")
+
+    def test_update_product_flavour(self):
+        """
+        test for updating product flavour
+        """
+
+        data = {'product_flavour_pk':self.product_flavour1.pk,'product_flavour_name':"sami"}
+        response = self.client.put(f'/server_api/product/product_flavour/update/{self.product_flavour1.pk}',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product flavour updated successfully!")
+
+    def test_delete_product_flavour(self):
+        """
+        test for deleting product flavour
+        """
+        response = self.client.delete(f'/server_api/product/product_flavour/delete/{self.product_flavour1.pk}')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Product flavour deleted successfully!")
+
+    #product tests
+            

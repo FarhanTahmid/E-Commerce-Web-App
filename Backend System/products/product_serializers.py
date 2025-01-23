@@ -17,3 +17,8 @@ class Product_Brands_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Product_Brands
         fields = '__all__'
+
+class Product_Flavour_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product_Flavours
+        fields = '__all__'

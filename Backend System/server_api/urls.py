@@ -28,5 +28,11 @@ urlpatterns = [                                                                 
     path('product/product_brand/fetch_product_brands/',views.FetchProductBrands.as_view(),name='fetch_product_brands'),#pass parameters /?pk= OR /?brand_name= OR no parameter to fetch all
     path('product/product_brand/create/',views.CreateProductBrands.as_view(),name='create_product_brand'),
     path('product/product_brand/update/<int:product_brand_pk>',views.UpdateProductBrands.as_view(),name='update_product_brand'),
-    path('product/product_brand/delete/<int:product_brand_pk>',views.DeleteUpdateProductBrands.as_view(),name='delete_product_brand'),
+    path('product/product_brand/delete/<int:product_brand_pk>',views.DeleteProductBrands.as_view(),name='delete_product_brand'),
+
+    #product flavours
+    path('product/product_flavour/fetch_product_flavour/',views.FetchProductFlavour.as_view(),name='fetch_product_flavour'),#pass parameters /?pk= OR product_flavour_name= OR no paramter to fetch all
+    path('product/product_flavour/create/',views.CreateProductFlavour.as_view(),name='create_product_flavour'),
+    path('product/product_flavour/update/<int:product_flavour_pk>',views.UpdateProductFlavour.as_view(),name='update_product_flavour'),
+    path('product/product_flavour/delete/<int:product_flavour_pk>',views.DeleteProductFlavour.as_view(),name='delete_product_flavour'),
 ]
