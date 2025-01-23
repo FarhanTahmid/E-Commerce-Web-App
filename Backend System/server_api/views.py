@@ -236,14 +236,18 @@ class CreateProductCategoryView(APIView):
 
             product_category_name = self.request.data.get('category_name',None)
             product_category_description = self.request.data.get('description',None)
+
+            missing_fields = []
             if not product_category_name:
+                missing_fields.append("Product category name")
+            if not product_category_description:
+                missing_fields.append("Product category description")
+            
+            if missing_fields:
                 return Response(
-                    {"error": "Product category name is required"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif not product_category_description:
-                return Response(
-                    {"error": "Product category description is required"},
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
                     status=status.HTTP_400_BAD_REQUEST
                 )
             product_category, message = ManageProducts.create_product_category(request,product_category_name=product_category_name,description=product_category_description)
@@ -275,14 +279,16 @@ class UpdateProductCategoryView(APIView):
             product_category_pk = pk
             product_category_name = self.request.data.get('category_name',None)
             product_category_description = self.request.data.get('description',None)
+            missing_fields = []
             if not product_category_name:
+                missing_fields.append("Product category name")
+            if not product_category_description:
+                missing_fields.append("Product category description")
+            if missing_fields:
                 return Response(
-                    {"error": "Product category name is required"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif not product_category_description:
-                return Response(
-                    {"error": "Product category description is required"},
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
                     status=status.HTTP_400_BAD_REQUEST
                 )
             updated_product_category, message = ManageProducts.update_product_category(request,product_category_pk=product_category_pk,new_category_name=product_category_name,description=product_category_description)
@@ -363,17 +369,15 @@ class CreateProductSubCategoryView(APIView):
             product_category_pk = product_category_pk
             product_sub_category_name = request.data.get('sub_category_name',None)
             product_sub_category_description = request.data.get('description',None)
+            missing_fields = []
             if not product_sub_category_name:
+                missing_fields.append("Product Sub Category name")
+            if not product_sub_category_description:
+                missing_fields.append("Product Sub Category description")
+            if missing_fields:
                 return Response(
                     {
-                        "error": "Product Sub Category name is needed"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif not product_sub_category_description:
-                return Response(
-                    {
-                        "error": "Product Sub Category description is needed"
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -404,28 +408,20 @@ class UpdateProductSubCategoryView(APIView):
             category_pk_list = request.data.get('category_pk_list',None)
             sub_category_name = request.data.get('sub_category_name',None)
             description = request.data.get('description',None)
+            missing_fields = []
             if not category_pk_list:
+                missing_fields.append("Product Categories")
+            if not sub_category_name:
+                missing_fields.append("Product Sub Category name")
+            if not description:
+                missing_fields.append("Product Sub Category descrpition")
+            if missing_fields:
                 return Response(
                     {
-                        "error": "Product Category list is needed"
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            elif not sub_category_name:
-                return Response(
-                    {
-                        "error": "Product Sub Category name is needed"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif not description:
-                return Response(
-                    {
-                        "error": "Product Sub Category descrpition is needed"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
             updated_product_sub_category,message = ManageProducts.update_product_sub_category(request,product_sub_category_pk=product_sub_category_pk,
                                                                                             category_pk_list=category_pk_list,sub_category_name=sub_category_name,
                                                                                             description=description)
@@ -518,24 +514,17 @@ class CreateProductBrands(APIView):
             brand_description = self.request.data.get('brand_description',None)
             brand_logo = self.request.data.get('brand_logo',None)
 
+            missing_fields = []
             if not brand_name:
+                missing_fields.append("Brand name")
+            if not brand_established_year:
+                missing_fields.append("Brand established year")
+            if not is_own_brand:
+                missing_fields.append("Brand ownership")
+            if missing_fields:
                 return Response(
                     {
-                        "error": "Brand name is required"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif not brand_established_year:
-                return Response(
-                    {
-                        "error": "Brand established year is required"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif not is_own_brand:
-                return Response(
-                    {
-                        "error": "Brand ownership detail is required"
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
