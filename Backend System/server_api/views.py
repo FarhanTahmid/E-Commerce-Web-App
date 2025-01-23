@@ -509,7 +509,7 @@ class CreateProductBrands(APIView):
             
             brand_name = self.request.data.get('brand_name',None)
             brand_established_year = self.request.data.get('brand_established_year',None)
-            is_own_brand = self.request.data.get('is_own_brand',None)
+            is_own_brand = self.request.data.get('is_own_brand',False)
             brand_country = self.request.data.get('brand_country',None)
             brand_description = self.request.data.get('brand_description',None)
             brand_logo = self.request.data.get('brand_logo',None)
@@ -519,8 +519,6 @@ class CreateProductBrands(APIView):
                 missing_fields.append("Brand name")
             if not brand_established_year:
                 missing_fields.append("Brand established year")
-            if not is_own_brand:
-                missing_fields.append("Brand ownership")
             if missing_fields:
                 return Response(
                     {
@@ -545,5 +543,78 @@ class CreateProductBrands(APIView):
             return Response({
                 "success": False,
                 "error": str(e),
-                "message": "An error occurred while creating product brands."
+                "message": "An error occurred while creating product brand."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class UpdateProductBrands(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,product_brand_pk,format=None):
+        try:
+            product_brand_pk = product_brand_pk
+            brand_name = self.request.data.get('brand_name',None)
+            brand_established_year = self.request.data.get('brand_established_year',None)
+            is_own_brand = self.request.data.get('is_own_brand',False)
+            brand_country = self.request.data.get('brand_country',None)
+            brand_description = self.request.data.get('brand_description',None)
+            brand_logo = self.request.data.get('brand_logo',None)
+
+            missing_fields = []
+            if not brand_name:
+                missing_fields.append("Product Brand name")
+            if not brand_established_year:
+                missing_fields.append("PRoduct Brand established year")
+            if missing_fields:
+                return Response(
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            product_brand_update,message = ManageProducts.update_product_brand(request,product_brand_pk,brand_name,brand_established_year,
+                                                                               is_own_brand,brand_country,brand_description,brand_logo)
+
+            if product_brand_update:
+                return Response(
+                    {
+                        "message": "Brand updated"
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product brand."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class DeleteUpdateProductBrands(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,product_brand_pk,format=None):
+        try:
+
+            product_brand_pk=product_brand_pk
+            deleted,message= ManageProducts.delete_product_brand(request,product_brand_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product brand."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

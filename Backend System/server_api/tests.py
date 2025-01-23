@@ -294,3 +294,26 @@ class ProductCategoryAPITestCases(APITestCase):
         response = self.client.post(f'/server_api/product/product_brand/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Same brand exists in Database!")
+
+    def test_update_product_brand(self):
+        """
+        Test for updating product brand
+        """
+        data = {'brand_name':self.product_brand1.brand_name,'brand_established_year':2010}
+        response = self.client.put(f'/server_api/product/product_brand/update/{self.product_brand1.pk}',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Brand updated")
+
+        #same name
+        data = {'brand_name':'Dove','brand_established_year':2010}
+        response = self.client.put(f'/server_api/product/product_brand/update/{self.product_brand1.pk}',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Same brand already exists!")
+
+    def test_delete_product_brand(self):
+        """
+        Test for deleting product brand
+        """
+        response = self.client.delete(f'/server_api/product/product_brand/delete/{self.product_brand1.pk}') 
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Product brand deleted successfully!")

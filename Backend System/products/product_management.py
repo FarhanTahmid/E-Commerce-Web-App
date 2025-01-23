@@ -780,7 +780,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching Product brand! Please try again later.")
         
     def update_product_brand(request,product_brand_pk,brand_name,brand_established_year,
-                            is_own_brand,brand_country=None,brand_description=None,brand_logo=None):
+                            is_own_brand=False,brand_country=None,brand_description=None,brand_logo=None):
         """
         Update an existing product brand with detailed exception handling.
 
