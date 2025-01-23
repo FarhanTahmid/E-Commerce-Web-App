@@ -16,6 +16,7 @@ class AdminManagement:
         Fetch admin positions based on various optional parameters with detailed exception handling.
 
         This function attempts to retrieve admin positions from the database based on the provided parameters.
+        If no parameter is passed, returns all admin positions.
         It handles various errors that might occur during the process, logging each error for further analysis.
 
         Args:
@@ -289,7 +290,9 @@ class AdminManagement:
         """
         Fetch tokens based on various optional parameters with detailed exception handling.
 
-        This function attempts to retrieve tokens from the database based on the provided parameters.
+        This function attempts to retrieve tokens from the database based on the provided parameters,
+        username or admin_unique_id.
+        With no parameter passed, returns all tokens.
         It handles various errors that might occur during the process, logging each error for further analysis.
 
         Args:
@@ -359,8 +362,9 @@ class AdminManagement:
     def fetch_business_admin_user(admin_unique_id=None,admin_user_name=None):
 
         """
-        Fetch business admin users based on various optional parameters with detailed exception handling.
-
+        Fetch business admin users based on various optional parameters
+        admin_unique_id or admin_user_name, with detailed exception handling.
+        With no parameters returns all business admin user
         This function attempts to retrieve business admin users from the database based on the provided parameters.
         It handles various errors that might occur during the process, logging each error for further analysis.
 
@@ -519,6 +523,60 @@ class AdminManagement:
                                    admin_contact_no=None,admin_email=None,admin_avatar=None,old_password=None,
                                    password=None,admin_user_name=None):
         
+        """
+        Update an existing business admin user with detailed exception handling.
+
+        This function attempts to update the details of a business admin user. It checks for changes in
+        the full name, position, contact number, email, avatar, and password of the admin user and updates them accordingly.
+        The function includes comprehensive exception handling to log and report any errors that occur.
+
+        Args:
+            request (Request): The request object containing the user information.
+            admin_unique_id (str): The unique ID of the admin user to be updated.
+            admin_full_name (str): The new full name for the admin user.
+            admin_position_pk (int): The primary key (ID) of the new admin position to be associated with the admin user.
+            admin_contact_no (str, optional): The updated contact number of the admin user. Defaults to None.
+            admin_email (str, optional): The updated email address of the admin user. Defaults to None.
+            admin_avatar (str, optional): The updated avatar image of the admin user. Defaults to None.
+            old_password (str, optional): The old password of the admin user for verification. Defaults to None.
+            password (str, optional): The new password for the admin user. Defaults to None.
+            admin_user_name (str, optional): The new username for the admin user. Defaults to None.
+
+        Returns:
+            tuple:
+                - bool: `True` if the admin user was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_business_admin_user(
+                request,
+                admin_unique_id="12345",
+                admin_full_name="John Doe",
+                admin_position_pk=1,
+                admin_contact_no="1234567890",
+                admin_email="johndoe@example.com",
+                admin_avatar="path/to/avatar.jpg",
+                old_password="oldpassword",
+                password="newpassword",
+                admin_user_name="johndoe"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating admin user! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating admin user! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating admin user! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating admin user! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         try:
             #getting the admin user
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
@@ -579,6 +637,47 @@ class AdminManagement:
         
     def update_business_admin_user_password(request,admin_unique_id,old_password,new_password):
 
+        """
+        Update the password of an existing business admin user with detailed exception handling.
+
+        This function attempts to update the password of a business admin user. It verifies the old password
+        before setting the new password. The function includes comprehensive exception handling to log and report any errors that occur.
+
+        Args:
+            request (Request): The request object containing the user information.
+            admin_unique_id (str): The unique ID of the admin user whose password is to be updated.
+            old_password (str): The old password of the admin user for verification.
+            new_password (str): The new password for the admin user.
+
+        Returns:
+            tuple:
+                - bool: `True` if the password was updated successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = update_business_admin_user_password(
+                request,
+                admin_unique_id="12345",
+                old_password="oldpassword",
+                new_password="newpassword"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while updating admin password! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while updating admin password! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while updating admin password! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while updating admin password! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         try:
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
             user = business_admin_user.user
@@ -610,6 +709,46 @@ class AdminManagement:
     
     def reset_business_admin_user_password(request,admin_user_name,new_password):
 
+        """
+        Reset the password of an existing business admin user with detailed exception handling.
+
+        This function attempts to reset the password of a business admin user. It sets the new password
+        without requiring the old password. The function includes comprehensive exception handling to log and report any errors that occur.
+
+        Args:
+            request (Request): The request object containing the user information.
+            admin_user_name (str): The username of the admin user whose password is to be reset.
+            new_password (str): The new password for the admin user.
+
+        Returns:
+            tuple:
+                - bool: `True` if the password was reset successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = reset_business_admin_user_password(
+                request,
+                admin_user_name="admin",
+                new_password="newpassword"
+            )
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while resetting admin password! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while resetting admin password! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while resetting admin password! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while resetting admin password! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
+
         try:
 
             #fetching the Business Admin user using user name
@@ -639,6 +778,41 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while resetting admin password! Please try again later.")
         
     def delete_business_admin_user(request,admin_unique_id):
+
+        """
+        Delete an existing business admin user with detailed exception handling.
+
+        This function attempts to delete a business admin user from the database. It handles various
+        exceptions that might occur during the process, logging each error for further analysis.
+
+        Args:
+            request (Request): The request object containing the user information.
+            admin_unique_id (str): The unique ID of the admin user to be deleted.
+
+        Returns:
+            tuple:
+                - bool: `True` if the admin user was deleted successfully, `False` otherwise.
+                - str: A message indicating the success or failure of the operation.
+
+        Example Usage:
+            success, message = delete_business_admin_user(request, admin_unique_id="12345")
+            print(message)
+
+        Exception Handling:
+            - **DatabaseError**: Catches general database-related issues.
+                Message: "An unexpected error in Database occurred while deleting admin user! Please try again later."
+            - **OperationalError**: Handles server-related issues such as connection problems.
+                Message: "An unexpected error in server occurred while deleting admin user! Please try again later."
+            - **ProgrammingError**: Catches programming errors such as invalid queries.
+                Message: "An unexpected error in server occurred while deleting admin user! Please try again later."
+            - **IntegrityError**: Handles data integrity issues.
+                Message: "Same type exists in Database!"
+            - **Exception**: A catch-all for any other unexpected errors.
+                Message: "An unexpected error occurred while deleting admin user! Please try again later."
+
+        Notes:
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+        """
         try:
             #getting the admin
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)

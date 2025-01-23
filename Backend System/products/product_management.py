@@ -12,45 +12,55 @@ class ManageProducts:
     def fetch_product_categories(product_category_pk=None):
 
         """
-        Retrieve all product categories from the database with detailed exception handling.
+    Retrieve all product categories from the database with detailed exception handling.
 
-        This function fetches all records from the `Product_Category` model and returns them as a queryset.
-        It includes comprehensive exception handling to manage various types of errors that may occur during the query.
+    This function fetches all records from the `Product_Category` model and returns them as a queryset if no
+    product_category_pk is provided. If provided, then fetches that particular product category.
+    It includes comprehensive exception handling to manage various types of errors that may occur during the query.
 
-        Returns:
-            tuple:
-                - QuerySet or None: A queryset containing all `Product_Category` records if successful,
-                or `None` if an error occurs.
-                - str: A message indicating the success or failure of the operation.
+    Args:
+        product_category_pk (int, optional): The primary key (ID) of a specific product category to be fetched. Defaults to None.
 
-        Example Usage:
-            product_categories, message = fetch_all_product_categories()
-            if product_categories:
-                print(message)
-                for category in product_categories:
-                    print(f"ID: {category.pk}, Name: {category.name}, Description: {category.description}")
-            else:
-                print(message)
+    Returns:
+        tuple:
+            - QuerySet or None: A queryset containing all `Product_Category` records if successful,
+              or `None` if an error occurs.
+            - str: A message indicating the success or failure of the operation.
 
-        Exception Handling:
-            - **DatabaseError**: Catches general database-related issues and logs the error.
-                Example: Issues with the database engine or query execution.
-                Message: "An unexpected error in Database occurred! Please try again later."
-            - **OperationalError**: Handles server-related errors such as connection issues or timeouts.
-                Message: "An unexpected error in server occurred! Please try again later."
-            - **ProgrammingError**: Catches programming errors such as invalid queries or schema mismatches.
-                Message: "An unexpected error in server occurred! Please try again later."
-            - **IntegrityError**: Handles data integrity issues such as duplicate entries or constraint violations.
-                Message: "Same type exists in Database!"
-            - **Exception**: A catch-all for unexpected errors, ensuring the application remains stable.
-                Message: "An unexpected error occurred! Please try again later."
-                
-            **All errors are logged in `system.models.ErrorLogs`. This helps to identify and debug issues in the system.
+    Example Usage:
+        product_categories, message = fetch_product_categories()
+        if product_categories:
+            print(message)
+            for category in product_categories:
+                print(f"ID: {category.pk}, Name: {category.category_name}, Description: {category.description}")
+        else:
+            print(message)
 
-        Notes:
-            - The returned queryset allows you to access individual objects and their attributes.
-            - The `message` provides user-friendly feedback on the success or failure of the operation.
-        """
+        product_category, message = fetch_product_categories(product_category_pk=1)
+        if product_category:
+            print(message)
+            print(f"ID: {product_category.pk}, Name: {product_category.category_name}, Description: {product_category.description}")
+        else:
+            print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues and logs the error.
+            Example: Issues with the database engine or query execution.
+            Message: "An unexpected error in Database occurred! Please try again later."
+        - **OperationalError**: Handles server-related errors such as connection issues or timeouts.
+            Message: "An unexpected error in server occurred! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries or schema mismatches.
+            Message: "An unexpected error in server occurred! Please try again later."
+        - **IntegrityError**: Handles data integrity issues such as duplicate entries or constraint violations.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for unexpected errors, ensuring the application remains stable.
+            Message: "An unexpected error occurred! Please try again later."
+
+    Notes:
+        - All errors are logged in `ErrorLogs` for debugging and analysis.
+        - The returned queryset allows you to access individual objects and their attributes.
+        - The `message` provides user-friendly feedback on the success or failure of the operation.
+    """        
         try:
             if product_category_pk:
                 return Product_Category.objects.get(pk=product_category_pk), "Product categories successfully!"
@@ -707,7 +717,7 @@ class ManageProducts:
     def fetch_product_brand(pk=None,brand_name=None):
 
         """
-        Fetch a product brand by its name with detailed exception handling.
+        Fetch a product brand by its name or pk with detailed exception handling.
 
         Choose any one argument to retrieve. Providing multiple will return the using first paramter.
         This function attempts to retrieve a product brand from the database based on the provided brand name or pk.
@@ -782,8 +792,8 @@ class ManageProducts:
         Args:
             product_brand_pk (int): The primary key (ID) of the product brand to be updated.
             brand_name (str): The new name for the product brand.
-            brand_country (str): The new country of the product brand.
-            brand_description (str): The updated description for the product brand.
+            brand_country (str): The new country of the product brand. Defaults to None
+            brand_description (str): The updated description for the product brand. Defaults to None
             brand_established_year (int): The updated year the product brand was established.
             is_own_brand (bool): Indicates if the brand is owned by the company.
             brand_logo (str, optional): The new logo of the product brand. Defaults to None.
@@ -1200,6 +1210,7 @@ class ManageProducts:
 
         Choose any one argument to retrieve result. Providing multiple will return using first parameter.
         This function attempts to retrieve products from the database based on the provided parameters.
+        If no parameter is provided retrieves all products.
         It handles various errors that might occur during the process, logging each error for further analysis.
 
         Args:
@@ -1570,7 +1581,7 @@ class ManageProducts:
         """
         Fetch product SKUs based on various optional parameters with detailed exception handling.
 
-        Must provide any one argument
+        Must provide any one paramter. If no paramter is passed, returns False with a message.
         This function attempts to retrieve product SKUs from the database based on the provided parameters.
         It handles various errors that might occur during the process, logging each error for further analysis.
 
@@ -1628,6 +1639,8 @@ class ManageProducts:
                     return Product_SKU.objects.get(product_sku=product_sku.upper()), "Fetched successfully"
                 except:
                     return False, "No sku with this code!"
+            else:
+                return False , "No parameter passed! Must pass a single parameter"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
