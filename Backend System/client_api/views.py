@@ -10,7 +10,7 @@ class ProductCategoryListView(APIView):
     """
     API endpoint to retrieve all product categories with rate limiting and API key authentication.
 
-    This endpoint fetches all product categories from the database using the `fetch_all_product_categories` method.
+    This endpoint fetches all product categories from the database using the `fetch_product_categories` method.
     It provides detailed responses and enhanced error handling to ensure the API remains robust and user-friendly.
 
     Permissions:
@@ -25,7 +25,7 @@ class ProductCategoryListView(APIView):
         - **500 Internal Server Error**: An error occurred during the operation, with an appropriate error message.
 
     Error Handling:
-        - Handles errors from the `fetch_all_product_categories` function gracefully and returns user-friendly messages.
+        - Handles errors from the `fetch_product_categories` function gracefully and returns user-friendly messages.
         - Logs errors internally for debugging purposes.
 
     Example Usage:
@@ -68,7 +68,7 @@ class ProductCategoryListView(APIView):
         """
         try:
             # Fetch all product categories
-            product_categories, message = ManageProducts.fetch_all_product_categories()
+            product_categories, message = ManageProducts.fetch_product_categories()
 
             if product_categories:
                 # Serialize the product categories
