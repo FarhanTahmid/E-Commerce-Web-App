@@ -35,4 +35,8 @@ urlpatterns = [                                                                 
     path('product/product_flavour/create/',views.CreateProductFlavour.as_view(),name='create_product_flavour'),
     path('product/product_flavour/update/<int:product_flavour_pk>',views.UpdateProductFlavour.as_view(),name='update_product_flavour'),
     path('product/product_flavour/delete/<int:product_flavour_pk>',views.DeleteProductFlavour.as_view(),name='delete_product_flavour'),
+
+    #product
+    path('product/fetch_product/',views.FetchProduct.as_view(),name='fetch_product'),#pass parameters /?pk= OR product_name= OR product_brand_pk= OR product_category_pk_list OR product_sub_category_pk_list Or no paramter to fetch all
+    path('product/create/',views.CreateProduct.as_view(),name='create_product'),
 ]

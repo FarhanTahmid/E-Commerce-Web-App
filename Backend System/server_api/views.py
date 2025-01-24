@@ -742,4 +742,107 @@ class DeleteProductFlavour(APIView):
         
 #product
 class FetchProduct(APIView):
-    pass
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+
+            product_pk = self.request.data.get('product_pk',None)
+            product_name = self.request.data.get('product_name',None)
+            product_brand_pk = self.request.data.get('product_brand_pk',None)
+            product_category_pk_list = self.request.data.get('product_category_pk_list',None)
+            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
+
+            if product_pk:
+                product,message = ManageProducts.fetch_product(product_pk=product_pk)
+                product_data = product_serializers.Product_Serializer(product,many=False)
+            elif product_name:
+                product,message = ManageProducts.fetch_product(product_name=product_name)
+                product_data = product_serializers.Product_Serializer(product,many=False)
+            elif product_brand_pk:
+                product,message = ManageProducts.fetch_product(product_brand_pk=product_brand_pk)
+                product_data = product_serializers.Product_Serializer(product,many=False)
+            elif product_category_pk_list:
+                product,message = ManageProducts.fetch_product(product_category_pk_list=product_category_pk_list)
+                product_data = product_serializers.Product_Serializer(product,many=True)
+            elif product_sub_category_pk_list:
+                product,message = ManageProducts.fetch_product(product_sub_category_pk_list=product_sub_category_pk_list)
+                product_data = product_serializers.Product_Serializer(product,many=True)
+            else:
+                product,message = ManageProducts.fetch_product()
+                product_data = product_serializers.Product_Serializer(product,many=True)
+            
+            if product:
+                return Response({
+                    'message':message,
+                    'product_data':product_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting product flavour."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class CreateProduct(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,format=None):
+        try:
+
+            product_name = self.request.data.get('product_name',None)
+            product_category_pk_list = self.request.data.get('product_category_pk_list',None)
+            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
+            product_description = self.request.data.get('product_description',None)
+            product_summary = self.request.data.get('product_summary',None)
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
+
+            #can none
+            product_brand_pk = self.request.data.get('product_brand_pk',None)
+            product_ingredients = self.request.data.get('product_ingredients',None)
+            product_usage_direction = self.request.data.get('product_usage_direction',None)
+
+            missing_fields = []
+            if not product_name:
+                missing_fields.append("Product Name")
+            if not product_category_pk_list:
+                missing_fields.append("Product Categories")
+            if not product_sub_category_pk_list:
+                missing_fields.append("Product Sub Categories")
+            if not product_description:
+                missing_fields.append("Product Description")
+            if not product_summary:
+                missing_fields.append("Product Summary")
+            if not product_flavours_pk_list:
+                missing_fields.append("Product Flavours")
+            
+            if missing_fields:
+                return Response({
+                    'error':f"The following fields are required: {', '.join(missing_fields)}"
+                })
+            
+            product_created,message = ManageProducts.create_product(request,product_name,product_category_pk_list,product_sub_category_pk_list,
+                                                                    product_description,product_summary,product_flavours_pk_list,product_brand_pk,
+                                                                    product_ingredients,product_usage_direction)
+            if product_created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting product flavour."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        

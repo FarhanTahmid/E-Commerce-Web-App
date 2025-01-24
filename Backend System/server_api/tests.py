@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 from products.models import *
 from products import product_serializers
 from business_admin.models import *
+from django.db.models import Q
 
 # Create your tests here.
 class ProductCategoryAPITestCases(APITestCase):
@@ -31,6 +32,21 @@ class ProductCategoryAPITestCases(APITestCase):
         
         self.product_flavour1 = Product_Flavours.objects.create(product_flavour_name="Vanilla", created_at=self.now)
         self.product_flavour2 = Product_Flavours.objects.create(product_flavour_name="Strawberry", created_at=self.now)
+
+        self.product1 = Product.objects.create(product_name="Dove Cleanser", product_brand=self.product_brand2,
+                                            product_description="A cleanser by Dove", product_summary="Gentle cleanser",
+                                            product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=self.now)
+        self.product1.product_category.set([self.product_category2])
+        self.product1.product_sub_category.set([self.product_sub_category2])
+        self.product1.product_flavours.set([self.product_flavour2])
+
+        self.product2 = Product.objects.create(product_name="Dove85 Cleanser", product_brand=self.product_brand1,
+                                            product_description="A cleanser by Dove", product_summary="Gentle cleanser",
+                                            product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=self.now)
+        self.product2.product_category.set([self.product_category1])
+        self.product2.product_sub_category.set([self.product_sub_category1])
+        self.product2.product_flavours.set([self.product_flavour1])
+
 
     def test_fetch_all_product_categories(self):
         """
@@ -378,4 +394,51 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(response.data['message'],"Product flavour deleted successfully!")
 
     #product tests
-            
+    def test_fetch_product(self):
+        """
+        test for fetching product
+        """        
+        #all
+        response = self.client.get(f'/server_api/product/fetch_product/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        existing_data = Product.objects.all()
+        existing_data = product_serializers.Product_Serializer(existing_data,many=True).data
+        returned_data = response.data['product_data']
+        self.assertEqual(existing_data,returned_data)
+        #using category list
+        response = self.client.get(f'/server_api/product/fetch_product/?product_category_pk_list={[self.product_category1.pk,self.product_category2.pk]}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        existing_data = Product.objects.filter(Q(product_category = self.product_category1) | Q(product_category = self.product_category2))
+        existing_data = product_serializers.Product_Serializer(existing_data,many=True).data
+        returned_data = response.data['product_data']
+        self.assertEqual(existing_data,returned_data)
+
+        #using sub category list
+        response = self.client.get(f'/server_api/product/fetch_product/?product_sub_category_pk_list={[self.product_sub_category1.pk,self.product_sub_category2.pk]}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        existing_data = Product.objects.filter(Q(product_sub_category = self.product_sub_category1.pk) | Q(product_sub_category = self.product_sub_category2))
+        existing_data = product_serializers.Product_Serializer(existing_data,many=True).data
+        returned_data = response.data['product_data']
+        self.assertEqual(existing_data,returned_data)
+
+    def test_create_product(self):
+        """
+        Test for creating product
+        """
+        
+        data = {'product_name':"ooo",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
+                'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
+                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                }
+        response = self.client.post(f'/server_api/product/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Product, ooo created!")
+        
+        #duplicate
+        data = {'product_name':"Dove Cleanser",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
+                'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
+                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                }
+        response = self.client.post(f'/server_api/product/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Same product already exists!")

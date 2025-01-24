@@ -22,3 +22,7 @@ class Product_Flavour_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Product_Flavours
         fields = '__all__'
+class Product_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields= '__all__'
