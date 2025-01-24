@@ -489,3 +489,37 @@ class ProductCategoryAPITestCases(APITestCase):
         response = self.client.get(f'/server_api/product/product-sku/fetch-product-sku/')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"No parameter passed! Must pass a single parameter")
+
+    def test_create_product_sku(self):
+        """
+        Test product sku creation
+        """
+        data = {'product_pk':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL'}
+        response = self.client.post(f'/server_api/product/product-sku/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Product sku created successfully")
+
+    def test_update_product_sku(self):
+        """
+        Test for updating product sku
+        """
+
+        data = {'product_id':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL','product_color':'navy yellow'}
+        response = self.client.put(f'/server_api/product/product-sku/update/{self.product_sku2.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product sku updated with new sku id")
+        
+    def test_delete_product_sku(self):
+        """
+        Test for deleting product sku
+        """
+        response = self.client.delete(f'/server_api/product/product-sku/delete/{self.product_sku2.pk}/')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Product sku successfully deleted!")
+
+        #delete again
+        # response = self.client.delete(f'/server_api/product/product-sku/delete/{self.product_sku2.pk}/')
+        # self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        # self.assertEqual(response.data['error'],"An unexpected error occurred while deleting product sku! Please try again later.")
+        
+

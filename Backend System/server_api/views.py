@@ -824,7 +824,7 @@ class CreateProduct(APIView):
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
-                })
+                },status=status.HTTP_400_BAD_REQUEST)
             
             product_created,message = ManageProducts.create_product(request,product_name,product_category_pk_list,product_sub_category_pk_list,
                                                                     product_description,product_summary,product_flavours_pk_list,product_brand_pk,
@@ -883,7 +883,7 @@ class UpdateProduct(APIView):
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
-                })
+                },status=status.HTTP_400_BAD_REQUEST)
             
             product_update,message = ManageProducts.update_product(request,product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,
                                                                    product_description,product_summary,product_flavours_pk_list,product_brand_pk,
@@ -973,3 +973,117 @@ class FetchProductSKU(APIView):
                 "error": str(e),
                 "message": "An error occurred while fetching product sku."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CreateProductSKU(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,format=None):
+
+        try:
+            product_pk = self.request.data.get('product_pk',None)
+            product_price = self.request.data.get('product_price',None)
+            product_stock = self.request.data.get('product_stock',None)
+
+            #can none
+            product_color = self.request.data.get('product_color',None)
+            product_size = self.request.data.get('product_size',None)
+
+            missing_fields = []
+            if not product_pk:
+                missing_fields.append("Product")
+            if not product_price:
+                missing_fields.append("Price")
+            if not product_stock:
+                missing_fields.append("Product stock")
+            if missing_fields:
+                return Response({
+                    'error':f"The following fields are required: {', '.join(missing_fields)}"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+            product_sku_created,message = ManageProducts.create_product_sku(request,product_pk,product_price,product_stock,product_color
+                                                                            ,product_size)
+            if product_sku_created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while creating product sku."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class UpdateProductSKU(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,product_sku_pk,format=None):
+        try:
+
+            product_sku_pk=product_sku_pk
+            product_id = self.request.data.get('product_id',None)
+            product_price = self.request.data.get('product_price',None)
+            product_stock = self.request.data.get('product_stock',None)
+
+            #can none
+            product_color = self.request.data.get('product_color',None)
+            product_size = self.request.data.get('product_size',None)
+
+            missing_fields = []
+            if not product_id:
+                missing_fields.append("Product")
+            if not product_price:
+                missing_fields.append("Price")
+            if not product_stock:
+                missing_fields.append("Product stock")
+            if missing_fields:
+                return Response({
+                    'error':f"The following fields are required: {', '.join(missing_fields)}"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+            product_sku_update, message = ManageProducts.update_product_sku(request,product_sku_pk,product_id,product_price,
+                                                                            product_stock,product_color,product_size)
+            if product_sku_update:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product sku."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class DeleteProductSKU(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,product_sku_pk,format=None):
+        try:
+            product_sku_pk = product_sku_pk
+            deleted,message = ManageProducts.delete_product_sku(request,product_sku_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+             
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting product sku."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+

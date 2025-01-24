@@ -44,6 +44,8 @@ urlpatterns = [                                                                 
 
     #product sku
     path('product/product-sku/fetch-product-sku/',views.FetchProductSKU.as_view(),name='product_sku_fetch'),#MUST pass parameter either /?pk= OR product_id= OR  product_name= OR product_sku =
-    
+    path('product/product-sku/create/',views.CreateProductSKU.as_view(),name='product_sku_create'),
+    path('product/product-sku/update/<int:product_sku_pk>/',views.UpdateProductSKU.as_view(),name='update_product_sku'),
+    path('product/product-sku/delete/<int:product_sku_pk>/',views.DeleteProductSKU.as_view(),name='delete_product_sku'),
 
 ]
