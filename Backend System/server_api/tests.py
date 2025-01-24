@@ -47,6 +47,9 @@ class ProductCategoryAPITestCases(APITestCase):
         self.product2.product_sub_category.set([self.product_sub_category1])
         self.product2.product_flavours.set([self.product_flavour1])
 
+        self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=self.now)
+        self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=self.now)
+
 
     def test_fetch_all_product_categories(self):
         """
@@ -454,3 +457,35 @@ class ProductCategoryAPITestCases(APITestCase):
         response = self.client.put(f'/server_api/product/update/{self.product1.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product updated successfully!")
+
+        #duplicate
+        data = {'product_pk':self.product1.pk,'product_name':"Dove85 Cleanser",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
+                'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
+                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                }
+        response = self.client.put(f'/server_api/product/update/{self.product1.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Same product name already exists!")
+
+    def test_delete_product(self):
+        """
+        Test delete product
+        """
+        response = self.client.delete(f'/server_api/product/delete/{self.product1.pk}/')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Product deleted successfully")
+
+    #prodcut sky
+    def test_fetch_product_sku(self):
+        """
+        Test fetch product sku fetch
+        """
+        #with pk
+        response = self.client.get(f'/server_api/product/product-sku/fetch-product-sku/?pk={self.product_sku1.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Fetched successfully")
+
+        #without
+        response = self.client.get(f'/server_api/product/product-sku/fetch-product-sku/')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"No parameter passed! Must pass a single parameter")

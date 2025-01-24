@@ -894,7 +894,7 @@ class UpdateProduct(APIView):
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
-                    'message':message
+                    'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
@@ -902,4 +902,74 @@ class UpdateProduct(APIView):
                 "success": False,
                 "error": str(e),
                 "message": "An error occurred while updating product."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class DeleteProduct(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,product_pk,format=None):
+
+        try:
+            product_pk = product_pk
+            deleted ,message = ManageProducts.delete_product(request,product_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting product."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#product sku
+class FetchProductSKU(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+
+            pk = self.request.query_params.get('pk',None)
+            product_id = self.request.query_params.get('product_id',None)
+            product_name = self.request.query_params.get('product_name',None)
+            product_sku = self.request.query_params.get('product_sku',None)
+
+            if pk:
+                product_sku_fetch,message = ManageProducts.fetch_product_sku(pk=pk)
+                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
+            elif product_id:
+                product_sku_fetch,message = ManageProducts.fetch_product_sku(product_id=product_id)
+                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
+            elif product_name:
+                product_sku_fetch,message = ManageProducts.fetch_product_sku(product_name=product_name)
+                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
+            elif product_sku:
+                product_sku_fetch,message = ManageProducts.fetch_product_sku(product_sku=product_sku)
+                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
+            else:
+                return Response({
+                    'error': "No parameter passed! Must pass a single parameter"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            if product_sku_fetch:
+                return Response({
+                    'message':message,
+                    'product_sku_fetch':product_sku_fetch_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while fetching product sku."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
