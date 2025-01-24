@@ -2,9 +2,9 @@ from django.test import TestCase,RequestFactory
 from django.utils import timezone
 from products.models import *
 from products.product_management import ManageProducts
-from unittest import mock
 from django.db import *
 from system.models import *
+from django.core.files.uploadedfile import SimpleUploadedFile
 from business_admin.models import *
 # Create your tests here.
 
@@ -83,6 +83,9 @@ class TestManageProducts(TestCase):
         #creating product sku
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
+
+        #image
+        self.image1 = SimpleUploadedFile("test_image1.jpg", b"file_content", content_type="image/jpeg")
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
@@ -515,6 +518,19 @@ class TestManageProducts(TestCase):
         success, message = ManageProducts.delete_product_sku(request,product_sku_pk=self.product_sku1.pk)
         self.assertTrue(success,"Product sku should be deleted successfully!")
         self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
+
+    #test product image
+    # def test_create_product_image(self):
+    #     """
+    #     Test create product image
+    #     """
+    #     request = self.factory.post('/product/product_image/create/')
+    #     #request.user = self._create_mock_dev_user()
+    #     request.user = self._create_mock_businessadmin_user()
+    #     success, message = ManageProducts.create_product_image(request,self.product1.pk,self.image1,color="aqua")
+    #     self.assertEqual(success,"Product image should be created successsfully")
+    #     self.assertEqual(message,"Product image created successfully","Success message is incorrect")
+
 
         
    

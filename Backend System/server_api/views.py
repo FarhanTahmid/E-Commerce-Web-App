@@ -54,6 +54,14 @@ class SignupBusinessAdminUser(APIView):
             admin_contact_no = self.request.data.get('admin_contact_no',None)
             admin_email = self.request.data.get('admin_email',None)
             admin_avatar = self.request.data.get('admin_avatar', None)
+            
+            if ' ' in admin_user_name:
+                return Response(
+                    {
+                        "error": "Admin user name should not contain spaces."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             missing_fields = []
             if not admin_full_name:
@@ -169,6 +177,54 @@ class LogOutBusinessAdminUser(APIView):
             "redirect_url": "/server_api/business_admin/login/"
         }, status=status.HTTP_200_OK)
 
+class UpdateBusinessAdminUser(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,admin_user_name,format=None):
+
+        try:
+            admin_user_name = admin_user_name
+            admin_full_name = self.request.data.get('admin_full_name',None)
+            admin_position_pk = self.request.data.get('admin_position_pk',None)
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+
+            #can none
+            admin_contact_no = self.request.data.get('admin_contact_no',None)
+            admin_email = self.request.data.get('admin_email',None)
+            admin_avatar = self.request.data.get('admin_avatar',None)
+            old_password = self.request.data.get('old_password',None)
+            password = self.request.data.get('password',None)
+
+            missing_fields = []
+            if not admin_full_name:
+                missing_fields.append("Admin full name")
+            if not admin_position_pk:
+                missing_fields.append("Admin position")
+            if missing_fields:
+                return Response(
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+                                                                                admin_contact_no,admin_email,admin_avatar,old_password,password,admin_user_name)
+            if admin_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating business admin user"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 #product categories
 class FetchProductCategoryView(APIView):
 

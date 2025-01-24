@@ -583,6 +583,7 @@ class AdminManagement:
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             #checking conditions to update as necessarily
+            print(business_admin_user.admin_unique_id)
             if password:
                 user = business_admin_user.user
                 if user.check_password(old_password):
@@ -614,6 +615,7 @@ class AdminManagement:
                     business_admin_user.admin_avatar.delete()
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
+            print(business_admin_user.admin_unique_id)
             updated,message = SystemLogs.updated_by(request,business_admin_user)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
             return True, "Business Admin successfully updated"

@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase
+from django.test import RequestFactory
 from rest_framework import status
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -13,6 +14,7 @@ class ProductCategoryAPITestCases(APITestCase):
     
     def setUp(self):
         self.now = timezone.now()
+        self.factory = RequestFactory()
         self.user = User.objects.create_user(username='testuser', password='password')
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
@@ -49,6 +51,11 @@ class ProductCategoryAPITestCases(APITestCase):
 
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=self.now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=self.now)
+
+
+        self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create(username='sami2186', is_superuser=False),
+                                                               admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1
+                                                               )
 
 
     def test_fetch_all_product_categories(self):
@@ -271,6 +278,16 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn('detail', response.data) 
         self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
+
+    def test_business_admin_update(self):
+        """
+        Test for updating business admin
+        """
+
+        data= {'admin_full_name':"TrishaHaque Samuel",'admin_position_pk':self.adminposition1.pk}
+        response = self.client.put(f'/server_api/business-admin/update/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Business Admin successfully updated")
 
     #product brands
     def test_fetch_product_brand(self):
@@ -521,5 +538,5 @@ class ProductCategoryAPITestCases(APITestCase):
         # response = self.client.delete(f'/server_api/product/product-sku/delete/{self.product_sku2.pk}/')
         # self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         # self.assertEqual(response.data['error'],"An unexpected error occurred while deleting product sku! Please try again later.")
-        
+    
 

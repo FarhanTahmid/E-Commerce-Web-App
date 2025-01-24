@@ -1882,3 +1882,39 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product sku! Please try again later.")
+    
+    #product images
+    def create_product_image(request,product_id,product_image,color=None,size=None):
+
+        try:
+            #getting the product
+            try:
+                product,message = ManageProducts.fetch_product(product_pk=product_id)
+                print("herere2")
+                product_image_created = Product_Images.objects.create(product_id=product,product_image = product_image)
+                if color:
+                    product_image_created.color = color
+                if size:
+                    product_image_created.size = size
+                product_image_created.save()
+                updated, message = SystemLogs.updated_by(request,product_image_created)
+                activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
+                return True, "Product image created successfully"
+            except:
+                return False, "No product found"
+            
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating product image! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating product image! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating product image! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating product image! Please try again later.")
