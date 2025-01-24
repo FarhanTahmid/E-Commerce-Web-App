@@ -785,7 +785,7 @@ class FetchProduct(APIView):
             return Response({
                 "success": False,
                 "error": str(e),
-                "message": "An error occurred while deleting product flavour."
+                "message": "An error occurred while fetching product."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class CreateProduct(APIView):
@@ -843,6 +843,63 @@ class CreateProduct(APIView):
             return Response({
                 "success": False,
                 "error": str(e),
-                "message": "An error occurred while deleting product flavour."
+                "message": "An error occurred while creating product."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+class UpdateProduct(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,product_pk,format=None):
+    
+        try:
+            product_pk = product_pk
+            product_name = self.request.data.get('product_name',None)
+            product_category_pk_list = self.request.data.get('product_category_pk_list',None)
+            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
+            product_description = self.request.data.get('product_description',None)
+            product_summary = self.request.data.get('product_summary',None)
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
+
+            #can none
+            product_brand_pk = self.request.data.get('product_brand_pk',None)
+            product_ingredients = self.request.data.get('product_ingredients',None)
+            product_usage_direction = self.request.data.get('product_usage_direction',None)
+
+            missing_fields = []
+            if not product_name:
+                missing_fields.append("Product Name")
+            if not product_category_pk_list:
+                missing_fields.append("Product Categories")
+            if not product_sub_category_pk_list:
+                missing_fields.append("Product Sub Categories")
+            if not product_description:
+                missing_fields.append("Product Description")
+            if not product_summary:
+                missing_fields.append("Product Summary")
+            if not product_flavours_pk_list:
+                missing_fields.append("Product Flavours")
+            
+            if missing_fields:
+                return Response({
+                    'error':f"The following fields are required: {', '.join(missing_fields)}"
+                })
+            
+            product_update,message = ManageProducts.update_product(request,product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,
+                                                                   product_description,product_summary,product_flavours_pk_list,product_brand_pk,
+                                                                   product_ingredients,product_usage_direction)
+            if product_update:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

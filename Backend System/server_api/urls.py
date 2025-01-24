@@ -27,16 +27,17 @@ urlpatterns = [                                                                 
     #product brand
     path('product/product-brand/fetch-product-brands/',views.FetchProductBrands.as_view(),name='fetch_product_brands'),#pass parameters /?pk= OR /?brand_name= OR no parameter to fetch all
     path('product/product-brand/create/',views.CreateProductBrands.as_view(),name='create_product_brand'),
-    path('product/product-brand/update/<int:product_brand_pk>',views.UpdateProductBrands.as_view(),name='update_product_brand'),
-    path('product/product-brand/delete/<int:product_brand_pk>',views.DeleteProductBrands.as_view(),name='delete_product_brand'),
+    path('product/product-brand/update/<int:product_brand_pk>/',views.UpdateProductBrands.as_view(),name='update_product_brand'),
+    path('product/product-brand/delete/<int:product_brand_pk>/',views.DeleteProductBrands.as_view(),name='delete_product_brand'),
 
     #product flavours
     path('product/product-flavour/fetch-product-flavour/',views.FetchProductFlavour.as_view(),name='fetch_product_flavour'),#pass parameters /?pk= OR product_flavour_name= OR no paramter to fetch all
     path('product/product-flavour/create/',views.CreateProductFlavour.as_view(),name='create_product_flavour'),
-    path('product/product-flavour/update/<int:product_flavour_pk>',views.UpdateProductFlavour.as_view(),name='update_product_flavour'),
-    path('product/product-flavour/delete/<int:product_flavour_pk>',views.DeleteProductFlavour.as_view(),name='delete_product_flavour'),
+    path('product/product-flavour/update/<int:product_flavour_pk>/',views.UpdateProductFlavour.as_view(),name='update_product_flavour'),
+    path('product/product-flavour/delete/<int:product_flavour_pk>/',views.DeleteProductFlavour.as_view(),name='delete_product_flavour'),
 
     #product
     path('product/fetch-product/',views.FetchProduct.as_view(),name='fetch_product'),#pass parameters /?pk= OR product_name= OR product_brand_pk= OR product_category_pk_list OR product_sub_category_pk_list Or no paramter to fetch all
     path('product/create/',views.CreateProduct.as_view(),name='create_product'),
+    path('product/update/<int:product_pk>/',views.UpdateProduct.as_view(),name='update_product'),
 ]

@@ -57,6 +57,7 @@ class ProductCategoryListView(APIView):
         }
     """
     permission_classes = [HasAPIKey]
+    authentication_classes = [HasAPIKey]
 
     @method_decorator(ratelimit(key='ip', rate='10/m', method='GET', block=True))
     def get(self, request):
