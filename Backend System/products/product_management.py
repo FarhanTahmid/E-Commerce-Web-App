@@ -1365,7 +1365,7 @@ class ManageProducts:
                 if product.product_name.lower() == product_name.lower():
                     return False, "Same product already exists!"
             except:
-                print("creating product as no matchin found")
+                print("creating product as no matching found")
                 product = Product.objects.create(product_name=product_name,product_description=product_description,
                                     product_summary=product_summary)
                 product.save()

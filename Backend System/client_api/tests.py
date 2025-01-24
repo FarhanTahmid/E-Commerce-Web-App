@@ -72,7 +72,7 @@ class ProductCategoryListTests(APITestCase):
         # Mock the function to raise an exception
         from unittest.mock import patch
 
-        with patch("products.product_management.ManageProducts.fetch_all_product_categories", side_effect=Exception("Unexpected error")):
+        with patch("products.product_management.ManageProducts.fetch_product_categories", side_effect=Exception("Unexpected error")):
             response = self.client.get("/client_api/product-categories/", **self.headers)
             self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
             self.assertEqual(response.data["success"], False)

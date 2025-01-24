@@ -53,7 +53,7 @@ class ProductCategoryAPITestCases(APITestCase):
         Test
         for fetching product categories
         """
-        response = self.client.get('/server_api/product/categories/fetch_all/')
+        response = self.client.get('/server_api/product/categories/fetch-all/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEquals(len(response.data['product_category']),2)
         expected_data = Product_Category.objects.all()
@@ -62,7 +62,7 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(returned_data, expected_data_serialized)
 
         #single
-        response = self.client.get(f'/server_api/product/categories/fetch_all/?{self.product_category1.pk}')
+        response = self.client.get(f'/server_api/product/categories/fetch-all/?{self.product_category1.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         expected_data = Product_Category.objects.get(pk=self.product_category1.pk)
         returned_data = response.data['product_category'][0]
@@ -133,7 +133,7 @@ class ProductCategoryAPITestCases(APITestCase):
         for fetching product sub categories
         """
 
-        response = self.client.get(f'/server_api/product/sub_categories/fetch_all_product_sub_categories_for_a_category/{self.product_category2.pk}/')
+        response = self.client.get(f'/server_api/product/sub-categories/fetch-all-product-sub-categories-for-a-category/{self.product_category2.pk}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEquals(len(response.data['product_sub_category']),2)
         expected_data = Product_Sub_Category.objects.filter(category_id = self.product_category2)
@@ -147,12 +147,12 @@ class ProductCategoryAPITestCases(APITestCase):
         for creating product sub categories
         """
         data = {"sub_category_name": "Foundation", "description": "Foundation Description"}
-        response = self.client.post(f'/server_api/product/sub_categories/create/{self.product_category2.pk}/',data,format='json')
+        response = self.client.post(f'/server_api/product/sub-categories/create/{self.product_category2.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"New Product sub-category, Foundation successfully added!","Success message is incorrect")
         
         #if duplicate
-        response = self.client.post(f'/server_api/product/sub_categories/create/{self.product_category2.pk}/',data,format='json')
+        response = self.client.post(f'/server_api/product/sub-categories/create/{self.product_category2.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Same type exists in Database!","Success message is incorrect")
    
@@ -165,7 +165,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
 
         data = {"category_pk_list":[self.product_category1.pk],"sub_category_name": "Moisturizers lop", "description": "Moisturizers Description"}
-        response = self.client.put(f'/server_api/product/sub_categories/update/{self.product_sub_category1.pk}/',data,format='json')
+        response = self.client.put(f'/server_api/product/sub-categories/update/{self.product_sub_category1.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product Sub Category updated successfully!","Success message is incorrect")
 
@@ -175,12 +175,12 @@ class ProductCategoryAPITestCases(APITestCase):
           Test
         for deleting product sub categories
         """
-        response = self.client.delete(f'/server_api/product/sub_categories/delete/{self.product_sub_category1.pk}/')
+        response = self.client.delete(f'/server_api/product/sub-categories/delete/{self.product_sub_category1.pk}/')
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         self.assertEqual(response.data['message'],"Product Sub Category deleted successfully!","Success message is incorrect")
 
         #deleting again
-        response = self.client.delete(f'/server_api/product/sub_categories/delete/{self.product_sub_category1.pk}/')
+        response = self.client.delete(f'/server_api/product/sub-categories/delete/{self.product_sub_category1.pk}/')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Product Sub Category does not exist!","Success message is incorrect")
 
@@ -193,7 +193,7 @@ class ProductCategoryAPITestCases(APITestCase):
         data = {
             'username':self.user.username
         }
-        response = self.client.post(f'/server_api/business_admin/fetch_token/',data,format='json')
+        response = self.client.post(f'/server_api/business-admin/fetch-token/',data,format='json')
         self.assertEqual(response.data['message'],"Token fetched successfully")
         self.assertIn('token', response.data) 
 
@@ -210,7 +210,7 @@ class ProductCategoryAPITestCases(APITestCase):
             "admin_contact_no": "1234567890",
             "admin_email": "john.doe@example.com",
         }
-        response = self.client.post(f'/server_api/business_admin/signup/',data,format='json')
+        response = self.client.post(f'/server_api/business-admin/signup/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"Business Admin created successfully. Redirecting to dashboard...","Success messsage is incorrect")
         self.assertEqual(response.data['redirect_url'],"/dashboard","Success messsage is incorrect")
@@ -225,7 +225,7 @@ class ProductCategoryAPITestCases(APITestCase):
             "username":"testuser",
             "password":"password"
         }
-        response = self.client.post(f'/server_api/business_admin/login/',data,format='json')
+        response = self.client.post(f'/server_api/business-admin/login/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Logged In","Success message is incorrect")
 
@@ -234,7 +234,7 @@ class ProductCategoryAPITestCases(APITestCase):
             "username":"testuser2",
             "password":"password22"
         }
-        response = self.client.post(f'/server_api/business_admin/login/',data,format='json')
+        response = self.client.post(f'/server_api/business-admin/login/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data['error'],"Username or Password incorrect!","Success message is incorrect")
 
@@ -243,7 +243,7 @@ class ProductCategoryAPITestCases(APITestCase):
             "username":None,
             "password":None
         }
-        response = self.client.post(f'/server_api/business_admin/login/',data,format='json')
+        response = self.client.post(f'/server_api/business-admin/login/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Username or Password must be provided!","Success message is incorrect")
 
@@ -251,7 +251,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         Test that a user can successfully log out and is redirected to the login page.
         """
-        response = self.client.post(f'/server_api/business_admin/logout/')
+        response = self.client.post(f'/server_api/business-admin/logout/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('redirect_url', response.data) 
         self.assertEqual(response.data['redirect_url'], '/server_api/business_admin/login/') 
@@ -264,7 +264,7 @@ class ProductCategoryAPITestCases(APITestCase):
         Test that an unauthenticated user cannot access the logout endpoint.
         """
         self.client.credentials()  
-        response = self.client.post(f'/server_api/business_admin/logout/')
+        response = self.client.post(f'/server_api/business-admin/logout/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn('detail', response.data) 
         self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
@@ -275,7 +275,7 @@ class ProductCategoryAPITestCases(APITestCase):
         Test for creating product brand
         """
         #fetching all
-        response = self.client.get(f'/server_api/product/product_brand/fetch_product_brands/')
+        response = self.client.get(f'/server_api/product/product-brand/fetch-product-brands/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEquals(len(response.data['product_brands']),2)
         expected_data = Product_Brands.objects.all()
@@ -284,7 +284,7 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(returned_data, expected_data_serialized)
 
         #fetching single
-        response = self.client.get(f'/server_api/product/product_brand/fetch_product_brands/?pk={self.product_brand1.pk}')
+        response = self.client.get(f'/server_api/product/product-brand/fetch-product-brands/?pk={self.product_brand1.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         expected_data = Product_Brands.objects.get(pk=self.product_brand1.pk)
         returned_data = response.data['product_brands']
@@ -292,7 +292,7 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(returned_data, expected_data_serialized)
 
         #fetching using name
-        response = self.client.get(f'/server_api/product/product_brand/fetch_product_brands/?brand_name={self.product_brand1.brand_name}')
+        response = self.client.get(f'/server_api/product/product-brand/fetch-product-brands/?brand_name={self.product_brand1.brand_name}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         expected_data = Product_Brands.objects.get(pk=self.product_brand1.pk)
         returned_data = response.data['product_brands']
@@ -304,13 +304,13 @@ class ProductCategoryAPITestCases(APITestCase):
         Test for creating product brand
         """
         data = {'brand_name':"simu",'brand_established_year':2008,'is_own_brand':True}
-        response = self.client.post(f'/server_api/product/product_brand/create/',data,format='json')
+        response = self.client.post(f'/server_api/product/product-brand/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"Brand created")
 
         #duplicate
         data = {'brand_name':"Loreal",'brand_established_year':2008,'is_own_brand':True}
-        response = self.client.post(f'/server_api/product/product_brand/create/',data,format='json')
+        response = self.client.post(f'/server_api/product/product-brand/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Same brand exists in Database!")
 
@@ -319,13 +319,13 @@ class ProductCategoryAPITestCases(APITestCase):
         Test for updating product brand
         """
         data = {'brand_name':self.product_brand1.brand_name,'brand_established_year':2010}
-        response = self.client.put(f'/server_api/product/product_brand/update/{self.product_brand1.pk}',data,format='json')
+        response = self.client.put(f'/server_api/product/product-brand/update/{self.product_brand1.pk}',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"Brand updated")
 
         #same name
         data = {'brand_name':'Dove','brand_established_year':2010}
-        response = self.client.put(f'/server_api/product/product_brand/update/{self.product_brand1.pk}',data,format='json')
+        response = self.client.put(f'/server_api/product/product-brand/update/{self.product_brand1.pk}',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Same brand already exists!")
 
@@ -333,7 +333,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         Test for deleting product brand
         """
-        response = self.client.delete(f'/server_api/product/product_brand/delete/{self.product_brand1.pk}') 
+        response = self.client.delete(f'/server_api/product/product-brand/delete/{self.product_brand1.pk}') 
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         self.assertEqual(response.data['message'],"Product brand deleted successfully!")
 
@@ -343,7 +343,7 @@ class ProductCategoryAPITestCases(APITestCase):
         Test to fetch product flavours
         """
         #all fetch
-        response = self.client.get(f'/server_api/product/product_flavour/fetch_product_flavour/')
+        response = self.client.get(f'/server_api/product/product-flavour/fetch-product-flavour/')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(len(response.data['product_flavours_data']),2) 
         expected_data = Product_Flavours.objects.all()
@@ -352,7 +352,7 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(returned_data,expected_data)
 
         #pk
-        response = self.client.get(f'/server_api/product/product_flavour/fetch_product_flavour/?pk={self.product_flavour1.pk}')
+        response = self.client.get(f'/server_api/product/product-flavour/fetch-product-flavour/?pk={self.product_flavour1.pk}')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(len(response.data),2) 
         expected_data = Product_Flavours.objects.get(pk=self.product_flavour1.pk)
@@ -365,13 +365,13 @@ class ProductCategoryAPITestCases(APITestCase):
         Test for creating product flavour
         """
         data = {'product_flavour_name':"anana"}
-        response = self.client.post(f'/server_api/product/product_flavour/create/',data,format='json')
+        response = self.client.post(f'/server_api/product/product-flavour/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"New Product flavour, anana successfully added!")
 
         #duplicate
         data = {'product_flavour_name':self.product_flavour2.product_flavour_name}
-        response = self.client.post(f'/server_api/product/product_flavour/create/',data,format='json')
+        response = self.client.post(f'/server_api/product/product-flavour/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Same flavour exists in Database!")
 
@@ -381,7 +381,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
 
         data = {'product_flavour_pk':self.product_flavour1.pk,'product_flavour_name':"sami"}
-        response = self.client.put(f'/server_api/product/product_flavour/update/{self.product_flavour1.pk}',data,format='json')
+        response = self.client.put(f'/server_api/product/product-flavour/update/{self.product_flavour1.pk}',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product flavour updated successfully!")
 
@@ -389,7 +389,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         test for deleting product flavour
         """
-        response = self.client.delete(f'/server_api/product/product_flavour/delete/{self.product_flavour1.pk}')
+        response = self.client.delete(f'/server_api/product/product-flavour/delete/{self.product_flavour1.pk}')
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         self.assertEqual(response.data['message'],"Product flavour deleted successfully!")
 
@@ -399,14 +399,14 @@ class ProductCategoryAPITestCases(APITestCase):
         test for fetching product
         """        
         #all
-        response = self.client.get(f'/server_api/product/fetch_product/')
+        response = self.client.get(f'/server_api/product/fetch-product/')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         existing_data = Product.objects.all()
         existing_data = product_serializers.Product_Serializer(existing_data,many=True).data
         returned_data = response.data['product_data']
         self.assertEqual(existing_data,returned_data)
         #using category list
-        response = self.client.get(f'/server_api/product/fetch_product/?product_category_pk_list={[self.product_category1.pk,self.product_category2.pk]}')
+        response = self.client.get(f'/server_api/product/fetch-product/?product_category_pk_list={[self.product_category1.pk,self.product_category2.pk]}')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         existing_data = Product.objects.filter(Q(product_category = self.product_category1) | Q(product_category = self.product_category2))
         existing_data = product_serializers.Product_Serializer(existing_data,many=True).data
@@ -414,7 +414,7 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(existing_data,returned_data)
 
         #using sub category list
-        response = self.client.get(f'/server_api/product/fetch_product/?product_sub_category_pk_list={[self.product_sub_category1.pk,self.product_sub_category2.pk]}')
+        response = self.client.get(f'/server_api/product/fetch-product/?product_sub_category_pk_list={[self.product_sub_category1.pk,self.product_sub_category2.pk]}')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         existing_data = Product.objects.filter(Q(product_sub_category = self.product_sub_category1.pk) | Q(product_sub_category = self.product_sub_category2))
         existing_data = product_serializers.Product_Serializer(existing_data,many=True).data
