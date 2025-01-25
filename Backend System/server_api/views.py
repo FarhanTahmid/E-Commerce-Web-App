@@ -225,6 +225,75 @@ class UpdateBusinessAdminUser(APIView):
                 "error": str(e),
                 "message": "An error occurred while updating business admin user"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class UpdateBusinessAdminUserPassword(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,admin_user_name,format=None):
+        try:
+
+            admin_user_name = admin_user_name
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+            old_password = self.request.data.get('old_password',None)
+            new_password = self.request.data.get('new_password',None)
+            new_password_confirm = self.request.data.get('new_password_confirm',None)
+
+            if not new_password or not new_password_confirm:
+                return Response({
+                    'error':"Please provide new password"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if not old_password:
+                return Response({
+                    'error':"Please provide old password"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if new_password == new_password_confirm:
+                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
+
+                if password_update:
+                    return Response({
+                        'message':message
+                    },status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'error':message
+                    },status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({
+                    'error':"Password does not match"
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating business admin user password"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class DeleteBusinessAdminUser(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,admin_user_name,format=None):
+        try:
+            admin_user_name=admin_user_name
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+            deleted,message = AdminManagement.delete_business_admin_user(request,admin_unique_id)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting business admin user"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
 #product categories
 class FetchProductCategoryView(APIView):
 

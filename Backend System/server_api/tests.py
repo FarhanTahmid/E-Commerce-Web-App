@@ -53,7 +53,7 @@ class ProductCategoryAPITestCases(APITestCase):
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=self.now)
 
 
-        self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create(username='sami2186', is_superuser=False),
+        self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create_user(username='sami2186', password='password',is_superuser=False),
                                                                admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1
                                                                )
 
@@ -288,6 +288,31 @@ class ProductCategoryAPITestCases(APITestCase):
         response = self.client.put(f'/server_api/business-admin/update/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Business Admin successfully updated")
+
+    def test_update_business_admin_user_password(self):
+        """
+        Test for updating business admin user password
+        """
+
+        data = {'old_password':"password",'new_password':'new_password','new_password_confirm':'new_password'}
+        response = self.client.put(f'/server_api/business-admin/update-password/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Password updated successfully")
+
+        #missing data
+        data = {'old_password':"password",'new_password':'new_password','new_password_confirm':None}
+        response = self.client.put(f'/server_api/business-admin/update-password/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Please provide new password")
+
+    def test_delete_business_admin_user(self):
+        """
+        Test delete business admin user
+        """
+        response = self.client.delete(f'/server_api/business-admin/delete/{str(self.businessadmin1.admin_user_name)}/')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Admin deleted successfully")
+
 
     #product brands
     def test_fetch_product_brand(self):

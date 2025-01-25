@@ -11,6 +11,8 @@ urlpatterns = [                                                                 
     path('business-admin/update/<str:admin_user_name>/',views.UpdateBusinessAdminUser.as_view(),name='update_business_admin_user'),
     path('business-admin/login/',views.LoginInBusinessAdminUser.as_view(),name='login_business_admin_user'),
     path('business-admin/logout/',views.LogOutBusinessAdminUser.as_view(),name='logout_business_admin_user'),
+    path('business-admin/update-password/<str:admin_user_name>/',views.UpdateBusinessAdminUserPassword.as_view(),name='update_business_admin_user_password'),
+    path('business-admin/delete/<str:admin_user_name>/',views.DeleteBusinessAdminUser.as_view(),name='delete_business_admin_user'),
 
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
