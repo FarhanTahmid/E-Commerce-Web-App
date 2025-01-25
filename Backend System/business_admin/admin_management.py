@@ -583,7 +583,6 @@ class AdminManagement:
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             #checking conditions to update as necessarily
-            
             if password:
                 user = business_admin_user.user
                 if user.check_password(old_password):

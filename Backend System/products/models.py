@@ -147,7 +147,7 @@ class Product_SKU(models.Model):
         product_name = self.product_id.product_name.replace(' ', '_')
         base_sku = f"{product_name.upper()}_{self.product_color.upper() if self.product_color else 'no_color'.upper()}_{self.product_size.upper() if self.product_size else 'no_size'.upper()}_{sequential_number}"
         unique_hash = hashlib.md5(base_sku.encode()).hexdigest()[:6]
-        self.product_sku = f"{base_sku}_{unique_hash}"
+        self.product_sku = f"{base_sku}_{unique_hash.upper()}"
 
     def save(self, *args, **kwargs):
         #if newly created only then

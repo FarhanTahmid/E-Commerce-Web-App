@@ -1631,10 +1631,12 @@ class ManageProducts:
                 return Product_SKU.objects.get(pk=pk), "Fetched successfully"
             elif product_id:
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                return Product_SKU.objects.filter(product_id=product), "Fetched successfully"
+                product_skus = Product_SKU.objects.filter(product_id=product)
+                return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
             elif product_name:
                 product,message = ManageProducts.fetch_product(product_name=product_name)
-                return Product_SKU.objects.filter(product_id=product), "Fetched successfully"
+                product_skus = Product_SKU.objects.filter(product_id=product)
+                return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
             elif product_sku:
                 try:
                     return Product_SKU.objects.get(product_sku=product_sku.upper()), "Fetched successfully"
@@ -1884,13 +1886,41 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product sku! Please try again later.")
     
     #product images
+    def fetch_product_image(product_pk=None,product_image_pk=None):
+
+        try:
+            if product_pk:
+                product,message = ManageProducts.fetch_product(product_pk=product_pk)
+                product_images = Product_Images.objects.filter(product_id=product)
+                return product_images, "Product images fetched successfully" if len(product_images)>0 else "No images found for this product"
+            elif product_image_pk:
+                product_image = Product_Images.objects.get(pk=product_image_pk)
+                return product_image, "Product images fetched successfully"
+            else:
+                product_images = Product_Images.objects.all()
+                return product_images, "All product images fetched successfully" if len(product_images)>0 else "No images found"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching product image! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching product image! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching product image! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching product image! Please try again later.")
+    
     def create_product_image(request,product_id,product_image,color=None,size=None):
 
         try:
             #getting the product
             try:
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                print("herere2")
                 product_image_created = Product_Images.objects.create(product_id=product,product_image = product_image)
                 if color:
                     product_image_created.color = color
@@ -1918,3 +1948,68 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product image! Please try again later.")
+        
+    def update_product_image(request,product_image_pk,product_image=None,color=None,size=None):
+
+        try:
+            #getting the product images
+            product_image ,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
+            if product_image and product_image.product_image != product_image:
+                if product_image.product_image:
+                    path = settings.MEDIA_ROOT+str(product_image.product_image)
+                    if os.path.exists(path):
+                        os.remove(path)
+                    product_image.product_image.delete()
+                product_image.product_image = product_image
+            if color and product_image.color.lower() != color.lower():
+                product_image.color = color
+            if size and product_image.size.lower() != size.lower():
+                product_image.size = size
+            
+            product_image.save()
+            return True,"Product image updated successfully"
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product image! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product image! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product image! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product image! Please try again later.")
+    
+    def delete_product_image(request,product_image_pk_list):
+        
+        try:
+            #getting the product image
+            for i in product_image_pk_list:
+                product_image,message = ManageProducts.fetch_product_image(request,product_image_pk=i)
+                if product_image.product_image:
+                    path = settings.MEDIA_ROOT+str(product_image.product_image)
+                    if os.path.exists(path):
+                        os.remove(path)
+                    product_image.product_image.delete()
+                product_image.delete()
+            return True,"Product image deleted successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting product image! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting product image! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting product image! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product image! Please try again later.")

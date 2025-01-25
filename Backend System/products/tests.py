@@ -464,7 +464,7 @@ class TestManageProducts(TestCase):
     #test product sku
     def test_fetch_product_sku(self):
         """
-        Test for fetching product sky
+        Test for fetching product sku
         """
         #fetch using pk
         success, message = ManageProducts.fetch_product_sku(pk=self.product_sku2.pk)
@@ -482,9 +482,16 @@ class TestManageProducts(TestCase):
         self.assertEqual(message,"Fetched successfully","Success message is incorrect")
 
         #fetch using product sku if not found
+        print(self.product_sku2.product_sku)
         success, message = ManageProducts.fetch_product_sku(product_sku="sAmi5")
         self.assertFalse(success,"Product sku should not be fetched successfully!")
         self.assertEqual(message,"No sku with this code!","Error is incorrect")
+
+        #fetch using product sku
+        #LOREAL_MOISTURIZER_SILVER_NO_SIZE_1_6D9F46
+        success, message = ManageProducts.fetch_product_sku(product_sku="LOREAL_MOISTURIZER_SILVER_NO_SIZE_1_6D9F46")
+        self.assertTrue(success,"Product sku should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
 
     def test_create_product_sku(self):
         """
