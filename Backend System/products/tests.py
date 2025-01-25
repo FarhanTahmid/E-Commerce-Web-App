@@ -6,6 +6,9 @@ from django.db import *
 from system.models import *
 from django.core.files.uploadedfile import SimpleUploadedFile
 from business_admin.models import *
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
 # Create your tests here.
 
 class TestManageProducts(TestCase):
@@ -36,6 +39,7 @@ class TestManageProducts(TestCase):
         self.sub_category5.category_id.set([self.category_makeup])
 
         #creating product brand
+        self.brand_logo = TestManageProducts.generate_test_image('white',1)
         self.brand1 = Product_Brands.objects.create(brand_name="Loreal", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 1909,is_own_brand=False,created_at=now)
         self.brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",
@@ -84,8 +88,25 @@ class TestManageProducts(TestCase):
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
 
-        #image
-        self.image1 = SimpleUploadedFile("test_image1.jpg", b"file_content", content_type="image/jpeg")
+    @staticmethod
+    def generate_test_image(color,size):
+        """Generate an in-memory image file."""
+        image = Image.new('RGB', (size * 100, size * 100), color=color)
+        
+        # Save it to a BytesIO buffer
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+        
+        # Return an InMemoryUploadedFile, which is what Django expects for file uploads
+        return InMemoryUploadedFile(
+            buffer,  # File
+            None,  # Field name
+            f'{color}_{size}.jpg',  # Filename
+            'image/jpeg',  # Content type
+            buffer.getbuffer().nbytes,  # File size
+            None  # Content type extra
+        )
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
@@ -214,7 +235,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_brand/create/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.create_product_brand(request,"Lux", 1889,True, "USA", "Lux Paris")
+        success, message = ManageProducts.create_product_brand(request,"Lux", 1889,True, "USA", "Lux Paris",self.brand_logo)
         self.assertTrue(success, "Product brand should be created successfully.")
         self.assertEqual(message, "New Product brand, Lux successfully added!", "Success message is incorrect.")
     
@@ -261,10 +282,13 @@ class TestManageProducts(TestCase):
         """
         Test updating a product brand successfully.
         """
+        new_logo = TestManageProducts.generate_test_image('pink',1)
         request = self.factory.post('/product/product_brand/update/')
         #request.user = self._create_mock_dev_user()
+        self.brand1.brand_logo = TestManageProducts.generate_test_image('purple',3)
+        self.brand1.save()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.update_product_brand(request,self.brand1.pk, "Loreal Updated",2009,True, "India", "Loreal Paris Updated")
+        success, message = ManageProducts.update_product_brand(request,self.brand1.pk, "Loreal Updated",2009,False, "DDD", "Loreal Paris Updated")
         self.assertTrue(success, "Product brand should be updated successfully.")
         self.assertEqual(message, "Product brand, Loreal Updated updated successfully!", "Success message is incorrect.")
 
@@ -527,18 +551,50 @@ class TestManageProducts(TestCase):
         self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
 
     #test product image
-    # def test_create_product_image(self):
-    #     """
-    #     Test create product image
-    #     """
-    #     request = self.factory.post('/product/product_image/create/')
-    #     #request.user = self._create_mock_dev_user()
-    #     request.user = self._create_mock_businessadmin_user()
-    #     success, message = ManageProducts.create_product_image(request,self.product1.pk,self.image1,color="aqua")
-    #     self.assertEqual(success,"Product image should be created successsfully")
-    #     self.assertEqual(message,"Product image created successfully","Success message is incorrect")
+    def test_create_product_image(self):
+        """
+        Test create product image
+        """
+        #image
+        image1 = TestManageProducts.generate_test_image('red',1)
+        request = self.factory.post('/product/product_image/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.create_product_image(request,self.product1.pk,image1,color="aqua")
+        self.assertTrue(success,"Product image should be created successsfully")
+        self.assertEqual(message,"Product image created successfully","Success message is incorrect")
+
+    def test_update_product_image(self):
+        """
+        Test for updating product image
+        """
+        #product image
+        image = TestManageProducts.generate_test_image('yellow',1)
+        product_image = Product_Images.objects.create(product_id=self.product1,product_image=image)
+
+        request = self.factory.post('/product/product_image/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        new_image = TestManageProducts.generate_test_image('green',1)
+        success,message = ManageProducts.update_product_image(request,product_image.pk,new_image,'pink')
+        self.assertTrue(success,"Product image should be updated successsfully")
+        self.assertEqual(message,"Product image updated successfully")
+
+    def test_delete_product_image(self):
+        """
+        Test for deleting product image
+        """
+        image = TestManageProducts.generate_test_image('orange',1)
+        product_image = Product_Images.objects.create(product_id=self.product1,product_image=image)
+        request = self.factory.post('/product/product_image/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.delete_product_image(request,[product_image.pk])
+        self.assertTrue(success,"Product image should be deleted successsfully")
+        self.assertEqual(message,"Product image deleted successfully")
 
 
-        
+
+    
    
         

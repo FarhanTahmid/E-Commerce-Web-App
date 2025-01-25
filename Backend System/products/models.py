@@ -174,14 +174,14 @@ class Product_SKU(models.Model):
 
 
 def get_product_image_path(instance, filename):
-    return f'product_images/{instance.product_id}/{filename}'
+    return f'product_images/{instance.product_id.product_name}/{filename}'
 class Product_Images(models.Model):
     '''This table stores the pictures of the Product. Pictures are stored locally in the product_images/{product_pk}/ folder'''
 
     product_id=models.ForeignKey(Product,null=False,blank=False,on_delete=models.CASCADE)
     product_image=ResizedImageField(size=[632,632],upload_to=get_product_image_path,blank=True, null=True)
-    color = models.CharField(null=False, blank=False, max_length=100)
-    size = models.CharField(null=False, blank=False, max_length=100)
+    color = models.CharField(null=True, blank=True, max_length=100)
+    size = models.CharField(null=True, blank=True, max_length=100)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
@@ -194,7 +194,7 @@ class Product_Images(models.Model):
         return str(self.product_id.product_name)
     
 def get_product_video_path(instance, filename):
-    return f'product_videos/{instance.product_id}/{filename}'
+    return f'product_videos/{instance.product_id.product_name}/{filename}'
 class Product_Videos(models.Model):
     '''This table stores the videos of the Product. Videos are stored locally in the product_videos/{product_pk}/ folder'''
 

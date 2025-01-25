@@ -201,8 +201,9 @@ class AdminManagement:
                     if p != admin_position and p.name.lower() == name.lower():
                         return False, "Same name already exists!"
                 admin_position.name = name
-            if description and admin_position.description != description.lower():
-                admin_position.description = description
+            if description:
+                if not admin_position.description or admin_position.description.lower() != description.lower():
+                    admin_position.description = description
             admin_position.save()
             updated,message = SystemLogs.updated_by(request,admin_position)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
@@ -599,19 +600,22 @@ class AdminManagement:
                 business_admin_user.admin_user_name = admin_user_name
             if business_admin_user.admin_position != admin_position:
                 business_admin_user.admin_position = admin_position
-            if admin_contact_no and business_admin_user.admin_contact_no != admin_contact_no:
-                business_admin_user.admin_contact_no = admin_contact_no
-            if admin_email and business_admin_user.admin_email != admin_email:
-                business_admin_user.admin_email = admin_email
-                user = business_admin_user.user
-                user.email = admin_email
-                user.save()
-            if admin_avatar and business_admin_user.admin_avatar != admin_avatar:
-                if business_admin_user.admin_avatar:
-                    path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
-                    if os.path.exists(path):
-                        os.remove(path)
-                    business_admin_user.admin_avatar.delete()
+            if admin_contact_no:
+                if not business_admin_user.admin_contact_no or business_admin_user.admin_contact_no != admin_contact_no:
+                    business_admin_user.admin_contact_no = admin_contact_no
+            if admin_email:
+                if not business_admin_user.admin_email or business_admin_user.admin_email != admin_email:
+                    business_admin_user.admin_email = admin_email
+                    user = business_admin_user.user
+                    user.email = admin_email
+                    user.save()
+            if admin_avatar:
+                if not business_admin_user.admin_avatar or business_admin_user.admin_avatar != admin_avatar:
+                    if business_admin_user.admin_avatar:
+                        path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
+                        if os.path.exists(path):
+                            os.remove(path)
+                        business_admin_user.admin_avatar.delete()
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
 

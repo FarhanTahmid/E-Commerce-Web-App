@@ -688,11 +688,11 @@ class ManageProducts:
                                         is_own_brand=is_own_brand)
             product_brand.save()
             if (brand_country):
-                brand_country=brand_country
+                product_brand.brand_country=brand_country
             if (brand_description):
-                brand_description=brand_description
+                product_brand.brand_description=brand_description
             if (brand_logo):
-                brand_logo=brand_logo
+                product_brand.brand_logo=brand_logo
             product_brand.save()
             updated, message = SystemLogs.updated_by(request,product_brand)
             activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Brand {brand_name}",message="Created")
@@ -834,11 +834,13 @@ class ManageProducts:
                         return False, "Same brand already exists!"
                 product_brand.brand_name = brand_name
             #update the product brand country
-            if (brand_country and product_brand.brand_country.lower() != brand_country.lower()):
-                product_brand.brand_country = brand_country
+            if (brand_country):
+                if not product_brand.brand_country or product_brand.brand_country.lower() != brand_country.lower():
+                    product_brand.brand_country = brand_country
             #update the product brand description
-            if (brand_description and product_brand.brand_description.lower() != brand_description.lower()):
-                product_brand.brand_description = brand_description
+            if (brand_description):
+                if not product_brand.brand_description or product_brand.brand_description.lower() != brand_description.lower():
+                    product_brand.brand_description = brand_description
             #update the product brand established year
             if (product_brand.brand_established_year != brand_established_year):
                 product_brand.brand_established_year = brand_established_year
@@ -846,15 +848,13 @@ class ManageProducts:
             if (product_brand.is_own_brand != is_own_brand):
                 product_brand.is_own_brand = is_own_brand
             #update the product brand logo
-            if (brand_logo and product_brand.brand_logo != brand_logo):
-                # Delete the previous logo if a new one is provided
+            if (brand_logo):
                 if product_brand.brand_logo:
                     # Delete the previous logo file from local directory
                     path = settings.MEDIA_ROOT+str(product_brand.brand_logo)
                     if os.path.exists(path):
                         os.remove(path)
                     product_brand.brand_logo.delete()
-                product_brand.brand_logo = brand_logo
             product_brand.save()
             updated,message = SystemLogs.updated_by(request,product_brand)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
@@ -1489,13 +1489,16 @@ class ManageProducts:
                 product.product_description = product_description
             if product.product_summary.lower() != product_summary.lower():
                 product.product_summary = product_summary
-            if product_brand_pk and product_brand_pk != product.product_brand.pk:
-                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
-                product.product_brand = product_brand
-            if product_ingredients and product.product_ingredients.lower() != product_ingredients.lower():
-                product.product_ingredients =  product_ingredients
-            if product_usage_direction and product.product_usage_direction.lower() != product_usage_direction.lower():
-                product.product_usage_direction = product_usage_direction
+            if product_brand_pk:
+                if not product.product_brand.pk or product_brand_pk != product.product_brand.pk:
+                    product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                    product.product_brand = product_brand
+            if product_ingredients:
+                if not product.product_ingredients or product.product_ingredients.lower() != product_ingredients.lower():
+                    product.product_ingredients =  product_ingredients
+            if product_usage_direction:
+                if not product.product_usage_direction or product.product_usage_direction.lower() != product_usage_direction.lower():
+                    product.product_usage_direction = product_usage_direction
             product.save()
             updated,message = SystemLogs.updated_by(request,product)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
@@ -1798,13 +1801,15 @@ class ManageProducts:
                 product_sku.product_price = product_price
             if product_sku.product_stock != product_stock:
                 product_sku.product_stock = product_stock
-            if product_color and product_sku.product_color != product_color:
-                product_sku.product_color = product_color
-            if product_size  and product_sku.product_size != product_size:
-                if type(product_size) == int:
-                    product_sku.product_size = str(product_size)
-                else:
-                    product_sku.product_size = product_size
+            if product_color:
+                if not product_sku.product_color or product_sku.product_color.lower() != product_color.lower():
+                    product_sku.product_color = product_color
+            if product_size:
+                if not product_sku.product_size or product_sku.product_size.lower() != product_size.lower():
+                    if type(product_size) == int:
+                        product_sku.product_size = str(product_size)
+                    else:
+                        product_sku.product_size = product_size
             product_sku.save()
             updated,message = SystemLogs.updated_by(request,product_sku)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product sku with sku - {product_sku.product_sku}",message="Updated")
@@ -1949,24 +1954,28 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product image! Please try again later.")
         
-    def update_product_image(request,product_image_pk,product_image=None,color=None,size=None):
+    def update_product_image(request,product_image_pk,new_image=None,color=None,size=None):
 
         try:
             #getting the product images
             product_image ,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
-            if product_image and product_image.product_image != product_image:
+            if new_image:
                 if product_image.product_image:
                     path = settings.MEDIA_ROOT+str(product_image.product_image)
                     if os.path.exists(path):
                         os.remove(path)
                     product_image.product_image.delete()
-                product_image.product_image = product_image
-            if color and product_image.color.lower() != color.lower():
-                product_image.color = color
-            if size and product_image.size.lower() != size.lower():
-                product_image.size = size
+                product_image.product_image = new_image
+            if color:
+                if not product_image.color or product_image.color.lower() != color.lower():
+                    product_image.color = color
+            if size:
+                if not product_image.size or product_image.size.lower() != size.lower():
+                    product_image.size = size
             
             product_image.save()
+            updated, message = SystemLogs.updated_by(request,product_image)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product image for the product, {product_image.product_id.product_name}",message="Updated Product Image")
             return True,"Product image updated successfully"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1990,12 +1999,13 @@ class ManageProducts:
         try:
             #getting the product image
             for i in product_image_pk_list:
-                product_image,message = ManageProducts.fetch_product_image(request,product_image_pk=i)
+                product_image,message = ManageProducts.fetch_product_image(product_image_pk=i)
                 if product_image.product_image:
                     path = settings.MEDIA_ROOT+str(product_image.product_image)
                     if os.path.exists(path):
                         os.remove(path)
                     product_image.product_image.delete()
+                activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product image for the product, {product_image.product_id.product_name}",message="Deleted Product Image")
                 product_image.delete()
             return True,"Product image deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
