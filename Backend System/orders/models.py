@@ -11,8 +11,8 @@ class Order(models.Model):
         ('shipped','Shipped'),
         ('delivered','Delivered'),
         ('cancelled','Cancelled'),
-        ('returned','Returned')
-        ('refunded','Refunded')
+        ('returned','Returned'),
+        ('refunded','Refunded'),
     ]
     
     order_id=models.CharField(null=False,blank=False,max_length=100,unique=True) # Each order will have a unique order_id that will be genetated by the system
