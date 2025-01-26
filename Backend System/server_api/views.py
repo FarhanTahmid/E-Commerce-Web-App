@@ -925,7 +925,7 @@ class CreateProduct(APIView):
             product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
             product_description = self.request.data.get('product_description',None)
             product_summary = self.request.data.get('product_summary',None)
-            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
+            
 
             #can none
             product_brand_pk = self.request.data.get('product_brand_pk',None)
@@ -1255,8 +1255,7 @@ class CreateProductImages(APIView):
     def post(self,request,product_id,format=None):
         try:
             product_id=product_id
-            product_image_list = self.request.data.get('product_image_list',None)
-            print(product_image_list)
+            product_image_list = self.request.data.getlist('product_image_list',None)#as multiform data need to use getlist
             #can none
             color = self.request.data.get('color',None)
             size = self.request.data.get('size',None)
@@ -1282,4 +1281,6 @@ class CreateProductImages(APIView):
                 "error": str(e),
                 "message": "An error occurred while creating product image."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
-
+        
+class UpdateProductImage(APIView):
+    pass

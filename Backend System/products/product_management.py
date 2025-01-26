@@ -1938,6 +1938,7 @@ class ManageProducts:
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
                 for i in product_image_list:
                     product_image_created = Product_Images.objects.create(product_id=product,product_image = i)
+                    product_image_created.save()
                     if color:
                         product_image_created.color = color
                     if size:
@@ -1947,7 +1948,7 @@ class ManageProducts:
                     activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
                 return True, "Product image created successfully"
             except:
-                return False, "No product found"
+                return False, "No product image found"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error

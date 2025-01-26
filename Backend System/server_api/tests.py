@@ -41,7 +41,7 @@ class ProductCategoryAPITestCases(APITestCase):
         self.product1 = Product.objects.create(product_name="Dove Cleanser", product_brand=self.product_brand2,
                                             product_description="A cleanser by Dove", product_summary="Gentle cleanser",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=self.now)
-        self.product1.product_category.set([self.product_category2])
+        self.product1.product_category.set([self.product_category1])
         self.product1.product_sub_category.set([self.product_sub_category2])
 
         self.product2 = Product.objects.create(product_name="Dove85 Cleanser", product_brand=self.product_brand1,
@@ -73,6 +73,16 @@ class ProductCategoryAPITestCases(APITestCase):
         buffer = BytesIO()
         image.save(buffer, format='JPEG')
         buffer.seek(0)
+
+        # Return an InMemoryUploadedFile, which is what Django expects for file uploads
+        return InMemoryUploadedFile(
+            buffer,  # File
+            None,  # Field name
+            f'{color}_{size}.jpg',  # Filename
+            'image/jpeg',  # Content type
+            buffer.getbuffer().nbytes,  # File size
+            None  # Content type extra
+        )
 
     def test_fetch_all_product_categories(self):
         """
@@ -508,7 +518,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         Test for updating product
         """
-        data = {'product_pk':self.product1.pk,'product_name':"ooo",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
+        data = {'product_pk':self.product1.pk,'product_name':"ooo",'product_category_pk_list':[self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
                 'product_summary':"ppopop"
                 }
@@ -603,8 +613,9 @@ class ProductCategoryAPITestCases(APITestCase):
         """
 
         image = ProductCategoryAPITestCases.generate_test_image('yellow',1)
-        data = {'product_image_list':[image]}
-        response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='json')
+        image2 = ProductCategoryAPITestCases.generate_test_image('green',2)
+        data = {'product_image_list':[image,image2]}
+        response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='multipart')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"Product image created successfully")
 
