@@ -87,12 +87,12 @@ CORS_ALLOW_HEADERS = [
     "x-api-key",
 ]
 REST_FRAMEWORK = {
-
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',  # Or any other authenticator you're using
-    ],
+    
+    # 'DEFAULT_AUTHENTICATION_CLASSES': [
+    #     'rest_framework.authentication.SessionAuthentication',
+    #     'rest_framework.authentication.BasicAuthentication',
+    #     'rest_framework.authentication.TokenAuthentication',  # Or any other authenticator you're using
+    # ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework_api_key.permissions.HasAPIKey',
     ],

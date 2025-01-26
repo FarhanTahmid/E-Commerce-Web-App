@@ -97,3 +97,30 @@ class OrderPayment(models.Model):
     
     def __str__(self):
         return str(self.pk)
+
+class Cart(models.Model):
+    '''This model is for storing customer cart data'''
+    
+    device_ip=models.GenericIPAddressField(verbose_name="Device IP") #Storing device IP So that if the customer is not logged in, we can still track the cart
+    customer_id=models.ForeignKey(Customer,on_delete=models.CASCADE,related_name="Cart") #Store customer id if the user is logged in
+    cart_total_amount=models.DecimalField(max_digits=10,decimal_places=2,verbose_name="Cart Total Amount")
+    cart_checkout_status=models.BooleanField(default=False,verbose_name="Cart Checkout Status")
+    created_at=models.DateTimeField(auto_now_add=True,verbose_name="Created At")
+    updated_at=models.DateTimeField(auto_now=True,verbose_name="Updated At")
+    
+    class Meta:
+        verbose_name="Customer Cart"
+        verbose_name_plural="Customer Carts"
+    
+    def __str__(self):
+        return str(self.pk)
+
+class CartItems(models.Model):
+    cart_id=models.ForeignKey(Cart,on_delete=models.CASCADE)
+    product_sku=models.ForeignKey(Product_SKU,on_delete=models.CASCADE)
+    quantity=models.PositiveIntegerField(default=1,verbose_name="Quantity")
+    created_at=models.DateTimeField(auto_now_add=True,verbose_name="Created At")
+    updated_at=models.DateTimeField(auto_now=True,verbose_name="Updated At")
+
+    def __str__(self):
+        return str(self.pk)
