@@ -11,6 +11,7 @@ from django.db.models import Q
 from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
+import time
 
 # Create your tests here.
 class ProductCategoryAPITestCases(APITestCase):
@@ -618,6 +619,34 @@ class ProductCategoryAPITestCases(APITestCase):
     #     response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='multipart')
     #     self.assertEqual(response.status_code,status.HTTP_201_CREATED)
     #     self.assertEqual(response.data['message'],"Product image created successfully")
+
+    # def test_update_product_image(self):
+    #     """
+    #     Test for updating product image
+    #     """
+
+    #     image_old = ProductCategoryAPITestCases.generate_test_image('yellow',3)
+    #     image_new = ProductCategoryAPITestCases.generate_test_image('pink',4)
+    #     self.product_image.product_image = image_old
+    #     data = {'new_image':image_new,'size':'XXL'}
+    #     response = self.client.put(f'/server_api/product/product-image/update/{self.product_image.pk}/',data,format='multipart')
+    #     self.assertEqual(response.status_code,status.HTTP_200_OK)
+    #     self.assertEqual(response.data['message'],"Product image updated successfully")
+
+    # def test_delete_product_image(self):
+    #     """
+    #     Test for deleting product image
+    #     """
+        
+    #     image_old = ProductCategoryAPITestCases.generate_test_image('yellow',3)
+    #     self.product_image.product_image = image_old
+    #     self.product_image.save()
+    #     time.sleep(10)
+    #     response = self.client.delete(f'/server_api/product/product-image/delete/{self.product_image.pk}/')
+    #     self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+    #     self.assertEqual(response.data['message'],"Product image deleted successfully")
+
+
 
 
 

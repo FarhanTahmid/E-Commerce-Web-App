@@ -54,5 +54,7 @@ urlpatterns = [                                                                 
     #product image
     path('product/product-images/fetch-product-image/',views.FetchProductImages.as_view(),name='fetch_product_images'),#pass parameters either /?product_pk= OR product_image_pk= OR no paramters to fetch all
     path('product/product-images/create/<int:product_id>/',views.CreateProductImages.as_view(),name='create_product_images'),
+    path('product/product-image/update/<int:product_image_pk>/',views.UpdateProductImage.as_view(),name='update_product_image'),
+    path('product/product-image/delete/<int:product_image_pk>/',views.DeleteProductImage.as_view(),name='delete_product_image'),
 
 ]

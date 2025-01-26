@@ -1283,4 +1283,54 @@ class CreateProductImages(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
         
 class UpdateProductImage(APIView):
-    pass
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,product_image_pk,format=None):
+        try:
+            product_image_pk=product_image_pk
+
+            #can none
+            new_image = self.request.data.get('new_image',None)
+            color = self.request.data.get('color',None)
+            size = self.request.data.get('size',None)
+
+            product_image_updated,message = ManageProducts.update_product_image(request,product_image_pk,new_image,color,size)
+            if product_image_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class DeleteProductImage(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,product_image_pk,format=None):
+        try:
+            product_image_pk = product_image_pk
+            deleted,message = ManageProducts.delete_product_image(request,product_image_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating deleting image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  

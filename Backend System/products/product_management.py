@@ -1942,7 +1942,10 @@ class ManageProducts:
                     if color:
                         product_image_created.color = color
                     if size:
-                        product_image_created.size = size
+                        if type(size) == int:
+                            product_image_created.size = str(size)
+                        else:
+                            product_image_created.size = size
                     product_image_created.save()
                     updated, message = SystemLogs.updated_by(request,product_image_created)
                     activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
@@ -1982,6 +1985,7 @@ class ManageProducts:
                 if not product_image.color or product_image.color.lower() != color.lower():
                     product_image.color = color
             if size:
+                size = str(size)
                 if not product_image.size or product_image.size.lower() != size.lower():
                     product_image.size = size
             
@@ -2006,19 +2010,18 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product image! Please try again later.")
     
-    def delete_product_image(request,product_image_pk_list):
+    def delete_product_image(request,product_image_pk):
         
         try:
             #getting the product image
-            for i in product_image_pk_list:
-                product_image,message = ManageProducts.fetch_product_image(product_image_pk=i)
-                if product_image.product_image:
-                    path = settings.MEDIA_ROOT+str(product_image.product_image)
-                    if os.path.exists(path):
-                        os.remove(path)
-                    product_image.product_image.delete()
-                activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product image for the product, {product_image.product_id.product_name}",message="Deleted Product Image")
-                product_image.delete()
+            product_image,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
+            if product_image.product_image:
+                path = settings.MEDIA_ROOT+str(product_image.product_image)
+                if os.path.exists(path):
+                    os.remove(path)
+                product_image.product_image.delete()
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product image for the product, {product_image.product_id.product_name}",message="Deleted Product Image")
+            product_image.delete()
             return True,"Product image deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
