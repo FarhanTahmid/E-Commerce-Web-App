@@ -43,17 +43,18 @@ class ProductCategoryAPITestCases(APITestCase):
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=self.now)
         self.product1.product_category.set([self.product_category2])
         self.product1.product_sub_category.set([self.product_sub_category2])
-        self.product1.product_flavours.set([self.product_flavour2])
 
         self.product2 = Product.objects.create(product_name="Dove85 Cleanser", product_brand=self.product_brand1,
                                             product_description="A cleanser by Dove", product_summary="Gentle cleanser",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=self.now)
         self.product2.product_category.set([self.product_category1])
         self.product2.product_sub_category.set([self.product_sub_category1])
-        self.product2.product_flavours.set([self.product_flavour1])
+
 
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=self.now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=self.now)
+        self.product_sku1.product_flavours.set([self.product_flavour2])
+        self.product_sku2.product_flavours.set([self.product_flavour1])
 
 
         self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create_user(username='sami2186', password='password',is_superuser=False),
@@ -488,7 +489,7 @@ class ProductCategoryAPITestCases(APITestCase):
         
         data = {'product_name':"ooo",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.post(f'/server_api/product/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
@@ -497,7 +498,7 @@ class ProductCategoryAPITestCases(APITestCase):
         #duplicate
         data = {'product_name':"Dove Cleanser",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.post(f'/server_api/product/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
@@ -509,7 +510,7 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         data = {'product_pk':self.product1.pk,'product_name':"ooo",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.put(f'/server_api/product/update/{self.product1.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
@@ -518,7 +519,7 @@ class ProductCategoryAPITestCases(APITestCase):
         #duplicate
         data = {'product_pk':self.product1.pk,'product_name':"Dove85 Cleanser",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.put(f'/server_api/product/update/{self.product1.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
@@ -551,7 +552,8 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         Test product sku creation
         """
-        data = {'product_pk':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL'}
+        data = {'product_pk':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL',
+                'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk]}
         response = self.client.post(f'/server_api/product/product-sku/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"Product sku created successfully")
@@ -561,7 +563,8 @@ class ProductCategoryAPITestCases(APITestCase):
         Test for updating product sku
         """
 
-        data = {'product_id':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL','product_color':'navy yellow'}
+        data = {'product_id':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL','product_color':'navy yellow',
+                'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk]}
         response = self.client.put(f'/server_api/product/product-sku/update/{self.product_sku2.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product sku updated with new sku id")

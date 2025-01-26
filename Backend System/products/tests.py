@@ -54,39 +54,41 @@ class TestManageProducts(TestCase):
                                        product_ingredients="Water, Glycerin", product_usage_direction="Apply daily", created_at=now)
         self.product1.product_category.set([self.category_skincare])
         self.product1.product_sub_category.set([self.sub_category1,self.sub_category2])
-        self.product1.product_flavours.set([self.product_flavour1])
 
         self.product2 = Product.objects.create(product_name="Dove Cleanser", product_brand=self.brand2,
                                             product_description="A cleanser by Dove", product_summary="Gentle cleanser",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=now)
         self.product2.product_category.set([self.category_skincare])
         self.product2.product_sub_category.set([self.sub_category2])
-        self.product2.product_flavours.set([self.product_flavour2])
+        
 
         self.product3 = Product.objects.create(product_name="Loreal Shampoo", product_brand=self.brand1,
                                             product_description="A shampoo by Loreal", product_summary="Cleansing shampoo",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use as needed", created_at=now)
         self.product3.product_category.set([self.category_haircare])
         self.product3.product_sub_category.set([self.sub_category3])
-        self.product3.product_flavours.set([self.product_flavour1, self.product_flavour2])
 
         self.product4 = Product.objects.create(product_name="Dove Perfume", product_brand=self.brand2,
                                             product_description="A perfume by Dove", product_summary="Long-lasting fragrance",
                                             product_ingredients="Alcohol, Fragrance", product_usage_direction="Spray on pulse points", created_at=now)
         self.product4.product_category.set([self.category_fragrance])
         self.product4.product_sub_category.set([self.sub_category4])
-        self.product4.product_flavours.set([self.product_flavour1])
+    
 
         self.product5 = Product.objects.create(product_name="Loreal Lipstick", product_brand=self.brand1,
                                             product_description="A lipstick by Loreal", product_summary="Matte lipstick",
                                             product_ingredients="Wax, Pigment", product_usage_direction="Apply on lips", created_at=now)
         self.product5.product_category.set([self.category_makeup])
         self.product5.product_sub_category.set([self.sub_category5])
-        self.product5.product_flavours.set([self.product_flavour2])
+        
 
         #creating product sku
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
+
+        self.product_sku1.product_flavours.set([self.product_flavour1])
+        self.product_sku2.product_flavours.set([self.product_flavour2])
+
 
     @staticmethod
     def generate_test_image(color,size):
@@ -448,7 +450,7 @@ class TestManageProducts(TestCase):
         request.user = self._create_mock_businessadmin_user()
         success,message = ManageProducts.create_product(request,"Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
                                                         [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
-                                                        "Essentials","Very Essentials",[self.product_flavour1.pk],
+                                                        "Essentials","Very Essentials",
                                                         self.brand2.pk,"soup","free to use")
         self.assertTrue(success,"Product successfully created.")
         self.assertEqual(message,"Product, Dove Lipstick created!","Success message is incorrect")
@@ -456,7 +458,7 @@ class TestManageProducts(TestCase):
 
         success,message = ManageProducts.create_product(request,"Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
                                                         [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
-                                                        "Essentials","Very Essentials",[self.product_flavour1.pk],
+                                                        "Essentials","Very Essentials",
                                                         self.brand2.pk,"soup","free to use")
         self.assertFalse(success,"Product should not be created")
         self.assertEqual(message, "Same product already exists!","Error message is incorrect")
@@ -469,7 +471,7 @@ class TestManageProducts(TestCase):
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.update_product(request,self.product5.pk,self.product5.product_name,[self.category_fragrance.pk,self.category_makeup.pk],
-                                                         [self.sub_category1.pk],"hii","yoo",[self.product_flavour2.pk,self.product_flavour1.pk],
+                                                         [self.sub_category1.pk],"hii","yoo",
                                                          self.brand2.pk,"nothing","ooo")
         self.assertTrue(success,"Product should be updated!")
         self.assertEqual(message,"Product updated successfully!","Success message is incorrect")
@@ -524,7 +526,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_sku/create/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.create_product_sku(request,product_pk=self.product2.pk,product_price=25,product_stock=100,product_size=10)
+        success, message = ManageProducts.create_product_sku(request,product_pk=self.product2.pk,product_price=25,product_stock=100,product_flavours_pk_list=[self.product_flavour1.pk],product_size=10)
         self.assertTrue(success,"Product sku should be created successfully!")
         self.assertEqual(message,"Product sku created successfully","Success message is incorrect")
 
@@ -535,7 +537,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_sku/update/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.update_product_sku(request,product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_color="red",product_size=80)
+        success, message = ManageProducts.update_product_sku(request,product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_flavours_pk_list=[self.product_flavour2.pk,self.product_flavour1.pk],product_color="red",product_size=80)
         self.assertTrue(success,"Product sku should be updated successfully!")
         self.assertEqual(message,"Product sku updated with new sku id","Success message is incorrect")
 

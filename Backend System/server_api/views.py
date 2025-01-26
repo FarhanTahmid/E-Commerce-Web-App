@@ -943,8 +943,6 @@ class CreateProduct(APIView):
                 missing_fields.append("Product Description")
             if not product_summary:
                 missing_fields.append("Product Summary")
-            if not product_flavours_pk_list:
-                missing_fields.append("Product Flavours")
             
             if missing_fields:
                 return Response({
@@ -952,7 +950,7 @@ class CreateProduct(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
             
             product_created,message = ManageProducts.create_product(request,product_name,product_category_pk_list,product_sub_category_pk_list,
-                                                                    product_description,product_summary,product_flavours_pk_list,product_brand_pk,
+                                                                    product_description,product_summary,product_brand_pk,
                                                                     product_ingredients,product_usage_direction)
             if product_created:
                 return Response({
@@ -984,7 +982,6 @@ class UpdateProduct(APIView):
             product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
             product_description = self.request.data.get('product_description',None)
             product_summary = self.request.data.get('product_summary',None)
-            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
 
             #can none
             product_brand_pk = self.request.data.get('product_brand_pk',None)
@@ -1002,8 +999,6 @@ class UpdateProduct(APIView):
                 missing_fields.append("Product Description")
             if not product_summary:
                 missing_fields.append("Product Summary")
-            if not product_flavours_pk_list:
-                missing_fields.append("Product Flavours")
             
             if missing_fields:
                 return Response({
@@ -1011,7 +1006,7 @@ class UpdateProduct(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
             
             product_update,message = ManageProducts.update_product(request,product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,
-                                                                   product_description,product_summary,product_flavours_pk_list,product_brand_pk,
+                                                                   product_description,product_summary,product_brand_pk,
                                                                    product_ingredients,product_usage_direction)
             if product_update:
                 return Response({
@@ -1109,6 +1104,7 @@ class CreateProductSKU(APIView):
             product_pk = self.request.data.get('product_pk',None)
             product_price = self.request.data.get('product_price',None)
             product_stock = self.request.data.get('product_stock',None)
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
 
             #can none
             product_color = self.request.data.get('product_color',None)
@@ -1121,12 +1117,14 @@ class CreateProductSKU(APIView):
                 missing_fields.append("Price")
             if not product_stock:
                 missing_fields.append("Product stock")
+            if not product_flavours_pk_list:
+                missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
                 },status=status.HTTP_400_BAD_REQUEST)
 
-            product_sku_created,message = ManageProducts.create_product_sku(request,product_pk,product_price,product_stock,product_color
+            product_sku_created,message = ManageProducts.create_product_sku(request,product_pk,product_price,product_stock,product_flavours_pk_list,product_color
                                                                             ,product_size)
             if product_sku_created:
                 return Response({
@@ -1154,6 +1152,7 @@ class UpdateProductSKU(APIView):
             product_id = self.request.data.get('product_id',None)
             product_price = self.request.data.get('product_price',None)
             product_stock = self.request.data.get('product_stock',None)
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
 
             #can none
             product_color = self.request.data.get('product_color',None)
@@ -1166,13 +1165,15 @@ class UpdateProductSKU(APIView):
                 missing_fields.append("Price")
             if not product_stock:
                 missing_fields.append("Product stock")
+            if not product_flavours_pk_list:
+                missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
                 },status=status.HTTP_400_BAD_REQUEST)
 
             product_sku_update, message = ManageProducts.update_product_sku(request,product_sku_pk,product_id,product_price,
-                                                                            product_stock,product_color,product_size)
+                                                                            product_stock,product_flavours_pk_list,product_color,product_size)
             if product_sku_update:
                 return Response({
                     'message':message
@@ -1255,7 +1256,7 @@ class CreateProductImages(APIView):
         try:
             product_id=product_id
             product_image_list = self.request.data.get('product_image_list',None)
-
+            print(product_image_list)
             #can none
             color = self.request.data.get('color',None)
             size = self.request.data.get('size',None)

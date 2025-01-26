@@ -1300,44 +1300,44 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product! Please try again later.") 
         
     def create_product(request,product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
-                       product_summary,product_flavours_pk_list,product_brand_pk=None,product_ingredients=None,
+                       product_summary,product_brand_pk=None,product_ingredients=None,
                        product_usage_direction=None):
-        
         """
         Create a new product with detailed exception handling.
 
-        This function attempts to add a new product to the database. It first checks for
-        existing product using the product_name to avoid duplicates. If the product does not exist, it is created.
-        The function handles various errors that might occur during the process, logging each
-        error for further analysis.
+        This function attempts to add a new product to the database. It first checks if a product with the same name
+        already exists. If it does, it returns an error message. Otherwise, it creates a new product with the specified
+        attributes and associates it with the provided categories, sub-categories, and optional attributes like brand,
+        ingredients, and usage directions. The function handles various errors that might occur during the process,
+        logging each error for further analysis.
 
         Args:
-            product_name (str): The name of the product to be added.
+            request (Request): The request object containing the user information.
+            product_name (str): The name of the product to be created.
             product_category_pk_list (list): A list of primary keys (IDs) of the product categories to be associated with the product.
             product_sub_category_pk_list (list): A list of primary keys (IDs) of the product sub-categories to be associated with the product.
-            product_description (str): A description of the product.
-            product_summary (str): A summary of the product.
-            product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the product.
-            product_brand_pk (int, optional): The primary key (ID) of the product brand to be associated with the product. Defaults to None.
+            product_description (str): The description of the product.
+            product_summary (str): The summary of the product.
+            product_brand_pk (int, optional): The primary key (ID) of the product brand. Defaults to None.
             product_ingredients (str, optional): The ingredients of the product. Defaults to None.
             product_usage_direction (str, optional): The usage directions of the product. Defaults to None.
 
         Returns:
             tuple:
-                - Product or bool: The created product object if successful, `False` otherwise.
+                - bool or Product: `False` if the product already exists or an error occurs, otherwise the created product object.
                 - str: A message indicating the success or failure of the operation.
 
         Example Usage:
-            product, message = create_product(
-                product_name="Shampoo",
+            success, message = create_product(
+                request,
+                product_name="New Product",
                 product_category_pk_list=[1, 2],
                 product_sub_category_pk_list=[3, 4],
-                product_description="A cleansing shampoo",
-                product_summary="Cleansing shampoo for all hair types",
-                product_flavours_pk_list=[5, 6],
+                product_description="This is a new product.",
+                product_summary="New product summary",
                 product_brand_pk=1,
-                product_ingredients="Water, Sodium Laureth Sulfate",
-                product_usage_direction="Use as needed"
+                product_ingredients="Ingredient1, Ingredient2",
+                product_usage_direction="Use as directed."
             )
             print(message)
 
@@ -1348,15 +1348,13 @@ class ManageProducts:
                 Message: "An unexpected error in server occurred while creating product! Please try again later."
             - **ProgrammingError**: Catches programming errors such as invalid queries.
                 Message: "An unexpected error in server occurred while creating product! Please try again later."
-            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+            - **IntegrityError**: Handles data integrity issues.
                 Message: "Same type exists in Database!"
             - **Exception**: A catch-all for any other unexpected errors.
                 Message: "An unexpected error occurred while creating product! Please try again later."
 
         Notes:
-            - The function ensures that product names are checked in a case-insensitive manner to prevent duplicates.
-            - If a duplicate product is found, it will not be added, and an appropriate message will be returned.
-            - All errors are logged in `ErrorLogs` for debugging and analysis.
+            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
         try:
             try:
@@ -1372,10 +1370,8 @@ class ManageProducts:
                 #getting all category and sub categories and flavours
                 product_category = [Product_Category.objects.get(pk=p) for p in product_category_pk_list]
                 product_sub_category = [Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list]
-                product_flavours = [Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list]
                 product.product_category.add(*product_category)
                 product.product_sub_category.add(*product_sub_category)
-                product.product_flavours.add(*product_flavours)
                 #checking optional paramters
                 if product_brand_pk:
                     brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
@@ -1406,27 +1402,27 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product! Please try again later.")
 
     def update_product(request,product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,product_description,
-                       product_summary,product_flavours_pk_list,product_brand_pk=None,product_ingredients=None,
+                       product_summary,product_brand_pk=None,product_ingredients=None,
                        product_usage_direction=None):
 
         """
         Update an existing product with detailed exception handling.
 
-        This function attempts to update the details of a product. It checks for changes in
-        the product name, categories, sub-categories, description, summary, flavours, brand, ingredients, and usage directions,
-        and updates them accordingly. The function includes comprehensive exception handling to log and report any errors that occur.
+        This function attempts to update an existing product in the database. It fetches the product
+        using the provided primary key (product_pk) and updates its attributes with the specified values.
+        The function handles various errors that might occur during the process, logging each error for further analysis.
 
         Args:
+            request (Request): The request object containing the user information.
             product_pk (int): The primary key (ID) of the product to be updated.
-            product_name (str): The new name for the product.
+            product_name (str): The new name of the product.
             product_category_pk_list (list): A list of primary keys (IDs) of the product categories to be associated with the product.
             product_sub_category_pk_list (list): A list of primary keys (IDs) of the product sub-categories to be associated with the product.
-            product_description (str): The updated description of the product.
-            product_summary (str): The updated summary of the product.
-            product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the product.
-            product_brand_pk (int, optional): The primary key (ID) of the product brand to be associated with the product. Defaults to None.
-            product_ingredients (str, optional): The updated ingredients of the product. Defaults to None.
-            product_usage_direction (str, optional): The updated usage directions of the product. Defaults to None.
+            product_description (str): The new description of the product.
+            product_summary (str): The new summary of the product.
+            product_brand_pk (int, optional): The primary key (ID) of the product brand. Defaults to None.
+            product_ingredients (str, optional): The new ingredients of the product. Defaults to None.
+            product_usage_direction (str, optional): The new usage directions of the product. Defaults to None.
 
         Returns:
             tuple:
@@ -1435,16 +1431,16 @@ class ManageProducts:
 
         Example Usage:
             success, message = update_product(
+                request,
                 product_pk=1,
-                product_name="Updated Shampoo",
+                product_name="Updated Product",
                 product_category_pk_list=[1, 2],
                 product_sub_category_pk_list=[3, 4],
-                product_description="An updated cleansing shampoo",
-                product_summary="Updated cleansing shampoo for all hair types",
-                product_flavours_pk_list=[5, 6],
+                product_description="This is an updated product.",
+                product_summary="Updated product summary",
                 product_brand_pk=1,
-                product_ingredients="Updated ingredients",
-                product_usage_direction="Updated usage directions"
+                product_ingredients="Updated Ingredient1, Updated Ingredient2",
+                product_usage_direction="Use as directed."
             )
             print(message)
 
@@ -1455,7 +1451,7 @@ class ManageProducts:
                 Message: "An unexpected error in server occurred while updating product! Please try again later."
             - **ProgrammingError**: Catches programming errors such as invalid queries.
                 Message: "An unexpected error in server occurred while updating product! Please try again later."
-            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+            - **IntegrityError**: Handles data integrity issues.
                 Message: "Same type exists in Database!"
             - **Exception**: A catch-all for any other unexpected errors.
                 Message: "An unexpected error occurred while updating product! Please try again later."
@@ -1466,12 +1462,11 @@ class ManageProducts:
         try:
             new_product_category = sorted([Product_Category.objects.get(pk=p) for p in product_category_pk_list])
             new_product_sub_category = sorted([Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list])
-            new_product_flavours = sorted([Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list])
+            
             #getting the product
             product,message = ManageProducts.fetch_product(product_pk=product_pk)
             existing_product_category = sorted(product.product_category.all())
             existing_product_sub_category = sorted(product.product_sub_category.all())
-            existing_product_flavours = sorted(product.product_flavours.all())
             all_products, message = ManageProducts.fetch_product()
             #updating only if changed
             if product.product_name.lower() != product_name.lower():
@@ -1483,8 +1478,6 @@ class ManageProducts:
                 product.product_category.set(new_product_category)
             if existing_product_sub_category != new_product_sub_category:
                 product.product_sub_category.set(new_product_sub_category)
-            if existing_product_flavours != new_product_flavours:
-                product.product_flavours.set(new_product_flavours)
             if product.product_description.lower() != product_description.lower():
                 product.product_description = product_description
             if product.product_summary.lower() != product_summary.lower():
@@ -1663,18 +1656,22 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product sku! Please try again later.")
         
-    def create_product_sku(request,product_pk,product_price,product_stock,product_color=None,product_size=None):
+    def create_product_sku(request,product_pk,product_price,product_stock,product_flavours_pk_list,product_color=None,product_size=None):
 
         """
         Create a new product SKU with detailed exception handling.
 
-        This function attempts to add a new product SKU to the database for a given product. It handles various errors
-        that might occur during the process, logging each error for further analysis.
+        This function attempts to add a new product SKU to the database. It first fetches the product
+        using the provided product primary key (product_pk). Then, it creates a new SKU for the product
+        with the specified price, stock, and optional attributes like color and size. The function handles
+        various errors that might occur during the process, logging each error for further analysis.
 
         Args:
-            product_pk (int): The primary key (ID) of the product to which the SKU will be associated.
+            request (Request): The request object containing the user information.
+            product_pk (int): The primary key (ID) of the product to which the SKU belongs.
             product_price (float): The price of the product SKU.
             product_stock (int): The stock quantity of the product SKU.
+            product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the SKU.
             product_color (str, optional): The color of the product SKU. Defaults to None.
             product_size (str or int, optional): The size of the product SKU. Defaults to None.
 
@@ -1685,11 +1682,13 @@ class ManageProducts:
 
         Example Usage:
             success, message = create_product_sku(
+                request,
                 product_pk=1,
-                product_price=19.99,
+                product_price=25.99,
                 product_stock=100,
+                product_flavours_pk_list=[1, 2, 3],
                 product_color="Red",
-                product_size="M"
+                product_size="L"
             )
             print(message)
 
@@ -1700,7 +1699,7 @@ class ManageProducts:
                 Message: "An unexpected error in server occurred while creating product sku! Please try again later."
             - **ProgrammingError**: Catches programming errors such as invalid queries.
                 Message: "An unexpected error in server occurred while creating product sku! Please try again later."
-            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+            - **IntegrityError**: Handles data integrity issues.
                 Message: "Same type exists in Database!"
             - **Exception**: A catch-all for any other unexpected errors.
                 Message: "An unexpected error occurred while creating product sku! Please try again later."
@@ -1713,6 +1712,8 @@ class ManageProducts:
             #creating product sku for this product
             product_sku = Product_SKU.objects.create(product_id=product,product_price=product_price,product_stock=product_stock)
             product_sku.save()
+            product_flavours = [Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list]
+            product_sku.product_flavours.add(*product_flavours)
             if product_color:
                 product_sku.product_color = product_color
             if product_size:
@@ -1741,22 +1742,25 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product sku! Please try again later.")
 
-    def update_product_sku(request,product_sku_pk,product_id,product_price,product_stock,product_color=None,product_size=None):
+    def update_product_sku(request,product_sku_pk,product_id,product_price,product_stock,product_flavours_pk_list,product_color=None,product_size=None):
 
         """
         Update an existing product SKU with detailed exception handling.
 
-        This function attempts to update the details of a product SKU. It checks for changes in
-        the product ID, price, stock, color, and size, and updates them accordingly. The function includes comprehensive
-        exception handling to log and report any errors that occur. Product sku code gets updated auto.
+        This function attempts to update an existing product SKU in the database. It fetches the product
+        and the SKU using the provided primary keys. Then, it updates the SKU with the specified price,
+        stock, and optional attributes like color and size. The function handles various errors that might
+        occur during the process, logging each error for further analysis.
 
         Args:
+            request (Request): The request object containing the user information.
             product_sku_pk (int): The primary key (ID) of the product SKU to be updated.
-            product_id (int): The primary key (ID) of the product to which the SKU is associated.
-            product_price (float): The updated price of the product SKU.
-            product_stock (int): The updated stock quantity of the product SKU.
-            product_color (str, optional): The updated color of the product SKU. Defaults to None.
-            product_size (str or int, optional): The updated size of the product SKU. Defaults to None.
+            product_id (int): The primary key (ID) of the product to which the SKU belongs.
+            product_price (float): The new price of the product SKU.
+            product_stock (int): The new stock quantity of the product SKU.
+            product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the SKU.
+            product_color (str, optional): The new color of the product SKU. Defaults to None.
+            product_size (str or int, optional): The new size of the product SKU. Defaults to None.
 
         Returns:
             tuple:
@@ -1765,11 +1769,13 @@ class ManageProducts:
 
         Example Usage:
             success, message = update_product_sku(
+                request,
                 product_sku_pk=1,
                 product_id=1,
-                product_price=19.99,
-                product_stock=100,
-                product_color="Red",
+                product_price=29.99,
+                product_stock=150,
+                product_flavours_pk_list=[1, 2, 3],
+                product_color="Blue",
                 product_size="M"
             )
             print(message)
@@ -1781,7 +1787,7 @@ class ManageProducts:
                 Message: "An unexpected error in server occurred while updating product sku! Please try again later."
             - **ProgrammingError**: Catches programming errors such as invalid queries.
                 Message: "An unexpected error in server occurred while updating product sku! Please try again later."
-            - **IntegrityError**: Handles data integrity issues such as duplicate entries.
+            - **IntegrityError**: Handles data integrity issues.
                 Message: "Same type exists in Database!"
             - **Exception**: A catch-all for any other unexpected errors.
                 Message: "An unexpected error occurred while updating product sku! Please try again later."
@@ -1795,12 +1801,16 @@ class ManageProducts:
             #getting the product sku
             product_sku,message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
             #sku gets updated automatically, no logic needed
+            existing_product_flavours = sorted(product_sku.product_flavours.all())
+            new_product_flavours = sorted([Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list])
             if product_sku.product_id != product:
                 product_sku.product_id = product
             if product_sku.product_price != product_price:
                 product_sku.product_price = product_price
             if product_sku.product_stock != product_stock:
                 product_sku.product_stock = product_stock
+            if existing_product_flavours != new_product_flavours:
+                product_sku.product_flavours.set(new_product_flavours)
             if product_color:
                 if not product_sku.product_color or product_sku.product_color.lower() != product_color.lower():
                     product_sku.product_color = product_color
