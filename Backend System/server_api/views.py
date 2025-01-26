@@ -54,6 +54,14 @@ class SignupBusinessAdminUser(APIView):
             admin_contact_no = self.request.data.get('admin_contact_no',None)
             admin_email = self.request.data.get('admin_email',None)
             admin_avatar = self.request.data.get('admin_avatar', None)
+            
+            if ' ' in admin_user_name:
+                return Response(
+                    {
+                        "error": "Admin user name should not contain spaces."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             missing_fields = []
             if not admin_full_name:
@@ -168,6 +176,123 @@ class LogOutBusinessAdminUser(APIView):
             "message": "Successfully logged out.",
             "redirect_url": "/server_api/business_admin/login/"
         }, status=status.HTTP_200_OK)
+
+class UpdateBusinessAdminUser(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,admin_user_name,format=None):
+
+        try:
+            admin_user_name = admin_user_name
+            admin_full_name = self.request.data.get('admin_full_name',None)
+            admin_position_pk = self.request.data.get('admin_position_pk',None)
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+
+            #can none
+            admin_contact_no = self.request.data.get('admin_contact_no',None)
+            admin_email = self.request.data.get('admin_email',None)
+            admin_avatar = self.request.data.get('admin_avatar',None)
+            old_password = self.request.data.get('old_password',None)
+            password = self.request.data.get('password',None)
+
+            missing_fields = []
+            if not admin_full_name:
+                missing_fields.append("Admin full name")
+            if not admin_position_pk:
+                missing_fields.append("Admin position")
+            if missing_fields:
+                return Response(
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+                                                                                admin_contact_no,admin_email,admin_avatar,old_password,password,admin_user_name)
+            if admin_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating business admin user"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class UpdateBusinessAdminUserPassword(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,admin_user_name,format=None):
+        try:
+
+            admin_user_name = admin_user_name
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+            old_password = self.request.data.get('old_password',None)
+            new_password = self.request.data.get('new_password',None)
+            new_password_confirm = self.request.data.get('new_password_confirm',None)
+
+            if not new_password or not new_password_confirm:
+                return Response({
+                    'error':"Please provide new password"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if not old_password:
+                return Response({
+                    'error':"Please provide old password"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if new_password == new_password_confirm:
+                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
+
+                if password_update:
+                    return Response({
+                        'message':message
+                    },status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'error':message
+                    },status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({
+                    'error':"Password does not match"
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating business admin user password"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class DeleteBusinessAdminUser(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,admin_user_name,format=None):
+        try:
+            admin_user_name=admin_user_name
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+            deleted,message = AdminManagement.delete_business_admin_user(request,admin_unique_id)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting business admin user"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
 
 #product categories
 class FetchProductCategoryView(APIView):
@@ -800,7 +925,7 @@ class CreateProduct(APIView):
             product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
             product_description = self.request.data.get('product_description',None)
             product_summary = self.request.data.get('product_summary',None)
-            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
+            
 
             #can none
             product_brand_pk = self.request.data.get('product_brand_pk',None)
@@ -818,8 +943,6 @@ class CreateProduct(APIView):
                 missing_fields.append("Product Description")
             if not product_summary:
                 missing_fields.append("Product Summary")
-            if not product_flavours_pk_list:
-                missing_fields.append("Product Flavours")
             
             if missing_fields:
                 return Response({
@@ -827,7 +950,7 @@ class CreateProduct(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
             
             product_created,message = ManageProducts.create_product(request,product_name,product_category_pk_list,product_sub_category_pk_list,
-                                                                    product_description,product_summary,product_flavours_pk_list,product_brand_pk,
+                                                                    product_description,product_summary,product_brand_pk,
                                                                     product_ingredients,product_usage_direction)
             if product_created:
                 return Response({
@@ -859,7 +982,6 @@ class UpdateProduct(APIView):
             product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
             product_description = self.request.data.get('product_description',None)
             product_summary = self.request.data.get('product_summary',None)
-            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
 
             #can none
             product_brand_pk = self.request.data.get('product_brand_pk',None)
@@ -877,8 +999,6 @@ class UpdateProduct(APIView):
                 missing_fields.append("Product Description")
             if not product_summary:
                 missing_fields.append("Product Summary")
-            if not product_flavours_pk_list:
-                missing_fields.append("Product Flavours")
             
             if missing_fields:
                 return Response({
@@ -886,7 +1006,7 @@ class UpdateProduct(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
             
             product_update,message = ManageProducts.update_product(request,product_pk,product_name,product_category_pk_list,product_sub_category_pk_list,
-                                                                   product_description,product_summary,product_flavours_pk_list,product_brand_pk,
+                                                                   product_description,product_summary,product_brand_pk,
                                                                    product_ingredients,product_usage_direction)
             if product_update:
                 return Response({
@@ -984,6 +1104,7 @@ class CreateProductSKU(APIView):
             product_pk = self.request.data.get('product_pk',None)
             product_price = self.request.data.get('product_price',None)
             product_stock = self.request.data.get('product_stock',None)
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
 
             #can none
             product_color = self.request.data.get('product_color',None)
@@ -996,12 +1117,14 @@ class CreateProductSKU(APIView):
                 missing_fields.append("Price")
             if not product_stock:
                 missing_fields.append("Product stock")
+            if not product_flavours_pk_list:
+                missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
                 },status=status.HTTP_400_BAD_REQUEST)
 
-            product_sku_created,message = ManageProducts.create_product_sku(request,product_pk,product_price,product_stock,product_color
+            product_sku_created,message = ManageProducts.create_product_sku(request,product_pk,product_price,product_stock,product_flavours_pk_list,product_color
                                                                             ,product_size)
             if product_sku_created:
                 return Response({
@@ -1029,6 +1152,7 @@ class UpdateProductSKU(APIView):
             product_id = self.request.data.get('product_id',None)
             product_price = self.request.data.get('product_price',None)
             product_stock = self.request.data.get('product_stock',None)
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
 
             #can none
             product_color = self.request.data.get('product_color',None)
@@ -1041,13 +1165,15 @@ class UpdateProductSKU(APIView):
                 missing_fields.append("Price")
             if not product_stock:
                 missing_fields.append("Product stock")
+            if not product_flavours_pk_list:
+                missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
                 },status=status.HTTP_400_BAD_REQUEST)
 
             product_sku_update, message = ManageProducts.update_product_sku(request,product_sku_pk,product_id,product_price,
-                                                                            product_stock,product_color,product_size)
+                                                                            product_stock,product_flavours_pk_list,product_color,product_size)
             if product_sku_update:
                 return Response({
                     'message':message
@@ -1086,4 +1212,125 @@ class DeleteProductSKU(APIView):
                 "error": str(e),
                 "message": "An error occurred while deleting product sku."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+#product image
+class FetchProductImages(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            product_pk = self.request.query_params.get('product_pk',None)
+            product_image_pk = self.request.query_params.get('product_image_pk',None)
+            if product_pk:
+                product_images,message = ManageProducts.fetch_product_image(product_pk=product_pk)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+            elif product_image_pk:
+                product_images,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=False)
+            else:
+                product_images,message = ManageProducts.fetch_product_image()
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+            
+            if product_images:
+                return Response({
+                    'message':message,
+                    'product_image_data':product_images_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while fetching product image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class CreateProductImages(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,product_id,format=None):
+        try:
+            product_id=product_id
+            product_image_list = self.request.data.getlist('product_image_list',None)#as multiform data need to use getlist
+            #can none
+            color = self.request.data.get('color',None)
+            size = self.request.data.get('size',None)
+
+
+            if not product_image_list:
+                return Response({
+                    'error':'Please select atleast 1 image'
+                },status=status.HTTP_400_BAD_REQUEST)
+
+            product_images,message = ManageProducts.create_product_image(request,product_id,product_image_list,color,size)
+            if product_images:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while creating product image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class UpdateProductImage(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,product_image_pk,format=None):
+        try:
+            product_image_pk=product_image_pk
+
+            #can none
+            new_image = self.request.data.get('new_image',None)
+            color = self.request.data.get('color',None)
+            size = self.request.data.get('size',None)
+
+            product_image_updated,message = ManageProducts.update_product_image(request,product_image_pk,new_image,color,size)
+            if product_image_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class DeleteProductImage(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,product_image_pk,format=None):
+        try:
+            product_image_pk = product_image_pk
+            deleted,message = ManageProducts.delete_product_image(request,product_image_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating deleting image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  

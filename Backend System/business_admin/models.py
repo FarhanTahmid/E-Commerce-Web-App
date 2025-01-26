@@ -48,9 +48,10 @@ class BusinessAdminUser(models.Model):
         
         existing_admins_count = BusinessAdminUser.objects.all().count()
 
-        base_sku = f"{self.admin_full_name.upper()}_{self.admin_user_name.upper()}_{existing_admins_count+1}"
+        full_name = self.admin_full_name.replace(' ','_')
+        base_sku = f"{full_name.upper()}_{self.admin_user_name.upper()}_{existing_admins_count+1}"
         unique_hash = hashlib.md5(base_sku.encode()).hexdigest()[:6]
-        self.admin_unique_id = f"{base_sku}_{unique_hash}"
+        self.admin_unique_id = f"{base_sku}_{unique_hash.upper()}"
     
     def save(self, *args, **kwargs):
         #if newly created only then

@@ -102,7 +102,6 @@ class Product(models.Model):
     product_summary=models.TextField(null=False,blank=False)
     product_ingredients=models.TextField(null=True,blank=True)
     product_usage_direction=models.TextField(null=True,blank=True)
-    product_flavours=models.ManyToManyField(Product_Flavours,related_name='product_flavour')
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
@@ -126,6 +125,7 @@ class Product_SKU(models.Model):
     product_size = models.CharField(null=True, blank=True, max_length=100)
     product_price=models.DecimalField(null=False,blank=False,default=0,max_digits=50,decimal_places=2)
     product_stock = models.IntegerField(null=False, blank=False, default=0)
+    product_flavours=models.ManyToManyField(Product_Flavours,related_name='product_flavour')
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
@@ -147,7 +147,7 @@ class Product_SKU(models.Model):
         product_name = self.product_id.product_name.replace(' ', '_')
         base_sku = f"{product_name.upper()}_{self.product_color.upper() if self.product_color else 'no_color'.upper()}_{self.product_size.upper() if self.product_size else 'no_size'.upper()}_{sequential_number}"
         unique_hash = hashlib.md5(base_sku.encode()).hexdigest()[:6]
-        self.product_sku = f"{base_sku}_{unique_hash}"
+        self.product_sku = f"{base_sku}_{unique_hash.upper()}"
 
     def save(self, *args, **kwargs):
         #if newly created only then
@@ -174,14 +174,14 @@ class Product_SKU(models.Model):
 
 
 def get_product_image_path(instance, filename):
-    return f'product_images/{instance.product_id}/{filename}'
+    return f'product_images/{instance.product_id.product_name}/{filename}'
 class Product_Images(models.Model):
     '''This table stores the pictures of the Product. Pictures are stored locally in the product_images/{product_pk}/ folder'''
 
     product_id=models.ForeignKey(Product,null=False,blank=False,on_delete=models.CASCADE)
     product_image=ResizedImageField(size=[632,632],upload_to=get_product_image_path,blank=True, null=True)
-    color = models.CharField(null=False, blank=False, max_length=100)
-    size = models.CharField(null=False, blank=False, max_length=100)
+    color = models.CharField(null=True, blank=True, max_length=100)
+    size = models.CharField(null=True, blank=True, max_length=100)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
@@ -194,7 +194,7 @@ class Product_Images(models.Model):
         return str(self.product_id.product_name)
     
 def get_product_video_path(instance, filename):
-    return f'product_videos/{instance.product_id}/{filename}'
+    return f'product_videos/{instance.product_id.product_name}/{filename}'
 class Product_Videos(models.Model):
     '''This table stores the videos of the Product. Videos are stored locally in the product_videos/{product_pk}/ folder'''
 
@@ -217,7 +217,7 @@ class Product_Discount(models.Model):
     ''''This table stores all the discounts of a product'''
 
     product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE)
-    discount_name = models.CharField(null=False, blank=False, max_length=100)
+    discount_name = models.CharField(null=False, blank=False, max_length=100,unique=True)
     discount_amount = models.DecimalField(null=False, blank=False, max_digits=10, decimal_places=2)
     start_date = models.DateTimeField(null=False, blank=False)
     end_date = models.DateTimeField(null=False, blank=False)
@@ -230,7 +230,7 @@ class Product_Discount(models.Model):
         verbose_name_plural="Product Discounts"
 
     def __str__(self):
-        return f"{self.product_id.product_name} - {self.discount_amount}"
+        return f"{self.product_id.product_name} - {self.discount_amount}. Discount duration - {self.start_date} - {self.end_date}"
     
     def is_discount_active(self):
 

@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase
+from django.test import RequestFactory
 from rest_framework import status
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -7,12 +8,17 @@ from products.models import *
 from products import product_serializers
 from business_admin.models import *
 from django.db.models import Q
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import time
 
 # Create your tests here.
 class ProductCategoryAPITestCases(APITestCase):
     
     def setUp(self):
         self.now = timezone.now()
+        self.factory = RequestFactory()
         self.user = User.objects.create_user(username='testuser', password='password')
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
@@ -36,20 +42,48 @@ class ProductCategoryAPITestCases(APITestCase):
         self.product1 = Product.objects.create(product_name="Dove Cleanser", product_brand=self.product_brand2,
                                             product_description="A cleanser by Dove", product_summary="Gentle cleanser",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=self.now)
-        self.product1.product_category.set([self.product_category2])
+        self.product1.product_category.set([self.product_category1])
         self.product1.product_sub_category.set([self.product_sub_category2])
-        self.product1.product_flavours.set([self.product_flavour2])
 
         self.product2 = Product.objects.create(product_name="Dove85 Cleanser", product_brand=self.product_brand1,
                                             product_description="A cleanser by Dove", product_summary="Gentle cleanser",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=self.now)
         self.product2.product_category.set([self.product_category1])
         self.product2.product_sub_category.set([self.product_sub_category1])
-        self.product2.product_flavours.set([self.product_flavour1])
+
 
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=self.now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=self.now)
+        self.product_sku1.product_flavours.set([self.product_flavour2])
+        self.product_sku2.product_flavours.set([self.product_flavour1])
 
+
+        self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create_user(username='sami2186', password='password',is_superuser=False),
+                                                               admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1
+                                                               )
+        
+        self.product_image = Product_Images.objects.create(product_id=self.product1)
+
+
+    @staticmethod
+    def generate_test_image(color,size):
+        """Generate an in-memory image file."""
+        image = Image.new('RGB', (size * 100, size * 100), color=color)
+        
+        # Save it to a BytesIO buffer
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+
+        # Return an InMemoryUploadedFile, which is what Django expects for file uploads
+        return InMemoryUploadedFile(
+            buffer,  # File
+            None,  # Field name
+            f'{color}_{size}.jpg',  # Filename
+            'image/jpeg',  # Content type
+            buffer.getbuffer().nbytes,  # File size
+            None  # Content type extra
+        )
 
     def test_fetch_all_product_categories(self):
         """
@@ -272,6 +306,41 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertIn('detail', response.data) 
         self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
 
+    def test_business_admin_update(self):
+        """
+        Test for updating business admin
+        """
+
+        data= {'admin_full_name':"TrishaHaque Samuel",'admin_position_pk':self.adminposition1.pk}
+        response = self.client.put(f'/server_api/business-admin/update/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Business Admin successfully updated")
+
+    def test_update_business_admin_user_password(self):
+        """
+        Test for updating business admin user password
+        """
+
+        data = {'old_password':"password",'new_password':'new_password','new_password_confirm':'new_password'}
+        response = self.client.put(f'/server_api/business-admin/update-password/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Password updated successfully")
+
+        #missing data
+        data = {'old_password':"password",'new_password':'new_password','new_password_confirm':None}
+        response = self.client.put(f'/server_api/business-admin/update-password/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Please provide new password")
+
+    def test_delete_business_admin_user(self):
+        """
+        Test delete business admin user
+        """
+        response = self.client.delete(f'/server_api/business-admin/delete/{str(self.businessadmin1.admin_user_name)}/')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Admin deleted successfully")
+
+
     #product brands
     def test_fetch_product_brand(self):
         """
@@ -431,7 +500,7 @@ class ProductCategoryAPITestCases(APITestCase):
         
         data = {'product_name':"ooo",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.post(f'/server_api/product/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
@@ -440,7 +509,7 @@ class ProductCategoryAPITestCases(APITestCase):
         #duplicate
         data = {'product_name':"Dove Cleanser",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.post(f'/server_api/product/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
@@ -450,9 +519,9 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         Test for updating product
         """
-        data = {'product_pk':self.product1.pk,'product_name':"ooo",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
+        data = {'product_pk':self.product1.pk,'product_name':"ooo",'product_category_pk_list':[self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.put(f'/server_api/product/update/{self.product1.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
@@ -461,7 +530,7 @@ class ProductCategoryAPITestCases(APITestCase):
         #duplicate
         data = {'product_pk':self.product1.pk,'product_name':"Dove85 Cleanser",'product_category_pk_list':[self.product_category1.pk,self.product_category2.pk],
                 'product_sub_category_pk_list' : [self.product_sub_category1.pk],'product_description':"pppp",
-                'product_summary':"ppopop",'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk],
+                'product_summary':"ppopop"
                 }
         response = self.client.put(f'/server_api/product/update/{self.product1.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
@@ -494,7 +563,8 @@ class ProductCategoryAPITestCases(APITestCase):
         """
         Test product sku creation
         """
-        data = {'product_pk':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL'}
+        data = {'product_pk':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL',
+                'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk]}
         response = self.client.post(f'/server_api/product/product-sku/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"Product sku created successfully")
@@ -504,7 +574,8 @@ class ProductCategoryAPITestCases(APITestCase):
         Test for updating product sku
         """
 
-        data = {'product_id':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL','product_color':'navy yellow'}
+        data = {'product_id':self.product2.pk,'product_price':400,'product_stock':800,'product_size':'XXL','product_color':'navy yellow',
+                'product_flavours_pk_list':[self.product_flavour1.pk,self.product_flavour2.pk]}
         response = self.client.put(f'/server_api/product/product-sku/update/{self.product_sku2.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product sku updated with new sku id")
@@ -521,5 +592,63 @@ class ProductCategoryAPITestCases(APITestCase):
         # response = self.client.delete(f'/server_api/product/product-sku/delete/{self.product_sku2.pk}/')
         # self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         # self.assertEqual(response.data['error'],"An unexpected error occurred while deleting product sku! Please try again later.")
+
+    #product images
+    def test_fetch_product_images(self):
+        """
+        Test for fetching product images
+        """
+        #fetch all
+        response = self.client.get(f'/server_api/product/product-images/fetch-product-image/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"All product images fetched successfully")
+
+        #using product_image_pk
+        response = self.client.get(f'/server_api/product/product-images/fetch-product-image/?product_image_pk={self.product_image.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product images fetched successfully")
+
+    # def test_create_product_image(self):
+    #     """
+    #     Test for creating product images
+    #     """
+
+    #     image = ProductCategoryAPITestCases.generate_test_image('yellow',1)
+    #     image2 = ProductCategoryAPITestCases.generate_test_image('green',2)
+    #     data = {'product_image_list':[image,image2]}
+    #     response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='multipart')
+    #     self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+    #     self.assertEqual(response.data['message'],"Product image created successfully")
+
+    # def test_update_product_image(self):
+    #     """
+    #     Test for updating product image
+    #     """
+
+    #     image_old = ProductCategoryAPITestCases.generate_test_image('yellow',3)
+    #     image_new = ProductCategoryAPITestCases.generate_test_image('pink',4)
+    #     self.product_image.product_image = image_old
+    #     data = {'new_image':image_new,'size':'XXL'}
+    #     response = self.client.put(f'/server_api/product/product-image/update/{self.product_image.pk}/',data,format='multipart')
+    #     self.assertEqual(response.status_code,status.HTTP_200_OK)
+    #     self.assertEqual(response.data['message'],"Product image updated successfully")
+
+    # def test_delete_product_image(self):
+    #     """
+    #     Test for deleting product image
+    #     """
         
+    #     image_old = ProductCategoryAPITestCases.generate_test_image('yellow',3)
+    #     self.product_image.product_image = image_old
+    #     self.product_image.save()
+    #     time.sleep(10)
+    #     response = self.client.delete(f'/server_api/product/product-image/delete/{self.product_image.pk}/')
+    #     self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+    #     self.assertEqual(response.data['message'],"Product image deleted successfully")
+
+
+
+
+
+    
 

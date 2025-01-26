@@ -123,12 +123,12 @@ class BusinessAdminTest(TestCase):
         """
         Test for updating business admins
         """
-        print(self.businessadmin1.admin_unique_id)
+        # print(self.businessadmin1.admin_unique_id)
         #SAMI_SAMI2186_1_a98961
         request = self.factory.post('/admins/update/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = AdminManagement.update_business_admin_user(request,admin_unique_id="SAMI_SAMI2186_1_a98961",
+        success, message = AdminManagement.update_business_admin_user(request,admin_unique_id="SAMI_SAMI2186_1_A98961",
                                                                  admin_full_name="rafi",admin_position_pk=self.adminposition2.pk,
                                                                  admin_contact_no="01306413841")
         self.assertTrue(success,"business admin should be successfully updated")
@@ -153,7 +153,7 @@ class BusinessAdminTest(TestCase):
         request = self.factory.post('/admins/delete/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAMI2186_1_a98961")
+        success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAMI2186_1_A98961")
         self.assertTrue(success,"business admin should be successfully deleted")
         self.assertEqual(message,"Admin deleted successfully","Success message is incorrect")
 
@@ -161,6 +161,5 @@ class BusinessAdminTest(TestCase):
         # success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAMI2186_1_a98961")
         # self.assertFalse(success,"business admin should not be found")
         # self.assertEqual(message,"An unexpected error occurred while deleting admin user! Please try again later.","Error message is incorrect")
-
 
 

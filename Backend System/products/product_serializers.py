@@ -30,3 +30,7 @@ class Product_SKU_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Product_SKU
         fields= '__all__'
+class Product_Images_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model=Product_Images
+        fields= '__all__'

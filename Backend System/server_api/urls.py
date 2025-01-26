@@ -8,8 +8,11 @@ urlpatterns = [                                                                 
     #business admin
     path('business-admin/fetch-token/',views.FetchToken.as_view(),name='fetch_token'),
     path('business-admin/signup/',views.SignupBusinessAdminUser.as_view(),name='create_business_admin_user'),
+    path('business-admin/update/<str:admin_user_name>/',views.UpdateBusinessAdminUser.as_view(),name='update_business_admin_user'),
     path('business-admin/login/',views.LoginInBusinessAdminUser.as_view(),name='login_business_admin_user'),
     path('business-admin/logout/',views.LogOutBusinessAdminUser.as_view(),name='logout_business_admin_user'),
+    path('business-admin/update-password/<str:admin_user_name>/',views.UpdateBusinessAdminUserPassword.as_view(),name='update_business_admin_user_password'),
+    path('business-admin/delete/<str:admin_user_name>/',views.DeleteBusinessAdminUser.as_view(),name='delete_business_admin_user'),
 
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
@@ -47,5 +50,11 @@ urlpatterns = [                                                                 
     path('product/product-sku/create/',views.CreateProductSKU.as_view(),name='product_sku_create'),
     path('product/product-sku/update/<int:product_sku_pk>/',views.UpdateProductSKU.as_view(),name='update_product_sku'),
     path('product/product-sku/delete/<int:product_sku_pk>/',views.DeleteProductSKU.as_view(),name='delete_product_sku'),
+
+    #product image
+    path('product/product-images/fetch-product-image/',views.FetchProductImages.as_view(),name='fetch_product_images'),#pass parameters either /?product_pk= OR product_image_pk= OR no paramters to fetch all
+    path('product/product-images/create/<int:product_id>/',views.CreateProductImages.as_view(),name='create_product_images'),
+    path('product/product-image/update/<int:product_image_pk>/',views.UpdateProductImage.as_view(),name='update_product_image'),
+    path('product/product-image/delete/<int:product_image_pk>/',views.DeleteProductImage.as_view(),name='delete_product_image'),
 
 ]

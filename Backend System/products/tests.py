@@ -2,14 +2,19 @@ from django.test import TestCase,RequestFactory
 from django.utils import timezone
 from products.models import *
 from products.product_management import ManageProducts
-from unittest import mock
 from django.db import *
 from system.models import *
+from django.core.files.uploadedfile import SimpleUploadedFile
 from business_admin.models import *
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import datetime
 # Create your tests here.
 
 class TestManageProducts(TestCase):
-    
+
+
     def setUp(self):
         self.factory = RequestFactory()
         self.adminposition1 = AdminPositions.objects.create(name="Manager",description="Manage of company")
@@ -36,6 +41,7 @@ class TestManageProducts(TestCase):
         self.sub_category5.category_id.set([self.category_makeup])
 
         #creating product brand
+        #self.brand_logo = TestManageProducts.generate_test_image('white',1)
         self.brand1 = Product_Brands.objects.create(brand_name="Loreal", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 1909,is_own_brand=False,created_at=now)
         self.brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",
@@ -50,39 +56,87 @@ class TestManageProducts(TestCase):
                                        product_ingredients="Water, Glycerin", product_usage_direction="Apply daily", created_at=now)
         self.product1.product_category.set([self.category_skincare])
         self.product1.product_sub_category.set([self.sub_category1,self.sub_category2])
-        self.product1.product_flavours.set([self.product_flavour1])
 
         self.product2 = Product.objects.create(product_name="Dove Cleanser", product_brand=self.brand2,
                                             product_description="A cleanser by Dove", product_summary="Gentle cleanser",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use twice daily", created_at=now)
         self.product2.product_category.set([self.category_skincare])
         self.product2.product_sub_category.set([self.sub_category2])
-        self.product2.product_flavours.set([self.product_flavour2])
+        
 
         self.product3 = Product.objects.create(product_name="Loreal Shampoo", product_brand=self.brand1,
                                             product_description="A shampoo by Loreal", product_summary="Cleansing shampoo",
                                             product_ingredients="Water, Sodium Laureth Sulfate", product_usage_direction="Use as needed", created_at=now)
         self.product3.product_category.set([self.category_haircare])
         self.product3.product_sub_category.set([self.sub_category3])
-        self.product3.product_flavours.set([self.product_flavour1, self.product_flavour2])
 
         self.product4 = Product.objects.create(product_name="Dove Perfume", product_brand=self.brand2,
                                             product_description="A perfume by Dove", product_summary="Long-lasting fragrance",
                                             product_ingredients="Alcohol, Fragrance", product_usage_direction="Spray on pulse points", created_at=now)
         self.product4.product_category.set([self.category_fragrance])
         self.product4.product_sub_category.set([self.sub_category4])
-        self.product4.product_flavours.set([self.product_flavour1])
+    
 
         self.product5 = Product.objects.create(product_name="Loreal Lipstick", product_brand=self.brand1,
                                             product_description="A lipstick by Loreal", product_summary="Matte lipstick",
                                             product_ingredients="Wax, Pigment", product_usage_direction="Apply on lips", created_at=now)
         self.product5.product_category.set([self.category_makeup])
         self.product5.product_sub_category.set([self.sub_category5])
-        self.product5.product_flavours.set([self.product_flavour2])
+        
 
         #creating product sku
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
+
+        self.product_sku1.product_flavours.set([self.product_flavour1])
+        self.product_sku2.product_flavours.set([self.product_flavour2])
+
+        self.active_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Active Discount",
+            discount_amount=10.00,
+            start_date=now - datetime.timedelta(days=1),  # Started yesterday
+            end_date=now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
+
+        # Inactive discount (end date in the past)
+        self.inactive_discount = Product_Discount.objects.create(
+            product_id=self.product2,
+            discount_name="Inactive Discount",
+            discount_amount=5.00,
+            start_date=now - datetime.timedelta(days=10),  # Started 10 days ago
+            end_date=now - datetime.timedelta(days=1)      # Ended yesterday
+        )
+
+        # Inactive discount (start date in the future)
+        self.future_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Future Discount",
+            discount_amount=15.00,
+            start_date=now + datetime.timedelta(days=1),  # Starts tomorrow
+            end_date=now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
+
+
+    @staticmethod
+    def generate_test_image(color,size):
+        """Generate an in-memory image file."""
+        image = Image.new('RGB', (size * 100, size * 100), color=color)
+        
+        # Save it to a BytesIO buffer
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+        
+        # Return an InMemoryUploadedFile, which is what Django expects for file uploads
+        return InMemoryUploadedFile(
+            buffer,  # File
+            None,  # Field name
+            f'{color}_{size}.jpg',  # Filename
+            'image/jpeg',  # Content type
+            buffer.getbuffer().nbytes,  # File size
+            None  # Content type extra
+        )
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
@@ -211,7 +265,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_brand/create/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.create_product_brand(request,"Lux", 1889,True, "USA", "Lux Paris")
+        success, message = ManageProducts.create_product_brand(request,"Lux", 1889,True, "USA", "Lux Paris")#,self.brand_logo
         self.assertTrue(success, "Product brand should be created successfully.")
         self.assertEqual(message, "New Product brand, Lux successfully added!", "Success message is incorrect.")
     
@@ -258,10 +312,13 @@ class TestManageProducts(TestCase):
         """
         Test updating a product brand successfully.
         """
+        #new_logo = TestManageProducts.generate_test_image('pink',1)
         request = self.factory.post('/product/product_brand/update/')
         #request.user = self._create_mock_dev_user()
+        #self.brand1.brand_logo = TestManageProducts.generate_test_image('purple',3)
+        #self.brand1.save()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.update_product_brand(request,self.brand1.pk, "Loreal Updated",2009,True, "India", "Loreal Paris Updated")
+        success, message = ManageProducts.update_product_brand(request,self.brand1.pk, "Loreal Updated",2009,False, "DDD", "Loreal Paris Updated")
         self.assertTrue(success, "Product brand should be updated successfully.")
         self.assertEqual(message, "Product brand, Loreal Updated updated successfully!", "Success message is incorrect.")
 
@@ -421,7 +478,7 @@ class TestManageProducts(TestCase):
         request.user = self._create_mock_businessadmin_user()
         success,message = ManageProducts.create_product(request,"Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
                                                         [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
-                                                        "Essentials","Very Essentials",[self.product_flavour1.pk],
+                                                        "Essentials","Very Essentials",
                                                         self.brand2.pk,"soup","free to use")
         self.assertTrue(success,"Product successfully created.")
         self.assertEqual(message,"Product, Dove Lipstick created!","Success message is incorrect")
@@ -429,7 +486,7 @@ class TestManageProducts(TestCase):
 
         success,message = ManageProducts.create_product(request,"Dove Lipstick",[self.category_makeup.pk,self.category_skincare.pk],
                                                         [self.sub_category1.pk,self.sub_category5.pk,self.sub_category3.pk],
-                                                        "Essentials","Very Essentials",[self.product_flavour1.pk],
+                                                        "Essentials","Very Essentials",
                                                         self.brand2.pk,"soup","free to use")
         self.assertFalse(success,"Product should not be created")
         self.assertEqual(message, "Same product already exists!","Error message is incorrect")
@@ -442,7 +499,7 @@ class TestManageProducts(TestCase):
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.update_product(request,self.product5.pk,self.product5.product_name,[self.category_fragrance.pk,self.category_makeup.pk],
-                                                         [self.sub_category1.pk],"hii","yoo",[self.product_flavour2.pk,self.product_flavour1.pk],
+                                                         [self.sub_category1.pk],"hii","yoo",
                                                          self.brand2.pk,"nothing","ooo")
         self.assertTrue(success,"Product should be updated!")
         self.assertEqual(message,"Product updated successfully!","Success message is incorrect")
@@ -461,7 +518,7 @@ class TestManageProducts(TestCase):
     #test product sku
     def test_fetch_product_sku(self):
         """
-        Test for fetching product sky
+        Test for fetching product sku
         """
         #fetch using pk
         success, message = ManageProducts.fetch_product_sku(pk=self.product_sku2.pk)
@@ -479,9 +536,16 @@ class TestManageProducts(TestCase):
         self.assertEqual(message,"Fetched successfully","Success message is incorrect")
 
         #fetch using product sku if not found
+        print(self.product_sku2.product_sku)
         success, message = ManageProducts.fetch_product_sku(product_sku="sAmi5")
         self.assertFalse(success,"Product sku should not be fetched successfully!")
         self.assertEqual(message,"No sku with this code!","Error is incorrect")
+
+        #fetch using product sku
+        #LOREAL_MOISTURIZER_SILVER_NO_SIZE_1_6D9F46
+        success, message = ManageProducts.fetch_product_sku(product_sku="LOREAL_MOISTURIZER_SILVER_NO_SIZE_1_6D9F46")
+        self.assertTrue(success,"Product sku should be fetched successfully!")
+        self.assertEqual(message,"Fetched successfully","Success message is incorrect")
 
     def test_create_product_sku(self):
         """
@@ -490,7 +554,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_sku/create/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.create_product_sku(request,product_pk=self.product2.pk,product_price=25,product_stock=100,product_size=10)
+        success, message = ManageProducts.create_product_sku(request,product_pk=self.product2.pk,product_price=25,product_stock=100,product_flavours_pk_list=[self.product_flavour1.pk],product_size=10)
         self.assertTrue(success,"Product sku should be created successfully!")
         self.assertEqual(message,"Product sku created successfully","Success message is incorrect")
 
@@ -501,7 +565,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_sku/update/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.update_product_sku(request,product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_color="red",product_size=80)
+        success, message = ManageProducts.update_product_sku(request,product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_flavours_pk_list=[self.product_flavour2.pk,self.product_flavour1.pk],product_color="red",product_size=80)
         self.assertTrue(success,"Product sku should be updated successfully!")
         self.assertEqual(message,"Product sku updated with new sku id","Success message is incorrect")
 
@@ -516,6 +580,117 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product sku should be deleted successfully!")
         self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
 
-        
+    #test product image
+    #This test are working fine, as they create files so commenting them
+
+    # def test_create_product_image(self):
+    #     """
+    #     Test create product image
+    #     """
+    #     #image
+    #     image1 = TestManageProducts.generate_test_image('red',1)
+    #     request = self.factory.post('/product/product_image/create/')
+    #     #request.user = self._create_mock_dev_user()
+    #     request.user = self._create_mock_businessadmin_user()
+    #     success, message = ManageProducts.create_product_image(request,self.product1.pk,image1,color="aqua")
+    #     self.assertTrue(success,"Product image should be created successsfully")
+    #     self.assertEqual(message,"Product image created successfully","Success message is incorrect")
+
+    # def test_update_product_image(self):
+    #     """
+    #     Test for updating product image
+    #     """
+    #     #product image
+    #     image = TestManageProducts.generate_test_image('yellow',1)
+    #     product_image = Product_Images.objects.create(product_id=self.product1,product_image=image)
+
+    #     request = self.factory.post('/product/product_image/update/')
+    #     #request.user = self._create_mock_dev_user()
+    #     request.user = self._create_mock_businessadmin_user()
+    #     new_image = TestManageProducts.generate_test_image('green',1)
+    #     success,message = ManageProducts.update_product_image(request,product_image.pk,new_image,'pink')
+    #     self.assertTrue(success,"Product image should be updated successsfully")
+    #     self.assertEqual(message,"Product image updated successfully")
+
+    # def test_delete_product_image(self):
+    #     """
+    #     Test for deleting product image
+    #     """
+    #     image = TestManageProducts.generate_test_image('orange',1)
+    #     product_image = Product_Images.objects.create(product_id=self.product1,product_image=image)
+    #     request = self.factory.post('/product/product_image/delete/')
+    #     #request.user = self._create_mock_dev_user()
+    #     request.user = self._create_mock_businessadmin_user()
+    #     success,message = ManageProducts.delete_product_image(request,[product_image.pk])
+    #     self.assertTrue(success,"Product image should be deleted successsfully")
+    #     self.assertEqual(message,"Product image deleted successfully")
+
+    #product discount
+    def test_fetch_product_discount(self):
+        """
+        Test for fetching product discount
+        """
+        request = self.factory.post('/product/product_discount/fetch/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.fetch_product_discount(product_id=self.product1.pk)
+        self.assertTrue(success,"Product discount should be fetched successfully")
+        self.assertEqual(message,"Product Discounts fetched successfully")
+
+        #fetch all
+        success, message = ManageProducts.fetch_product_discount()
+        self.assertTrue(success,"Product discount should be fetched successfully")
+        self.assertEqual(message,"All product discounts fetched successfully")
+
+        #fetch active
+        success, message = ManageProducts.fetch_product_discount(is_active=True)
+        self.assertTrue(success,"Product discount should be fetched successfully")
+        self.assertEqual(message,"Active Product Discount fetched successfully")
+
+    def test_create_product_discount(self):
+        """
+        Test create product discount
+        """
+        now = timezone.now()
+        request = self.factory.post('/product/product_discount/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now,now + datetime.timedelta(days=2))
+        self.assertTrue(success,"Product discount should be created successfully")
+        self.assertEqual(message,"Product discount created successfully")
+
+        #same name
+        success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now-datetime.timedelta(days=1),now  + datetime.timedelta(days=2))
+        self.assertFalse(success,"Product discount should not be created successfully")
+        self.assertEqual(message,"Product discount with this name already exists and is active")
+
+    def test_update_product_discount(self):
+        """
+        Test for updating product discount
+        """
+        now = timezone.now()
+        request = self.factory.post('/product/product_discount/update/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.update_product_discount(request,self.inactive_discount.pk,self.product1.pk,"XRAZY OFFer",800,now-datetime.timedelta(days=100),now + datetime.timedelta(days=10))
+        self.assertTrue(success,"Product discount should be updated successfully")
+        self.assertEqual(message,"Product Discount updated")
+
+    def test_delete_product_discount(self):
+        """
+        Test for deleting product discount
+        """
+        request = self.factory.post('/product/product_discount/create/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.delete_product_discount(request,self.inactive_discount.pk)
+        self.assertTrue(success,"Product discount should be deleted successfully")
+        self.assertEqual(message,"Product discount deleted successfully")
+
+
+
+
+
+    
    
         
