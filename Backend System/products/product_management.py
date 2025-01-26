@@ -416,6 +416,28 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Type! Please try again later.")
 
     # Manage Product Category
+    def fetch_all_product_categories():
+        
+        # Get the product type with product_type_pk
+        try:
+            get_all_product_categories = Product_Category.objects.all()
+            return get_all_product_categories, "Fetched all product categories successfully!"
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__
+            error_message = str(error)
+            ManageErrorLog.create_error_log(error_type, error_message)
+            print(f"{error_type} occurred: {error_message}")
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching Product Categories! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching Product Categories! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching Product Categories! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching Product Categories! Please try again later.")
+    
     def create_product_category(product_type_pk,category,description):
         pass
 
@@ -425,8 +447,6 @@ class ManageProducts:
     def delete_product_category(product_category_pk):
         pass
 
-    def fetch_all_product_categories():
-        pass
     
     # Manage Product Sub Category
     def create_product_sub_category(product_category_pk,sub_category,description):
