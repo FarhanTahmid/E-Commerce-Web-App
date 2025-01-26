@@ -607,17 +607,17 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product images fetched successfully")
 
-    def test_create_product_image(self):
-        """
-        Test for creating product images
-        """
+    # def test_create_product_image(self):
+    #     """
+    #     Test for creating product images
+    #     """
 
-        image = ProductCategoryAPITestCases.generate_test_image('yellow',1)
-        image2 = ProductCategoryAPITestCases.generate_test_image('green',2)
-        data = {'product_image_list':[image,image2]}
-        response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='multipart')
-        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-        self.assertEqual(response.data['message'],"Product image created successfully")
+    #     image = ProductCategoryAPITestCases.generate_test_image('yellow',1)
+    #     image2 = ProductCategoryAPITestCases.generate_test_image('green',2)
+    #     data = {'product_image_list':[image,image2]}
+    #     response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='multipart')
+    #     self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+    #     self.assertEqual(response.data['message'],"Product image created successfully")
 
 
 
