@@ -1920,20 +1920,21 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product image! Please try again later.")
     
-    def create_product_image(request,product_id,product_image,color=None,size=None):
+    def create_product_image(request,product_id,product_image_list,color=None,size=None):
 
         try:
             #getting the product
             try:
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                product_image_created = Product_Images.objects.create(product_id=product,product_image = product_image)
-                if color:
-                    product_image_created.color = color
-                if size:
-                    product_image_created.size = size
-                product_image_created.save()
-                updated, message = SystemLogs.updated_by(request,product_image_created)
-                activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
+                for i in product_image_list:
+                    product_image_created = Product_Images.objects.create(product_id=product,product_image = i)
+                    if color:
+                        product_image_created.color = color
+                    if size:
+                        product_image_created.size = size
+                    product_image_created.save()
+                    updated, message = SystemLogs.updated_by(request,product_image_created)
+                    activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
                 return True, "Product image created successfully"
             except:
                 return False, "No product found"

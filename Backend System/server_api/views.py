@@ -1211,4 +1211,74 @@ class DeleteProductSKU(APIView):
                 "error": str(e),
                 "message": "An error occurred while deleting product sku."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+#product image
+class FetchProductImages(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            product_pk = self.request.query_params.get('product_pk',None)
+            product_image_pk = self.request.query_params.get('product_image_pk',None)
+            if product_pk:
+                product_images,message = ManageProducts.fetch_product_image(product_pk=product_pk)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+            elif product_image_pk:
+                product_images,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=False)
+            else:
+                product_images,message = ManageProducts.fetch_product_image()
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+            
+            if product_images:
+                return Response({
+                    'message':message,
+                    'product_image_data':product_images_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while fetching product image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class CreateProductImages(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,product_id,format=None):
+        try:
+            product_id=product_id
+            product_image_list = self.request.data.get('product_image_list',None)
+
+            #can none
+            color = self.request.data.get('color',None)
+            size = self.request.data.get('size',None)
+
+
+            if not product_image_list:
+                return Response({
+                    'error':'Please select atleast 1 image'
+                },status=status.HTTP_400_BAD_REQUEST)
+
+            product_images,message = ManageProducts.create_product_image(request,product_id,product_image_list,color,size)
+            if product_images:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while creating product image."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
 

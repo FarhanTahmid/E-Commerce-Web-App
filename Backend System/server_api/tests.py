@@ -8,6 +8,9 @@ from products.models import *
 from products import product_serializers
 from business_admin.models import *
 from django.db.models import Q
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # Create your tests here.
 class ProductCategoryAPITestCases(APITestCase):
@@ -56,7 +59,19 @@ class ProductCategoryAPITestCases(APITestCase):
         self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create_user(username='sami2186', password='password',is_superuser=False),
                                                                admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1
                                                                )
+        
+        self.product_image = Product_Images.objects.create(product_id=self.product1)
 
+
+    @staticmethod
+    def generate_test_image(color,size):
+        """Generate an in-memory image file."""
+        image = Image.new('RGB', (size * 100, size * 100), color=color)
+        
+        # Save it to a BytesIO buffer
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
 
     def test_fetch_all_product_categories(self):
         """
@@ -563,5 +578,34 @@ class ProductCategoryAPITestCases(APITestCase):
         # response = self.client.delete(f'/server_api/product/product-sku/delete/{self.product_sku2.pk}/')
         # self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         # self.assertEqual(response.data['error'],"An unexpected error occurred while deleting product sku! Please try again later.")
+
+    #product images
+    def test_fetch_product_images(self):
+        """
+        Test for fetching product images
+        """
+        #fetch all
+        response = self.client.get(f'/server_api/product/product-images/fetch-product-image/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"All product images fetched successfully")
+
+        #using product_image_pk
+        response = self.client.get(f'/server_api/product/product-images/fetch-product-image/?product_image_pk={self.product_image.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product images fetched successfully")
+
+    def test_create_product_image(self):
+        """
+        Test for creating product images
+        """
+
+        image = ProductCategoryAPITestCases.generate_test_image('yellow',1)
+        data = {'product_image_list':[image]}
+        response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Product image created successfully")
+
+
+
     
 
