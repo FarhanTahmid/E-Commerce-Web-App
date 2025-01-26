@@ -1902,7 +1902,50 @@ class ManageProducts:
     
     #product images
     def fetch_product_image(product_pk=None,product_image_pk=None):
+        
+        """
+    Fetch product images based on various optional parameters with detailed exception handling.
 
+    This function attempts to retrieve product images from the database based on the provided parameters.
+    It handles various errors that might occur during the process, logging each error for further analysis.
+
+    Args:
+        product_pk (int, optional): The primary key (ID) of the product to filter images by. Defaults to None.
+        product_image_pk (int, optional): The primary key (ID) of the specific product image to be fetched. Defaults to None.
+
+    Returns:
+        tuple:
+            - QuerySet or Product_Images: A QuerySet of product images if `product_pk` is provided, a single Product_Images object if `product_image_pk` is provided, or all product images if no parameters are provided.
+            - str: A message indicating the success or failure of the operation.
+
+    Example Usage:
+        # Fetch images for a specific product
+        product_images, message = fetch_product_image(product_pk=1)
+        print(message)
+
+        # Fetch a specific product image
+        product_image, message = fetch_product_image(product_image_pk=1)
+        print(message)
+
+        # Fetch all product images
+        all_product_images, message = fetch_product_image()
+        print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues.
+            Message: "An unexpected error in Database occurred while fetching product image! Please try again later."
+        - **OperationalError**: Handles server-related issues such as connection problems.
+            Message: "An unexpected error in server occurred while fetching product image! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries.
+            Message: "An unexpected error in server occurred while fetching product image! Please try again later."
+        - **IntegrityError**: Handles data integrity issues.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for any other unexpected errors.
+            Message: "An unexpected error occurred while fetching product image! Please try again later."
+
+    Notes:
+        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+    """
         try:
             if product_pk:
                 product,message = ManageProducts.fetch_product(product_pk=product_pk)
@@ -1932,6 +1975,51 @@ class ManageProducts:
     
     def create_product_image(request,product_id,product_image_list,color=None,size=None):
 
+        """
+    Create new product images with detailed exception handling.
+
+    This function attempts to add new images to a product in the database. It first fetches the product
+    using the provided product primary key (product_id). Then, it creates new images for the product
+    with the specified attributes like color and size. The function handles various errors that might
+    occur during the process, logging each error for further analysis.
+
+    Args:
+        request (Request): The request object containing the user information.
+        product_id (int): The primary key (ID) of the product to which the images belong.
+        product_image_list (list): A list of image files to be associated with the product.
+        color (str, optional): The color of the product images. Defaults to None.
+        size (str or int, optional): The size of the product images. Defaults to None.
+
+    Returns:
+        tuple:
+            - bool: `True` if the product images were created successfully, `False` otherwise.
+            - str: A message indicating the success or failure of the operation.
+
+    Example Usage:
+        success, message = create_product_image(
+            request,
+            product_id=1,
+            product_image_list=[image1, image2],
+            color="Red",
+            size="L"
+        )
+        print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues.
+            Message: "An unexpected error in Database occurred while creating product image! Please try again later."
+        - **OperationalError**: Handles server-related issues such as connection problems.
+            Message: "An unexpected error in server occurred while creating product image! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries.
+            Message: "An unexpected error in server occurred while creating product image! Please try again later."
+        - **IntegrityError**: Handles data integrity issues.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for any other unexpected errors.
+            Message: "An unexpected error occurred while creating product image! Please try again later."
+
+    Notes:
+        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+    """
         try:
             #getting the product
             try:
@@ -1971,6 +2059,50 @@ class ManageProducts:
         
     def update_product_image(request,product_image_pk,new_image=None,color=None,size=None):
 
+        """
+    Update an existing product image with detailed exception handling.
+
+    This function attempts to update an existing product image in the database. It fetches the product image
+    using the provided primary key (product_image_pk) and updates its attributes with the specified values.
+    The function handles various errors that might occur during the process, logging each error for further analysis.
+
+    Args:
+        request (Request): The request object containing the user information.
+        product_image_pk (int): The primary key (ID) of the product image to be updated.
+        new_image (File, optional): The new image file to replace the existing one. Defaults to None.
+        color (str, optional): The new color of the product image. Defaults to None.
+        size (str or int, optional): The new size of the product image. Defaults to None.
+
+    Returns:
+        tuple:
+            - bool: `True` if the product image was updated successfully, `False` otherwise.
+            - str: A message indicating the success or failure of the operation.
+
+    Example Usage:
+        success, message = update_product_image(
+            request,
+            product_image_pk=1,
+            new_image=new_image_file,
+            color="Blue",
+            size="M"
+        )
+        print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues.
+            Message: "An unexpected error in Database occurred while updating product image! Please try again later."
+        - **OperationalError**: Handles server-related issues such as connection problems.
+            Message: "An unexpected error in server occurred while updating product image! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries.
+            Message: "An unexpected error in server occurred while updating product image! Please try again later."
+        - **IntegrityError**: Handles data integrity issues.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for any other unexpected errors.
+            Message: "An unexpected error occurred while updating product image! Please try again later."
+
+    Notes:
+        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+    """
         try:
             #getting the product images
             product_image ,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
@@ -2011,6 +2143,45 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product image! Please try again later.")
     
     def delete_product_image(request,product_image_pk):
+
+        """
+    Delete an existing product image with detailed exception handling.
+
+    This function attempts to delete an existing product image from the database. It fetches the product image
+    using the provided primary key (product_image_pk) and deletes it along with the associated image file.
+    The function handles various errors that might occur during the process, logging each error for further analysis.
+
+    Args:
+        request (Request): The request object containing the user information.
+        product_image_pk (int): The primary key (ID) of the product image to be deleted.
+
+    Returns:
+        tuple:
+            - bool: `True` if the product image was deleted successfully, `False` otherwise.
+            - str: A message indicating the success or failure of the operation.
+
+    Example Usage:
+        success, message = delete_product_image(
+            request,
+            product_image_pk=1
+        )
+        print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues.
+            Message: "An unexpected error in Database occurred while deleting product image! Please try again later."
+        - **OperationalError**: Handles server-related issues such as connection problems.
+            Message: "An unexpected error in server occurred while deleting product image! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries.
+            Message: "An unexpected error in server occurred while deleting product image! Please try again later."
+        - **IntegrityError**: Handles data integrity issues.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for any other unexpected errors.
+            Message: "An unexpected error occurred while deleting product image! Please try again later."
+
+    Notes:
+        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+    """
         
         try:
             #getting the product image
