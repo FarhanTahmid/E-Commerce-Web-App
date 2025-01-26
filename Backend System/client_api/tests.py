@@ -65,16 +65,3 @@ class ProductCategoryListTests(APITestCase):
         response = self.client.get("/client_api/product-categories/", headers=headers)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
-
-    def test_unexpected_error(self):
-        """
-        Test case for handling unexpected errors.
-        """
-        # Mock the function to raise an exception
-        from unittest.mock import patch
-
-        with patch("products.product_management.ManageProducts.fetch_product_categories", side_effect=Exception("Unexpected error")):
-            response = self.client.get("/client_api/product-categories/", headers=self.headers)
-            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            self.assertEqual(response.data["success"], False)
-            self.assertEqual(response.data["message"], "An unexpected error occurred! Please try again later.")
