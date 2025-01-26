@@ -230,7 +230,7 @@ class Product_Discount(models.Model):
         verbose_name_plural="Product Discounts"
 
     def __str__(self):
-        return f"{self.product_id.product_name} - {self.discount_amount}"
+        return f"{self.product_id.product_name} - {self.discount_amount}. Discount duration - {self.start_date} - {self.end_date}"
     
     def is_discount_active(self):
 
