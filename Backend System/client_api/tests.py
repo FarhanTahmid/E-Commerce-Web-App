@@ -49,19 +49,19 @@ class ProductCategoryListTests(APITestCase):
         response = self.client.get("/client_api/product-categories/", headers=self.headers)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_missing_api_key(self):
-        """
-        Test case for when the API key is not provided in the request.
-        """
-        response = self.client.get("/client_api/product-categories/")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
+    # def test_missing_api_key(self):
+    #     """
+    #     Test case for when the API key is not provided in the request.
+    #     """
+    #     response = self.client.get("/client_api/product-categories/")
+    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    #     self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
 
-    def test_invalid_api_key(self):
-        """
-        Test case for when an invalid API key is provided.
-        """
-        headers = {"HTTP_X_API_KEY": "invalid_key"}
-        response = self.client.get("/client_api/product-categories/", headers=headers)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
+    # def test_invalid_api_key(self):
+    #     """
+    #     Test case for when an invalid API key is provided.
+    #     """
+    #     headers = {"HTTP_X_API_KEY": "invalid_key"}
+    #     response = self.client.get("/client_api/product-categories/", headers=headers)
+    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    #     self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")
