@@ -12,6 +12,7 @@ from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import time
+import datetime
 
 # Create your tests here.
 class ProductCategoryAPITestCases(APITestCase):
@@ -63,6 +64,32 @@ class ProductCategoryAPITestCases(APITestCase):
                                                                )
         
         self.product_image = Product_Images.objects.create(product_id=self.product1)
+
+        self.active_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Active Discount",
+            discount_amount=10.00,
+            start_date=self.now - datetime.timedelta(days=1),  # Started yesterday
+            end_date=self.now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
+
+        # Inactive discount (end date in the past)
+        self.inactive_discount = Product_Discount.objects.create(
+            product_id=self.product2,
+            discount_name="Inactive Discount",
+            discount_amount=5.00,
+            start_date=self.now - datetime.timedelta(days=10),  # Started 10 days ago
+            end_date=self.now - datetime.timedelta(days=1)      # Ended yesterday
+        )
+
+        # Inactive discount (start date in the future)
+        self.future_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Future Discount",
+            discount_amount=15.00,
+            start_date=self.now + datetime.timedelta(days=1),  # Starts tomorrow
+            end_date=self.now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
 
 
     @staticmethod
@@ -645,6 +672,33 @@ class ProductCategoryAPITestCases(APITestCase):
     #     response = self.client.delete(f'/server_api/product/product-image/delete/{self.product_image.pk}/')
     #     self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
     #     self.assertEqual(response.data['message'],"Product image deleted successfully")
+
+    def test_fetch_product_discount(self):
+        """
+        Test for fetching product discount
+        """
+        #fetching all
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(len(response.data['product_discount']),3)
+        self.assertEqual(response.data['message'],"All product discounts fetched successfully")
+    
+        #product_discount_pk
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?product_discount_pk={self.active_discount.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product Discount fetched successfully")
+
+        #discount_name
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?discount_name={self.inactive_discount.discount_name}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product Discount fetched successfully")
+
+        #is_active
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?is_active={True}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Active Product Discount fetched successfully")
+
+
 
 
 

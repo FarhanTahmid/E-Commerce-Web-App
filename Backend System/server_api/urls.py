@@ -57,4 +57,7 @@ urlpatterns = [                                                                 
     path('product/product-image/update/<int:product_image_pk>/',views.UpdateProductImage.as_view(),name='update_product_image'),
     path('product/product-image/delete/<int:product_image_pk>/',views.DeleteProductImage.as_view(),name='delete_product_image'),
 
+    #product discount
+    path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),
+
 ]
