@@ -9,6 +9,7 @@ from business_admin.models import *
 from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
+import datetime
 # Create your tests here.
 
 class TestManageProducts(TestCase):
@@ -88,6 +89,32 @@ class TestManageProducts(TestCase):
 
         self.product_sku1.product_flavours.set([self.product_flavour1])
         self.product_sku2.product_flavours.set([self.product_flavour2])
+
+        self.active_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Active Discount",
+            discount_amount=10.00,
+            start_date=now - datetime.timedelta(days=1),  # Started yesterday
+            end_date=now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
+
+        # Inactive discount (end date in the past)
+        self.inactive_discount = Product_Discount.objects.create(
+            product_id=self.product2,
+            discount_name="Inactive Discount",
+            discount_amount=5.00,
+            start_date=now - datetime.timedelta(days=10),  # Started 10 days ago
+            end_date=now - datetime.timedelta(days=1)      # Ended yesterday
+        )
+
+        # Inactive discount (start date in the future)
+        self.future_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Future Discount",
+            discount_amount=15.00,
+            start_date=now + datetime.timedelta(days=1),  # Starts tomorrow
+            end_date=now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
 
 
     @staticmethod
@@ -596,6 +623,23 @@ class TestManageProducts(TestCase):
     #     success,message = ManageProducts.delete_product_image(request,[product_image.pk])
     #     self.assertTrue(success,"Product image should be deleted successsfully")
     #     self.assertEqual(message,"Product image deleted successfully")
+
+    #product discount
+    def test_fetch_product_discount(self):
+        """
+        Test for fetching product discount
+        """
+        request = self.factory.post('/product/product_sku/delete/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success, message = ManageProducts.fetch_product_discount(product_id=self.product1.pk)
+        self.assertTrue(success,"Product discount should be fetched successfully")
+        self.assertEqual(message,"Product Discounts fetched successfully")
+
+        #fetch all
+        success, message = ManageProducts.fetch_product_discount()
+        self.assertTrue(success,"Product discount should be fetched successfully")
+        self.assertEqual(message,"All product discounts fetched successfully")
 
 
 

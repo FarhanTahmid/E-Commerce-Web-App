@@ -2209,3 +2209,64 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product image! Please try again later.")
+        
+    #product discount
+    def fetch_product_discount(product_id=None,discount_name=None):
+        try:
+            if product_id:
+                product,message = ManageProducts.fetch_product(product_pk=product_id)
+                product_discount = Product_Discount.objects.filter(product_id=product)
+                return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif discount_name:
+                product,message = ManageProducts.fetch_product(product_pk=product_id)
+                product_discount = Product_Discount.objects.get(discount_name=discount_name)
+                return product_discount, "Product Discount fetched successfully"
+            else:
+                product_discount = Product_Discount.objects.all()
+                return product_discount,"All product discounts fetched successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching product discount! Please try again later.")
+        
+    def create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date):
+        try:
+            #getting the product
+            product,message = ManageProducts.fetch_product(product_pk=product_id)
+            try:
+                existing_product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
+                if existing_product_discount.is_discount_active():
+                    return False, "Product discount with this name already exists and is active"
+            except:
+                pass
+            product_discount= Product_Discount.objects.create(product_id=product,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
+            product_discount.save()
+            updated, message = SystemLogs.updated_by(request,product_discount)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+            return True,"Product discount created successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")

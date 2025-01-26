@@ -217,7 +217,7 @@ class Product_Discount(models.Model):
     ''''This table stores all the discounts of a product'''
 
     product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE)
-    discount_name = models.CharField(null=False, blank=False, max_length=100)
+    discount_name = models.CharField(null=False, blank=False, max_length=100,unique=True)
     discount_amount = models.DecimalField(null=False, blank=False, max_digits=10, decimal_places=2)
     start_date = models.DateTimeField(null=False, blank=False)
     end_date = models.DateTimeField(null=False, blank=False)
