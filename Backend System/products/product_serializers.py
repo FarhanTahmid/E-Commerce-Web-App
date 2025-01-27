@@ -34,3 +34,7 @@ class Product_Images_Serializer(serializers.ModelSerializer):
     class Meta:
         model=Product_Images
         fields= '__all__'
+class Product_Discount_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product_Discount
+        fields = '__all__'

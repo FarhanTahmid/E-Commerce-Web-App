@@ -1332,5 +1332,51 @@ class DeleteProductImage(APIView):
             return Response({
                 "success": False,
                 "error": str(e),
-                "message": "An error occurred while updating deleting image."
+                "message": "An error occurred while deleting image."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class FetchProductDiscount(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            
+            product_id = self.request.query_params.get('product_id',None)
+            discount_name = self.request.query_params.get('discount_name',None)
+            is_active = self.request.query_params.get('is_active',None)
+            product_discount_pk = self.request.query_params.get('product_discount_pk',None)
+
+            if product_id:
+                product_discount,message = ManageProducts.fetch_product_discount(product_id=product_id)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif discount_name:
+                product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif is_active:
+                product_discount,message = ManageProducts.fetch_product_discount(is_active=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif product_discount_pk:
+                product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            else:
+                product_discount,message = ManageProducts.fetch_product_discount()
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            
+            if product_discount:
+                return Response({
+                    'message':message,
+                    'product_discount':product_discount_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while fetching product discount."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
