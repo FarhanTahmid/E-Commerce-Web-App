@@ -101,53 +101,54 @@ class SystemLogs:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
         #checking type of user
-        try:
-            user = SystemLogs.get_logged_in_user(request)
-            if user.is_superuser:
-                user_type = {
-                "user_type": " Developer - Superuser",
-                "username": request.user.username,
-                "date": timezone.now().isoformat() 
-                }
-            else:
-                try:
-                    business_admin = BusinessAdminUser.objects.get(user=user)
-                    if business_admin:
-                        user_type = {
-                        "user_type": "Business Admin",
-                        "username": business_admin.admin_full_name,
-                        "unique_id":business_admin.admin_unique_id,
-                        "date": timezone.now().isoformat() 
-                        }
-                except:
-                    return False, "Error while updating logs"
+        # try:
+        #     user = SystemLogs.get_logged_in_user(request)
+        #     if user.is_superuser:
+        #         user_type = {
+        #         "user_type": " Developer - Superuser",
+        #         "username": request.user.username,
+        #         "date": timezone.now().isoformat() 
+        #         }
+        #     else:
+        #         try:
+        #             business_admin = BusinessAdminUser.objects.get(user=user)
+        #             if business_admin:
+        #                 user_type = {
+        #                 "user_type": "Business Admin",
+        #                 "username": business_admin.admin_full_name,
+        #                 "unique_id":business_admin.admin_unique_id,
+        #                 "date": timezone.now().isoformat() 
+        #                 }
+        #         except:
+        #             return False, "Error while updating logs"
             
-            current_data = model_instance.updated_by or {}
-            if isinstance(current_data, dict):
-                current_data.update(user_type)
-            else:
-                current_data = user_type
-            model_instance.updated_by = current_data
-            model_instance.save()
+        #     current_data = model_instance.updated_by or {}
+        #     if isinstance(current_data, dict):
+        #         current_data.update(user_type)
+        #     else:
+        #         current_data = user_type
+        #     model_instance.updated_by = current_data
+        #     model_instance.save()
 
-            return True, "Updated logs successfully"
+        #     return True, "Updated logs successfully"
    
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
+        # except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+        #     # Log the error
+        #     error_type = type(error).__name__  # Get the name of the error as a string
+        #     error_message = str(error)
+        #     ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+        #     print(f"{error_type} occurred: {error_message}")
 
-            # Return appropriate messages based on the error type
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while updating 'updated by field' for system logs! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while updating 'updated by field' for system logs! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while updating 'updated by field' for system logs! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
+        #     # Return appropriate messages based on the error type
+        #     error_messages = {
+        #         "DatabaseError": "An unexpected error in Database occurred while updating 'updated by field' for system logs! Please try again later.",
+        #         "OperationalError": "An unexpected error in server occurred while updating 'updated by field' for system logs! Please try again later.",
+        #         "ProgrammingError": "An unexpected error in server occurred while updating 'updated by field' for system logs! Please try again later.",
+        #         "IntegrityError": "Same type exists in Database!",
+        #     }
 
-            return False, error_messages.get(error_type, "An unexpected error occurred while updating 'updated by field' for system logs! Please try again later.")
+        #     return False, error_messages.get(error_type, "An unexpected error occurred while updating 'updated by field' for system logs! Please try again later.")
+        return True
         
     def admin_activites(request,action,message=None):
 
@@ -187,42 +188,43 @@ class SystemLogs:
         Notes:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
-        try:
+        # try:
             
-            user = SystemLogs.get_logged_in_user(request)
-            try:
-                business_admin = BusinessAdminUser.objects.get(user=user)
-                activity = ActivityLog.objects.create(activity_done_by_admin=business_admin,action=action)
-                activity.save()
-                details = {
-                    'action':action,
-                    'message':message
-                }
-                current_data = activity.details or {}
-                if isinstance(current_data, dict):
-                    current_data.update(details)
-                else:
-                    current_data =details
-                activity.details = current_data
-                activity.save()
-                return True, "Activity updated of admin"
+        #     user = SystemLogs.get_logged_in_user(request)
+        #     try:
+        #         business_admin = BusinessAdminUser.objects.get(user=user)
+        #         activity = ActivityLog.objects.create(activity_done_by_admin=business_admin,action=action)
+        #         activity.save()
+        #         details = {
+        #             'action':action,
+        #             'message':message
+        #         }
+        #         current_data = activity.details or {}
+        #         if isinstance(current_data, dict):
+        #             current_data.update(details)
+        #         else:
+        #             current_data =details
+        #         activity.details = current_data
+        #         activity.save()
+        #         return True, "Activity updated of admin"
 
-            except:
-                return False,"Business admin does not exist"
+        #     except:
+        #         return False,"Business admin does not exist"
 
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
+        # except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+        #     # Log the error
+        #     error_type = type(error).__name__  # Get the name of the error as a string
+        #     error_message = str(error)
+        #     ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+        #     print(f"{error_type} occurred: {error_message}")
 
-            # Return appropriate messages based on the error type
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while updating admin activites for system logs! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while updating admin activites for system logs! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while updating admin activites for system logs! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
+        #     # Return appropriate messages based on the error type
+        #     error_messages = {
+        #         "DatabaseError": "An unexpected error in Database occurred while updating admin activites for system logs! Please try again later.",
+        #         "OperationalError": "An unexpected error in server occurred while updating admin activites for system logs! Please try again later.",
+        #         "ProgrammingError": "An unexpected error in server occurred while updating admin activites for system logs! Please try again later.",
+        #         "IntegrityError": "Same type exists in Database!",
+        #     }
 
-            return False, error_messages.get(error_type, "An unexpected error occurred while updating admin activites for system logs! Please try again later.")
+        #     return False, error_messages.get(error_type, "An unexpected error occurred while updating admin activites for system logs! Please try again later.")
+        return True

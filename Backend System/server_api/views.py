@@ -94,19 +94,23 @@ class SignupBusinessAdminUser(APIView):
                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
                                                                                     admin_avatar=admin_avatar)
             if business_admin_user:
-                authenticated_user = authenticate(username=admin_user_name, password=password)
-                if authenticated_user:
-                    login(request, authenticated_user)
-                    return Response(
+                # authenticated_user = authenticate(username=admin_user_name, password=password)
+                # if authenticated_user:
+                #     login(request, authenticated_user)
+                #     return Response(
+                #         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
+                #         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
+                #         status=status.HTTP_201_CREATED
+                #     )
+                # else:
+                #     return Response(
+                #         {"error": "Business Admin created, but login failed. Please log in manually."},
+                #         status=status.HTTP_400_BAD_REQUEST
+                #     )
+                return Response(
                         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
                         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-                        status=status.HTTP_201_CREATED
-                    )
-                else:
-                    return Response(
-                        {"error": "Business Admin created, but login failed. Please log in manually."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                        status=status.HTTP_201_CREATED)
             else:
                 return Response(
                     {"error": message},
