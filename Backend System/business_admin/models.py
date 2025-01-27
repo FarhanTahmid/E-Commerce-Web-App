@@ -23,7 +23,7 @@ class BusinessAdminUser(models.Model):
     '''
         admin will login with the unique id. The unique id will be taken input from the user.
     '''
-    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    # user = models.ForeignKey(User,on_delete=models.CASCADE)
     admin_unique_id=models.CharField(null=False,blank=False,max_length=50,primary_key=True)
     admin_full_name=models.CharField(null=False,blank=False,max_length=100)
     admin_user_name = models.CharField(null=False,blank=False,max_length=100)

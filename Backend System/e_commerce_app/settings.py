@@ -104,6 +104,10 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),              # Token prefix in Authorization header
+    'ALGORITHM': 'HS256',                          # Encryption algorithm for tokens
+    'SIGNING_KEY': SECRET_KEY,                     # Use Django secret key
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 
@@ -184,6 +188,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# AUTH_USER_MODEL = 'customer.CustomerUser'
+# AUTHENTICATION_BACKENDS = ['customer.backends.EmailBackend']
+
 
 
 # Internationalization

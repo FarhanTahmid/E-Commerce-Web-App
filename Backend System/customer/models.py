@@ -1,86 +1,76 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser,BaseUserManager
+from django.contrib.auth.models import AbstractUser,AbstractBaseUser
 from django.core.validators import MinValueValidator,MaxValueValidator
 from django.utils import timezone
 from django_resized import ResizedImageField
-# Create your models here.
-
-# Models for custom customer user login and management
-class CustomerManager(BaseUserManager):
-    """
-    Custom manager for the CustomerUser model.
-
-    This manager provides methods for creating user instances with proper
-    handling of email normalization and password hashing. It is intended
-    to manage the lifecycle of `CustomerUser` objects.
-
-    Methods:
-        create_user(email, password=None):
-            Creates and returns a new `CustomerUser` instance with the specified email
-            and password.
-
-    Example Usage:
-        CustomerUser.objects.create_user(email='user@example.com', password='securepassword123')
-
-    Raises:
-        ValueError: If the email is not provided.
-    """
-
-    def create_user(self, email, password=None):
-        """
-        Creates and returns a new `CustomerUser` instance.
-
-        Parameters:
-            email (str): The email address for the new user. Must be unique.
-            password (str, optional): The password for the new user. Defaults to None.
-
-        Returns:
-            CustomerUser: A new `CustomerUser` instance with the provided email and password.
-
-        Example:
-            user = CustomerUser.objects.create_user(
-                email='user@example.com',
-                password='securepassword123'
-            )
-        """
-        if not email:
-            raise ValueError('Email is required')
-
-        email = self.normalize_email(email)  # Normalize the email for consistency
-        user = self.model(email=email)
-        user.set_password(password)  # Hash the password before saving
-        user.save(using=self._db)
-        return user
 
 class CustomerUser(AbstractBaseUser):
     """
-    Custom user model for managing customers in the e-commerce application.
+    Custom user model for managing customer accounts in the e-commerce application.
 
-    This model uses email as the unique identifier for authentication instead
-    of a traditional username. It is designed to handle the unique needs of
-    customer accounts, such as email-based login and account activity status.
+    This model extends Django's built-in `AbstractUser` to customize user authentication 
+    based on email rather than the traditional username. The `email` field is unique 
+    and serves as the primary identifier for login. Additional attributes and functionality 
+    can be added to meet the specific requirements of customer management.
 
     Attributes:
-        email (EmailField): The unique email address for the user.
-        is_active (BooleanField): Indicates whether the user account is active. Defaults to True.
+        email (EmailField):
+            - The unique email address for each customer user.
+            - Acts as the primary identifier for authentication and login.
+            - Must be unique across all users.
+
+        is_active (BooleanField):
+            - Indicates whether the user account is currently active.
+            - Default value is `True`.
+            - Inactive accounts are typically used for deactivating users without deleting them.
 
     Methods:
-        __str__(): Returns a string representation of the user, which is the email.
+        __str__():
+            - Returns a string representation of the user, which is the `email` address.
+            - Useful for debugging and when working with user objects in templates and the admin panel.
 
     Meta:
-        verbose_name (str): A human-readable singular name for the model.
-        verbose_name_plural (str): A human-readable plural name for the model.
+        verbose_name (str):
+            - A human-readable singular name for the model.
+            - Default: `'Customer User'`.
+
+        verbose_name_plural (str):
+            - A human-readable plural name for the model.
+            - Default: `'Customer Users'`.
+
+    Example Usage:
+        # Creating a new CustomerUser
+        user = CustomerUser.objects.create_user(
+            email="customer@example.com",
+            password="securepassword123"
+        )
+
+        # Checking if a user is active
+        if user.is_active:
+            print(f"{user.email} is an active customer.")
+
+        # Displaying the user as a string
+        print(user)  # Output: customer@example.com
     """
-    email = models.EmailField(max_length=255, unique=True, help_text="The user's unique email address.")
-    is_active = models.BooleanField(default=True, help_text="Indicates whether the user account is active.")
-
-    objects = CustomerManager()
-
-    USERNAME_FIELD = 'email'  # Specifies that email is the unique identifier for authentication
-
+    email = models.EmailField(
+        max_length=255,
+        unique=True,
+        help_text="The user's unique email address."
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Indicates whether the user account is active."
+    )
+    
+    USERNAME_FIELD='email'
+    REQUIRED_FIELDS=('username',)
+    
     def __str__(self):
         """
         Returns the string representation of the user, which is the email address.
+
+        This method is particularly useful in the Django admin, debugging sessions, 
+        and when working with user objects in templates.
 
         Returns:
             str: The user's email address.
