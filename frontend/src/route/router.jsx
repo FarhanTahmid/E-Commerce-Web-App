@@ -68,11 +68,24 @@ import WidgetsTables from "../pages/widgets-tables";
 import WidgetsCharts from "../pages/widgets-charts";
 import WidgetsStatistics from "../pages/widgets-statistics";
 import WidgetsMiscellaneous from "../pages/widgets-miscellaneous";
+import RequireAuth from '../components/RequireAuth';
+import Cookies from 'js-cookie';
+
+const PublicRoute = ({ children }) => {
+    const authToken = Cookies.get('authToken');
+
+    if (authToken) {
+        // Redirect to the home page if logged in
+        return <Navigate to="/" replace />;
+    }
+
+    return children;
+};
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        element: <RootLayout />,
+        element: <RequireAuth><RootLayout /></RequireAuth>,
         children: [
             {
                 path: "/",
@@ -172,15 +185,15 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/widgets/charts",
-                element: <WidgetsCharts/>
+                element: <WidgetsCharts />
             },
             {
                 path: "/widgets/statistics",
-                element: <WidgetsStatistics/>
+                element: <WidgetsStatistics />
             },
             {
                 path: "/widgets/miscellaneous",
-                element: <WidgetsMiscellaneous/>
+                element: <WidgetsMiscellaneous />
             },
             {
                 path: "/help/knowledgebase",
@@ -191,7 +204,7 @@ export const router = createBrowserRouter([
     },
     {
         path: "/",
-        element: <LayoutApplications />,
+        element: <RequireAuth><LayoutApplications /></RequireAuth>,
         children: [
             {
                 path: "/applications/chat",
@@ -221,7 +234,7 @@ export const router = createBrowserRouter([
     },
     {
         path: "/",
-        element: <LayoutSetting />,
+        element: <RequireAuth><LayoutSetting /></RequireAuth>,
         children: [
             {
                 path: "/settings/ganeral",
@@ -283,11 +296,11 @@ export const router = createBrowserRouter([
         children: [
             {
                 path: "/authentication/login/cover",
-                element: <LoginCover />
+                element: <PublicRoute><LoginCover /></PublicRoute>,
             },
             {
                 path: "/authentication/login/minimal",
-                element: <LoginMinimal />
+                element: <PublicRoute><LoginMinimal /></PublicRoute>
             },
             {
                 path: "/authentication/login/creative",
@@ -295,7 +308,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/authentication/register/cover",
-                element: <RegisterCover />
+                element: <PublicRoute><RegisterCover /></PublicRoute>
             },
             {
                 path: "/authentication/register/minimal",
@@ -354,5 +367,10 @@ export const router = createBrowserRouter([
                 element: <MaintenanceCreative />
             },
         ]
-    }
+    },
+    // Catch-all route for 404
+    {
+        path: "*",
+        element: <ErrorMinimal />, // This component should render your 404 page
+    },
 ])
