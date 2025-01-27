@@ -2320,6 +2320,7 @@ class ManageProducts:
         try:
             #getting the product discount
             product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
             product_discount.delete()
             return True,"Product discount deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

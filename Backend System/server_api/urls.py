@@ -58,6 +58,7 @@ urlpatterns = [                                                                 
     path('product/product-image/delete/<int:product_image_pk>/',views.DeleteProductImage.as_view(),name='delete_product_image'),
 
     #product discount
-    path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),
+    path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),#pass parameters either /?product_id= OR discount_name= OR is_active= OR product_discount_pk OR none to fetch all
+    path('product/product-discounts/create-product-discount/<int:product_id>/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
 
 ]
