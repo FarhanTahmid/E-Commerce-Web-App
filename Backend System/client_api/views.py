@@ -56,7 +56,7 @@ class ProductCategoryListView(APIView):
             "message": "An unexpected error occurred! Please try again later."
         }
     """
-    permission_classes = [HasAPIKey]
+    permission_classes = []
 
     @method_decorator(ratelimit(key='ip', rate='10/m', method='GET', block=True))
     def get(self, request):

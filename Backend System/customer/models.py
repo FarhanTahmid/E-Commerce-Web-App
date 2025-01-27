@@ -1,9 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser,BaseUserManager
 from django.core.validators import MinValueValidator,MaxValueValidator
 from django.utils import timezone
 from django_resized import ResizedImageField
-
-# Create your models here.
 
 
 def get_customer_avatar_path(instance, filename):
