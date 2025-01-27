@@ -18,7 +18,7 @@ const App = () => {
           <RouterProvider router={router} />
         </SideBarToggleProvider>
       </NavigationProvider>
-      <ThemeCustomizer />
+      {/* <ThemeCustomizer /> */}
     </>
   )
 }
