@@ -1,9 +1,18 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser,BaseUserManager
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator,MaxValueValidator
 from django.utils import timezone
 from django_resized import ResizedImageField
 
+class CustomCustomerManager(AbstractUser):
+    email = models.EmailField(max_length=254,unique=True,verbose_name="Email Address")
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username',)
+    
+    def __str__(self):
+        return self.email
+    
 
 def get_customer_avatar_path(instance, filename):
     return f'customer_profile_picture/{instance.customer_id}/{filename}'
