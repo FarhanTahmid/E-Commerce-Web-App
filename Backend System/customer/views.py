@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django_ratelimit.decorators import ratelimit
+from django.contrib.auth import authenticate
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -80,31 +81,6 @@ class CustomerSignupView(APIView):
         - Returns a `400 Bad Request` if the email already exists in the database.
         - Returns a `500 Internal Server Error` for unexpected errors.
 
-    Returns:
-        Response: A JSON response indicating success or failure.
-
-    Example Usage:
-        Request:
-            POST /signup/
-            {
-                "email": "user@example.com",
-                "password": "securepassword123"
-            }
-
-        Success Response:
-            {
-                "message": "Customer created successfully"
-            }
-
-        Error Response (Missing Fields):
-            {
-                "error": "Email and password are required"
-            }
-
-        Error Response (Duplicate Email):
-            {
-                "error": "Email already exists"
-            }
     """
         
         data = request.data
@@ -161,5 +137,140 @@ class CustomerSignupView(APIView):
             )
 
 class CustomerLoginView(APIView):
+    
+    """
+    Handles customer login functionality for the e-commerce application.
+
+    Features:
+        - Authenticates a customer based on their email and password.
+        - Provides access and refresh tokens upon successful login.
+        - Implements rate limiting to prevent brute force attacks.
+
+    Permissions:
+        - Open to all users (AllowAny).
+
+    Rate Limiting:
+        - Limits requests to a maximum of 5 login attempts per minute per IP address.
+
+    Responses:
+        - **200 OK**: Login successful; returns access and refresh tokens.
+        - **400 Bad Request**: Missing fields, invalid credentials, or incorrect data.
+        - **429 Too Many Requests**: Exceeded rate limit.
+        - **500 Internal Server Error**: Unexpected server error.
+
+    Example Request:
+        POST /login/
+        {
+            "email": "user@example.com",
+            "password": "securepassword123"
+        }
+
+    Example Responses:
+
+        Success Response:
+        {
+            "refresh": "<refresh_token>",
+            "access": "<access_token>",
+            "message": "Login successful"
+        }
+
+        Error Response (Missing Fields):
+        {
+            "error": "Email and password are required"
+        }
+
+        Error Response (Invalid Password):
+        {
+            "error": "Wrong password"
+        }
+
+        Error Response (Non-existent Account):
+        {
+            "error": "Account with this email does not exist!"
+        }
+
+        Error Response (Rate Limit Exceeded):
+        {
+            "detail": "Request was throttled. Expected available in X seconds."
+        }
+    """
+    
+    permission_classes = [AllowAny]
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self, request):
-        pass
+        
+        """
+    Handles the login process by authenticating user credentials.
+
+    Parameters:
+        request (Request): The HTTP request object containing login data.
+
+    Input Data (JSON):
+        - email (str): The customer's email address (required).
+        - password (str): The customer's password (required).
+
+    Workflow:
+        1. Extracts the `email` and `password` fields from the request data.
+        2. Validates that both fields are provided.
+        3. Attempts to authenticate the user using Django's `authenticate` method.
+        4. If authentication succeeds:
+            - Generates access and refresh tokens using `RefreshToken.for_user`.
+            - Returns a success response with tokens and a message.
+        5. If authentication fails:
+            - Checks if the email exists in the database.
+            - Returns an appropriate error message indicating whether the issue is with the password or the email.
+        6. Catches and handles any unexpected errors.
+
+    Error Handling:
+        - Returns a `400 Bad Request` for missing fields or invalid credentials.
+        - Returns a `400 Bad Request` if the email exists but the password is incorrect.
+        - Returns a `400 Bad Request` if the email does not exist in the database.
+        - Returns a `500 Internal Server Error` for unexpected errors.
+
+    """
+        
+        data=request.data
+        try:
+            # Check for required fields
+            email = data.get('email')
+            password = data.get('password')
+            if not email or not password:
+                return Response(
+                    {'error': 'Email and password are required'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            customer_user=authenticate(email=email,password=password)
+            if customer_user is not None:
+                refresh=RefreshToken.for_user(customer_user)
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'message': 'Login successful'
+                    }, status=status.HTTP_200_OK)
+            else:
+                # Check which input was wrong
+                if Accounts.objects.filter(email=email).exists():
+                    return Response(
+                        {'error': 'Wrong password'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                else:
+                    return Response(
+                        {'error': 'Account with this email does not exist!'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
