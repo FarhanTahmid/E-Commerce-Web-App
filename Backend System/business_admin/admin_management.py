@@ -128,8 +128,8 @@ class AdminManagement:
             if description:
                 admin_position.description = description
             admin_position.save()
-            updated,message = SystemLogs.updated_by(request,admin_position)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created admin position {admin_position.name}",message="created")
+            #updated,message = SystemLogs.updated_by(request,admin_position)
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Created admin position {admin_position.name}",message="created")
             return True, "Admin position created successfully"
     
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -205,8 +205,8 @@ class AdminManagement:
                 if not admin_position.description or admin_position.description.lower() != description.lower():
                     admin_position.description = description
             admin_position.save()
-            updated,message = SystemLogs.updated_by(request,admin_position)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
+            #updated,message = SystemLogs.updated_by(request,admin_position)
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
             return True, "Admin position successfully updated"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -265,7 +265,7 @@ class AdminManagement:
         try:
             #get the position
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin position {admin_position.name}",message="deleted")
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin position {admin_position.name}",message="deleted")
             admin_position.delete()
             return True, "Admin position deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -488,11 +488,10 @@ class AdminManagement:
             all_admins,message = AdminManagement.fetch_business_admin_user()
             if any(p.admin_user_name.lower() == admin_user_name.lower() for p in all_admins):
                 return False, "Admin with this username exists"
-            
-            user = User.objects.create_user(username=admin_user_name,password=password)
+            #user = User.objects.create_user(username=admin_user_name,password=password)
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-            business_admin = BusinessAdminUser.objects.create(user=user,admin_full_name=admin_full_name,admin_user_name=admin_user_name,
-                                                              admin_position = admin_position)
+            business_admin = BusinessAdminUser.objects.create(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
+                                                              admin_position = admin_position)#,user=user
             business_admin.save()
             if admin_contact_no:
                 business_admin.admin_contact_no = admin_contact_no
@@ -584,13 +583,13 @@ class AdminManagement:
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             #checking conditions to update as necessarily
-            if password:
-                user = business_admin_user.user
-                if user.check_password(old_password):
-                    user.set_password(password)
-                    user.save()
-                else:
-                    return False, "Old password is incorrect"
+            # if password:
+            #     user = business_admin_user.user
+            #     if user.check_password(old_password):
+            #         user.set_password(password)
+            #         user.save()
+            #     else:
+            #         return False, "Old password is incorrect"
             if business_admin_user.admin_full_name.lower() != admin_full_name.lower():
                 business_admin_user.admin_full_name = admin_full_name
             if admin_user_name and business_admin_user.admin_user_name.lower() != admin_user_name.lower():
@@ -606,9 +605,9 @@ class AdminManagement:
             if admin_email:
                 if not business_admin_user.admin_email or business_admin_user.admin_email != admin_email:
                     business_admin_user.admin_email = admin_email
-                    user = business_admin_user.user
-                    user.email = admin_email
-                    user.save()
+                    # user = business_admin_user.user
+                    # user.email = admin_email
+                    # user.save()
             if admin_avatar:
                 if not business_admin_user.admin_avatar or business_admin_user.admin_avatar != admin_avatar:
                     if business_admin_user.admin_avatar:
@@ -619,8 +618,8 @@ class AdminManagement:
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
 
-            updated,message = SystemLogs.updated_by(request,business_admin_user)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
+            #updated,message = SystemLogs.updated_by(request,business_admin_user)
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
             return True, "Business Admin successfully updated"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -685,14 +684,14 @@ class AdminManagement:
         """
         try:
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
-            user = business_admin_user.user
-            if user.check_password(old_password):
-                user.set_password(new_password)
-                user.save()
-            else:
-                return False, "Old password is incorrect"
-            updated,message = SystemLogs.updated_by(request,business_admin_user)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin password {business_admin_user.admin_user_name}",message="Updated password")
+            # user = business_admin_user.user
+            # if user.check_password(old_password):
+            #     user.set_password(new_password)
+            #     user.save()
+            # else:
+            #     return False, "Old password is incorrect"
+            #updated,message = SystemLogs.updated_by(request,business_admin_user)
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin password {business_admin_user.admin_user_name}",message="Updated password")
             return True, "Password updated successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -758,11 +757,11 @@ class AdminManagement:
 
             #fetching the Business Admin user using user name
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
-            user = business_admin_user.user
-            user.set_password(new_password)
-            user.save()
-            updated,message = SystemLogs.updated_by(request,business_admin_user)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Reset admin password {business_admin_user.admin_user_name}",message="Reset password")
+            # user = business_admin_user.user
+            # user.set_password(new_password)
+            # user.save()
+            #updated,message = SystemLogs.updated_by(request,business_admin_user)
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Reset admin password {business_admin_user.admin_user_name}",message="Reset password")
             return True, "Password reset successfull"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -826,7 +825,7 @@ class AdminManagement:
                 if os.path.exists(path):
                     os.remove(path)
                 business_admin_user.admin_avatar.delete()
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin {business_admin_user.admin_user_name}",message="Deleted")
+            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin {business_admin_user.admin_user_name}",message="Deleted")
             business_admin_user.delete()
             return True, "Admin deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

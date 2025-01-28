@@ -94,19 +94,23 @@ class SignupBusinessAdminUser(APIView):
                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
                                                                                     admin_avatar=admin_avatar)
             if business_admin_user:
-                authenticated_user = authenticate(username=admin_user_name, password=password)
-                if authenticated_user:
-                    login(request, authenticated_user)
-                    return Response(
+                # authenticated_user = authenticate(username=admin_user_name, password=password)
+                # if authenticated_user:
+                #     login(request, authenticated_user)
+                #     return Response(
+                #         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
+                #         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
+                #         status=status.HTTP_201_CREATED
+                #     )
+                # else:
+                #     return Response(
+                #         {"error": "Business Admin created, but login failed. Please log in manually."},
+                #         status=status.HTTP_400_BAD_REQUEST
+                #     )
+                return Response(
                         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
                         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-                        status=status.HTTP_201_CREATED
-                    )
-                else:
-                    return Response(
-                        {"error": "Business Admin created, but login failed. Please log in manually."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                        status=status.HTTP_201_CREATED)
             else:
                 return Response(
                     {"error": message},
@@ -1332,5 +1336,85 @@ class DeleteProductImage(APIView):
             return Response({
                 "success": False,
                 "error": str(e),
-                "message": "An error occurred while updating deleting image."
+                "message": "An error occurred while deleting image."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+class FetchProductDiscount(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            
+            product_id = self.request.query_params.get('product_id',None)
+            discount_name = self.request.query_params.get('discount_name',None)
+            is_active = self.request.query_params.get('is_active',None)
+            product_discount_pk = self.request.query_params.get('product_discount_pk',None)
+
+            if product_id:
+                product_discount,message = ManageProducts.fetch_product_discount(product_id=product_id)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif discount_name:
+                product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif is_active:
+                product_discount,message = ManageProducts.fetch_product_discount(is_active=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif product_discount_pk:
+                product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            else:
+                product_discount,message = ManageProducts.fetch_product_discount()
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            
+            if product_discount:
+                return Response({
+                    'message':message,
+                    'product_discount':product_discount_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while fetching product discount."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+        
+class CreateProductDiscount(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,product_id,format=None):
+
+        try:
+            product_id = product_id
+            discount_name = self.request.query_params.get('discount_name',None)
+            discount_amount = self.request.query_params.get('discount_amount',None)
+            start_date = self.request.query_params.get('start_date',None)
+            end_date = self.request.query_params.get('end_date',None)
+            if start_date>end_date:
+                return Response({
+                    'error':"Start date of dicount must be less than or equal to end data"
+                },status=status.HTTP_400_BAD_REQUEST)
+            discount_created,message = ManageProducts.create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date)
+            if discount_created:
+                return Response({
+                    'messge':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while creating product discount."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

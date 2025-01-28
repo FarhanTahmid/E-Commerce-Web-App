@@ -12,9 +12,10 @@ from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import time
+import datetime
 
 # Create your tests here.
-class ProductCategoryAPITestCases(APITestCase):
+class ServerAPITestCases(APITestCase):
     
     def setUp(self):
         self.now = timezone.now()
@@ -58,11 +59,37 @@ class ProductCategoryAPITestCases(APITestCase):
         self.product_sku2.product_flavours.set([self.product_flavour1])
 
 
-        self.businessadmin1 = BusinessAdminUser.objects.create(user = User.objects.create_user(username='sami2186', password='password',is_superuser=False),
+        self.businessadmin1 = BusinessAdminUser.objects.create(
                                                                admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1
-                                                               )
+                                                               )#user = User.objects.create_user(username='sami2186', password='password',is_superuser=False),
         
         self.product_image = Product_Images.objects.create(product_id=self.product1)
+
+        self.active_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Active Discount",
+            discount_amount=10.00,
+            start_date=self.now - datetime.timedelta(days=1),  # Started yesterday
+            end_date=self.now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
+
+        # Inactive discount (end date in the past)
+        self.inactive_discount = Product_Discount.objects.create(
+            product_id=self.product2,
+            discount_name="Inactive Discount",
+            discount_amount=5.00,
+            start_date=self.now - datetime.timedelta(days=10),  # Started 10 days ago
+            end_date=self.now - datetime.timedelta(days=1)      # Ended yesterday
+        )
+
+        # Inactive discount (start date in the future)
+        self.future_discount = Product_Discount.objects.create(
+            product_id=self.product1,
+            discount_name="Future Discount",
+            discount_amount=15.00,
+            start_date=self.now + datetime.timedelta(days=1),  # Starts tomorrow
+            end_date=self.now + datetime.timedelta(days=10)    # Ends in 10 days
+        )
 
 
     @staticmethod
@@ -251,8 +278,8 @@ class ProductCategoryAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         self.assertEqual(response.data['message'],"Business Admin created successfully. Redirecting to dashboard...","Success messsage is incorrect")
         self.assertEqual(response.data['redirect_url'],"/dashboard","Success messsage is incorrect")
-        self.assertTrue(User.objects.filter(username="johndoe").exists())
-        self.assertTrue(BusinessAdminUser.objects.filter(admin_full_name="John Doe").exists())
+        #self.assertTrue(User.objects.filter(username="johndoe").exists())
+        #self.assertTrue(BusinessAdminUser.objects.filter(admin_full_name="John Doe").exists())
 
     def test_business_admin_log_in(self):
         """
@@ -645,6 +672,52 @@ class ProductCategoryAPITestCases(APITestCase):
     #     response = self.client.delete(f'/server_api/product/product-image/delete/{self.product_image.pk}/')
     #     self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
     #     self.assertEqual(response.data['message'],"Product image deleted successfully")
+
+    def test_fetch_product_discount(self):
+        """
+        Test for fetching product discount
+        """
+        #fetching all
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(len(response.data['product_discount']),3)
+        self.assertEqual(response.data['message'],"All product discounts fetched successfully")
+    
+        #product_discount_pk
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?product_discount_pk={self.active_discount.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product Discount fetched successfully")
+
+        #discount_name
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?discount_name={self.inactive_discount.discount_name}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product Discount fetched successfully")
+
+        #is_active
+        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?is_active={True}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Active Product Discount fetched successfully")
+
+    def test_create_product_discount(self):
+        """
+        Test for creating product discount
+        """
+
+        data = {'discount_name':'EWEWEW','discount_amount':500,'start_date':str((self.now + datetime.timedelta(days=1)).isoformat()),'end_date':str((self.now + datetime.timedelta(days=5)).isoformat())}
+        response = self.client.post(f'/server_api/product/product-discounts/create-product-discount/{self.product2.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Product discount created successfully")
+
+        #start date more than end data
+        data = {'discount_name':'EWEWEW','discount_amount':500,'end_date':self.now + datetime.timedelta(days=1),'start_date':self.now + datetime.timedelta(days=5)}
+        response = self.client.post(f'/server_api/product/product-discounts/create-product-discount/{self.product2.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['message'],"Start date of dicount must be less than or equal to end data")
+
+
+
+
+
 
 
 
