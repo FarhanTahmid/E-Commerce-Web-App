@@ -1390,17 +1390,33 @@ class CreateProductDiscount(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self,request,product_id,format=None):
+    def post(self,request,product_id):
 
         try:
             product_id = product_id
-            discount_name = self.request.query_params.get('discount_name',None)
-            discount_amount = self.request.query_params.get('discount_amount',None)
-            start_date = self.request.query_params.get('start_date',None)
-            end_date = self.request.query_params.get('end_date',None)
+            discount_name = self.request.data.get('discount_name',None)
+            discount_amount = self.request.data.get('discount_amount',None)
+            start_date = self.request.get('start_date',None)
+            end_date = self.request.get('end_date',None)
+
+            missing_fields = []
+            if not discount_name:
+                missing_fields.append("Discount Name")
+            if not discount_amount:
+                missing_fields.append("Discount Amount")
+            if not start_date:
+                missing_fields.append("Start date")
+            if not end_date:
+                missing_fields.append("End date")
+
+            if missing_fields:
+                return Response({
+                    'error':f"The following fields are required: {', '.join(missing_fields)}"
+                },status=status.HTTP_400_BAD_REQUEST)
+
             if start_date>end_date:
                 return Response({
-                    'error':"Start date of dicount must be less than or equal to end data"
+                    'error':"Start date of discount must be less than or equal to end data"
                 },status=status.HTTP_400_BAD_REQUEST)
             discount_created,message = ManageProducts.create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date)
             if discount_created:
@@ -1417,4 +1433,85 @@ class CreateProductDiscount(APIView):
                 "success": False,
                 "error": str(e),
                 "message": "An error occurred while creating product discount."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+        
+class UpdateProductDiscount(APIView):
+    
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self,request,product_discount_pk,format=None):
+
+        try:
+            #getting the product discount
+            product_discount_pk = product_discount_pk
+            product_id = self.request.data.get('product_id',None)
+            discount_name = self.request.data.get('discount_name',None)
+            discount_amount = self.request.data.get('discount_amount',None)
+            start_date = self.request.data.get('start_date',None)
+            end_data = self.request.data.get('end_date',None)
+
+            missing_fields = []
+            if not product_id:
+                missing_fields.append("Product")
+            if not discount_name:
+                missing_fields.append("Discount name")
+            if not discount_amount:
+                missing_fields.append("Discount amount")
+            if not start_date:
+                missing_fields.append("Start date")
+            if not end_data:
+                missing_fields.appned("End date")
+
+            if missing_fields:
+                return Response({
+                    'error':f"The following fields are required: {', '.join(missing_fields)}"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+            if start_date>end_data:
+                return Response({
+                    'error':"Start date of discount must be less than or equal to end data"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            product_discount_updated,message = ManageProducts.update_product_discount(request,product_discount_pk,product_id,discount_name,discount_amount,
+                                                                              start_date,end_data)
+            if product_discount_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while updating product discount."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+        
+class DeleteProductDiscount(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self,request,product_discount_pk,format=None):
+        
+        try:
+            product_discount_pk=product_discount_pk
+            deleted,message = ManageProducts.delete_product_discount(request,product_discount_pk)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "message": "An error occurred while deleting product discount."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
