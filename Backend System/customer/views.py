@@ -7,6 +7,7 @@ from rest_framework import status
 from system.models import Accounts
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
+from json.decoder import JSONDecodeError
 # Create your views here.
 
 class CustomerSignupView(APIView):
@@ -111,7 +112,6 @@ class CustomerSignupView(APIView):
         try:
             email = data.get('email')
             password = data.get('password')
-            username = email.split('@')[0]
             # Validate required fields
             if not email or not password:
                 return Response(
@@ -129,7 +129,7 @@ class CustomerSignupView(APIView):
             # Create new customer user
             new_customer_user = Accounts(
                 email=email,
-                username=username,
+                username=email.split('@')[0],
             )
             new_customer_user.set_password(password)
             new_customer_user.save()
@@ -137,6 +137,11 @@ class CustomerSignupView(APIView):
             return Response(
                 {'message': 'Customer created successfully'},
                 status=status.HTTP_201_CREATED,
+            )
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         except KeyError as e:
             return Response(
