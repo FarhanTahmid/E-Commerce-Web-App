@@ -140,7 +140,11 @@ class TestManageProducts(TestCase):
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
-        return User.objects.create(username='testuser', is_superuser=True)
+        return Accounts(
+            email='user@example.com',
+            username='testuser',
+            is_superuser = True
+        )
 
     # def _create_mock_businessadmin_user(self):
     #     user = User.objects.create(username='testuser2', is_superuser=False)

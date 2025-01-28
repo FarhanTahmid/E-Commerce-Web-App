@@ -9,302 +9,305 @@ from products.product_management import ManageProducts
 from business_admin.admin_management import AdminManagement
 from business_admin.serializers import TokenSerializer
 from django.contrib.auth import authenticate, login
-from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from system.system_log import SystemLogs
-from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny
+from json.decoder import JSONDecodeError
+from django_ratelimit.decorators import ratelimit
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.utils.decorators import method_decorator
 
 # Create your views here.
 
 #business admin
-class FetchToken(APIView):
+# class FetchToken(APIView):
 
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
 
-    def post(self,request,format=None):
-        try:
-            username = self.request.data.get('username',None)
-            token,message = AdminManagement.fetch_token(username=username)
-            token_data = TokenSerializer(token,many=False)
-            if token_data:
-                return Response(
-                    {"message": message,"token": token_data.data},
-                    status=status.HTTP_200_OK
-                )
-            else:
-                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching token."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     def post(self,request,format=None):
+#         try:
+#             username = self.request.data.get('username',None)
+#             token,message = AdminManagement.fetch_token(username=username)
+#             token_data = TokenSerializer(token,many=False)
+#             if token_data:
+#                 return Response(
+#                     {"message": message,"token": token_data.data},
+#                     status=status.HTTP_200_OK
+#                 )
+#             else:
+#                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+#         except Exception as e:
+#             return Response({
+#                 "success": False,
+#                 "error": str(e),
+#                 "message": "An error occurred while fetching token."
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class SignupBusinessAdminUser(APIView):
+# class SignupBusinessAdminUser(APIView):
     
-    permission_classes = [AllowAny]
-    def post(self,request,format=None):
-        try:
-            admin_full_name = self.request.data.get('admin_full_name',None)
-            admin_user_name = self.request.data.get('admin_user_name',None)
-            password = self.request.data.get('password',None)
-            confirm_password = self.request.data.get('confirm_password',None)
-            admin_position_pk = self.request.data.get('admin_position_pk',None)
-            admin_contact_no = self.request.data.get('admin_contact_no',None)
-            admin_email = self.request.data.get('admin_email',None)
-            admin_avatar = self.request.data.get('admin_avatar', None)
+#     permission_classes = [AllowAny]
+#     def post(self,request,format=None):
+#         try:
+#             admin_full_name = self.request.data.get('admin_full_name',None)
+#             admin_user_name = self.request.data.get('admin_user_name',None)
+#             password = self.request.data.get('password',None)
+#             confirm_password = self.request.data.get('confirm_password',None)
+#             admin_position_pk = self.request.data.get('admin_position_pk',None)
+#             admin_contact_no = self.request.data.get('admin_contact_no',None)
+#             admin_email = self.request.data.get('admin_email',None)
+#             admin_avatar = self.request.data.get('admin_avatar', None)
             
-            if ' ' in admin_user_name:
-                return Response(
-                    {
-                        "error": "Admin user name should not contain spaces."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+#             if ' ' in admin_user_name:
+#                 return Response(
+#                     {
+#                         "error": "Admin user name should not contain spaces."
+#                     },
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
 
-            missing_fields = []
-            if not admin_full_name:
-                missing_fields.append('admin full name')
-            if not admin_user_name:
-                missing_fields.append('admin user name')
-            if not password:
-                missing_fields.append('password')
-            if not confirm_password:
-                missing_fields.append('confirm password')
-            if not admin_position_pk:
-                missing_fields.append('admin position')
+#             missing_fields = []
+#             if not admin_full_name:
+#                 missing_fields.append('admin full name')
+#             if not admin_user_name:
+#                 missing_fields.append('admin user name')
+#             if not password:
+#                 missing_fields.append('password')
+#             if not confirm_password:
+#                 missing_fields.append('confirm password')
+#             if not admin_position_pk:
+#                 missing_fields.append('admin position')
 
-            if missing_fields:
-                return Response(
-                    {
-                        "error": f"The following fields are required: {', '.join(missing_fields)}"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+#             if missing_fields:
+#                 return Response(
+#                     {
+#                         "error": f"The following fields are required: {', '.join(missing_fields)}"
+#                     },
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
 
-            if password != confirm_password:
-                return Response(
-                    {"error": "Password does not match. Try again!"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+#             if password != confirm_password:
+#                 return Response(
+#                     {"error": "Password does not match. Try again!"},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
             
-            business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
-                                                                                    password=password,admin_position_pk=admin_position_pk,
-                                                                                    admin_contact_no=admin_contact_no,admin_email=admin_email,
-                                                                                    admin_avatar=admin_avatar)
-            if business_admin_user:
-                # authenticated_user = authenticate(username=admin_user_name, password=password)
-                # if authenticated_user:
-                #     login(request, authenticated_user)
-                #     return Response(
-                #         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
-                #         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-                #         status=status.HTTP_201_CREATED
-                #     )
-                # else:
-                #     return Response(
-                #         {"error": "Business Admin created, but login failed. Please log in manually."},
-                #         status=status.HTTP_400_BAD_REQUEST
-                #     )
-                return Response(
-                        {"message": "Business Admin created successfully. Redirecting to dashboard...", 
-                        "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-                        status=status.HTTP_201_CREATED)
-            else:
-                return Response(
-                    {"error": message},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating Business Admin."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
+#                                                                                     password=password,admin_position_pk=admin_position_pk,
+#                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
+#                                                                                     admin_avatar=admin_avatar)
+#             if business_admin_user:
+#                 # authenticated_user = authenticate(username=admin_user_name, password=password)
+#                 # if authenticated_user:
+#                 #     login(request, authenticated_user)
+#                 #     return Response(
+#                 #         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
+#                 #         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
+#                 #         status=status.HTTP_201_CREATED
+#                 #     )
+#                 # else:
+#                 #     return Response(
+#                 #         {"error": "Business Admin created, but login failed. Please log in manually."},
+#                 #         status=status.HTTP_400_BAD_REQUEST
+#                 #     )
+#                 return Response(
+#                         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
+#                         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
+#                         status=status.HTTP_201_CREATED)
+#             else:
+#                 return Response(
+#                     {"error": message},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
+#         except Exception as e:
+#             return Response({
+#                 "success": False,
+#                 "error": str(e),
+#                 "message": "An error occurred while creating Business Admin."
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class LoginInBusinessAdminUser(APIView):
+# class LoginInBusinessAdminUser(APIView):
 
-    permission_classes = [AllowAny]
-    def post(self,request,format=None):
-        try:
-            username = self.request.data.get('username',None)
-            password = self.request.data.get('password',None)
+#     permission_classes = [AllowAny]
+#     def post(self,request,format=None):
+#         try:
+#             username = self.request.data.get('username',None)
+#             password = self.request.data.get('password',None)
 
-            if username == None or password == None:
-                return Response(
-                    {"error": "Username or Password must be provided!"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+#             if username == None or password == None:
+#                 return Response(
+#                     {"error": "Username or Password must be provided!"},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
             
-            authenticated_user = authenticate(username=username, password=password)
-            if authenticated_user:
-                user = User.objects.get(username = username)
-                Token.objects.filter(user=user).delete()
-                token = Token.objects.create(user=user)
-                token.save()
-                login(request, authenticated_user)
-                return Response(
-                    {"message": "Logged In", 
-                    "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-                    status=status.HTTP_200_OK
-                )
-            else:
-                return Response(
-                    {"error": "Username or Password incorrect!"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-        except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while logging in."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             authenticated_user = authenticate(username=username, password=password)
+#             if authenticated_user:
+#                 user = User.objects.get(username = username)
+#                 Token.objects.filter(user=user).delete()
+#                 token = Token.objects.create(user=user)
+#                 token.save()
+#                 login(request, authenticated_user)
+#                 return Response(
+#                     {"message": "Logged In", 
+#                     "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
+#                     status=status.HTTP_200_OK
+#                 )
+#             else:
+#                 return Response(
+#                     {"error": "Username or Password incorrect!"},
+#                     status=status.HTTP_401_UNAUTHORIZED
+#                 )
+#         except Exception as e:
+#             return Response({
+#                 "success": False,
+#                 "error": str(e),
+#                 "message": "An error occurred while logging in."
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-class LogOutBusinessAdminUser(APIView):
+# class LogOutBusinessAdminUser(APIView):
 
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
     
 
-    def post(self,request,format=None):
+#     def post(self,request,format=None):
 
-        try:
-            # Delete the user's token
-            user = SystemLogs.get_logged_in_user(request)
-            Token.objects.filter(user=user).delete()
-        except Token.DoesNotExist:
-            pass
+#         try:
+#             # Delete the user's token
+#             user = SystemLogs.get_logged_in_user(request)
+#             Token.objects.filter(user=user).delete()
+#         except Token.DoesNotExist:
+#             pass
 
-        return Response({
-            "message": "Successfully logged out.",
-            "redirect_url": "/server_api/business_admin/login/"
-        }, status=status.HTTP_200_OK)
+#         return Response({
+#             "message": "Successfully logged out.",
+#             "redirect_url": "/server_api/business_admin/login/"
+#         }, status=status.HTTP_200_OK)
 
-class UpdateBusinessAdminUser(APIView):
+# class UpdateBusinessAdminUser(APIView):
 
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
 
-    def put(self,request,admin_user_name,format=None):
+#     def put(self,request,admin_user_name,format=None):
 
-        try:
-            admin_user_name = admin_user_name
-            admin_full_name = self.request.data.get('admin_full_name',None)
-            admin_position_pk = self.request.data.get('admin_position_pk',None)
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+#         try:
+#             admin_user_name = admin_user_name
+#             admin_full_name = self.request.data.get('admin_full_name',None)
+#             admin_position_pk = self.request.data.get('admin_position_pk',None)
+#             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
 
-            #can none
-            admin_contact_no = self.request.data.get('admin_contact_no',None)
-            admin_email = self.request.data.get('admin_email',None)
-            admin_avatar = self.request.data.get('admin_avatar',None)
-            old_password = self.request.data.get('old_password',None)
-            password = self.request.data.get('password',None)
+#             #can none
+#             admin_contact_no = self.request.data.get('admin_contact_no',None)
+#             admin_email = self.request.data.get('admin_email',None)
+#             admin_avatar = self.request.data.get('admin_avatar',None)
+#             old_password = self.request.data.get('old_password',None)
+#             password = self.request.data.get('password',None)
 
-            missing_fields = []
-            if not admin_full_name:
-                missing_fields.append("Admin full name")
-            if not admin_position_pk:
-                missing_fields.append("Admin position")
-            if missing_fields:
-                return Response(
-                    {
-                        "error": f"The following fields are required: {', '.join(missing_fields)}"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
-                                                                                admin_contact_no,admin_email,admin_avatar,old_password,password,admin_user_name)
-            if admin_updated:
-                return Response({
-                    'message':message
-                },status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    'message':message
-                },status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating business admin user"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             missing_fields = []
+#             if not admin_full_name:
+#                 missing_fields.append("Admin full name")
+#             if not admin_position_pk:
+#                 missing_fields.append("Admin position")
+#             if missing_fields:
+#                 return Response(
+#                     {
+#                         "error": f"The following fields are required: {', '.join(missing_fields)}"
+#                     },
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
+#             admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+#                                                                                 admin_contact_no,admin_email,admin_avatar,old_password,password,admin_user_name)
+#             if admin_updated:
+#                 return Response({
+#                     'message':message
+#                 },status=status.HTTP_200_OK)
+#             else:
+#                 return Response({
+#                     'message':message
+#                 },status=status.HTTP_400_BAD_REQUEST)
+#         except Exception as e:
+#             return Response({
+#                 "success": False,
+#                 "error": str(e),
+#                 "message": "An error occurred while updating business admin user"
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-class UpdateBusinessAdminUserPassword(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+# class UpdateBusinessAdminUserPassword(APIView):
+#     authentication_classes = [TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
 
-    def put(self,request,admin_user_name,format=None):
-        try:
+#     def put(self,request,admin_user_name,format=None):
+#         try:
 
-            admin_user_name = admin_user_name
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
-            old_password = self.request.data.get('old_password',None)
-            new_password = self.request.data.get('new_password',None)
-            new_password_confirm = self.request.data.get('new_password_confirm',None)
+#             admin_user_name = admin_user_name
+#             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+#             old_password = self.request.data.get('old_password',None)
+#             new_password = self.request.data.get('new_password',None)
+#             new_password_confirm = self.request.data.get('new_password_confirm',None)
 
-            if not new_password or not new_password_confirm:
-                return Response({
-                    'error':"Please provide new password"
-                },status=status.HTTP_400_BAD_REQUEST)
-            if not old_password:
-                return Response({
-                    'error':"Please provide old password"
-                },status=status.HTTP_400_BAD_REQUEST)
-            if new_password == new_password_confirm:
-                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
+#             if not new_password or not new_password_confirm:
+#                 return Response({
+#                     'error':"Please provide new password"
+#                 },status=status.HTTP_400_BAD_REQUEST)
+#             if not old_password:
+#                 return Response({
+#                     'error':"Please provide old password"
+#                 },status=status.HTTP_400_BAD_REQUEST)
+#             if new_password == new_password_confirm:
+#                 password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
 
-                if password_update:
-                    return Response({
-                        'message':message
-                    },status=status.HTTP_200_OK)
-                else:
-                    return Response({
-                        'error':message
-                    },status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response({
-                    'error':"Password does not match"
-                },status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating business admin user password"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#                 if password_update:
+#                     return Response({
+#                         'message':message
+#                     },status=status.HTTP_200_OK)
+#                 else:
+#                     return Response({
+#                         'error':message
+#                     },status=status.HTTP_400_BAD_REQUEST)
+#             else:
+#                 return Response({
+#                     'error':"Password does not match"
+#                 },status=status.HTTP_400_BAD_REQUEST)
+#         except Exception as e:
+#             return Response({
+#                 "success": False,
+#                 "error": str(e),
+#                 "message": "An error occurred while updating business admin user password"
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-class DeleteBusinessAdminUser(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+# class DeleteBusinessAdminUser(APIView):
+#     authentication_classes = [TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
 
-    def delete(self,request,admin_user_name,format=None):
-        try:
-            admin_user_name=admin_user_name
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
-            deleted,message = AdminManagement.delete_business_admin_user(request,admin_unique_id)
-            if deleted:
-                return Response(
-                    {"message": message},
-                    status=status.HTTP_204_NO_CONTENT
-                )
-            else:
-                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting business admin user"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     def delete(self,request,admin_user_name,format=None):
+#         try:
+#             admin_user_name=admin_user_name
+#             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+#             deleted,message = AdminManagement.delete_business_admin_user(request,admin_unique_id)
+#             if deleted:
+#                 return Response(
+#                     {"message": message},
+#                     status=status.HTTP_204_NO_CONTENT
+#                 )
+#             else:
+#                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+#         except Exception as e:
+#             return Response({
+#                 "success": False,
+#                 "error": str(e),
+#                 "message": "An error occurred while deleting business admin user"
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
 
 #product categories
 class FetchProductCategoryView(APIView):
 
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsAuthenticated]
-    permission_classes = []
-
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             pk = request.query_params.get('pk')
@@ -321,18 +324,34 @@ class FetchProductCategoryView(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class FetchProductCategoryWithPkView(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,pk,format=None):
         try:
 
@@ -346,19 +365,35 @@ class FetchProductCategoryWithPkView(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product category with this pk."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class CreateProductCategoryView(APIView):
    
-    serializer_class = product_serializers.Product_Category_Serializer
-    authentication_classes = [TokenAuthentication]
+    
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self, request, format=None):
         
         try:
@@ -389,19 +424,35 @@ class CreateProductCategoryView(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
         
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class UpdateProductCategoryView(APIView):
 
-    serializer_class = product_serializers.Product_Category_Serializer
-    authentication_classes = [TokenAuthentication]
+    
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self, request,pk, format=None):
         try:
 
@@ -428,19 +479,34 @@ class UpdateProductCategoryView(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class DeleteProductCategoryView(APIView):
 
-    serializer_class = product_serializers.Product_Category_Serializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,pk,format=None):
         
         try:
@@ -454,19 +520,35 @@ class DeleteProductCategoryView(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting product category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 #product sub categories
 class FetchProductSubCategoryView(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,pk,format=None):
         try:
 
@@ -480,18 +562,34 @@ class FetchProductSubCategoryView(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product sub category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class CreateProductSubCategoryView(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,product_category_pk,format=None):
         try:
 
@@ -518,18 +616,34 @@ class CreateProductSubCategoryView(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product sub category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class UpdateProductSubCategoryView(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self,request,product_sub_category_pk,format=None):
         try:
 
@@ -561,18 +675,34 @@ class UpdateProductSubCategoryView(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product sub category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class DeleteProductSubCategoryView(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,product_sub_category_pk,format=None):
         try:
 
@@ -586,19 +716,35 @@ class DeleteProductSubCategoryView(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
             
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting product sub category."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 #product brands
 class FetchProductBrands(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
 
         try:
@@ -621,18 +767,34 @@ class FetchProductBrands(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product brands."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class CreateProductBrands(APIView):
     
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,format=None):
         try:
             
@@ -668,18 +830,34 @@ class CreateProductBrands(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product brand."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class UpdateProductBrands(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self,request,product_brand_pk,format=None):
         try:
             product_brand_pk = product_brand_pk
@@ -716,18 +894,34 @@ class UpdateProductBrands(APIView):
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product brand."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class DeleteProductBrands(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,product_brand_pk,format=None):
         try:
 
@@ -741,19 +935,35 @@ class DeleteProductBrands(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product brand."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 #product flavour
 class FetchProductFlavour(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             pk = request.query_params.get('pk')
@@ -776,18 +986,34 @@ class FetchProductFlavour(APIView):
                 )
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product flavour."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class CreateProductFlavour(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -809,18 +1035,34 @@ class CreateProductFlavour(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
             
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product flavour."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class UpdateProductFlavour(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self,request,product_flavour_pk,format=None):
         try:
             product_flavour_pk=product_flavour_pk
@@ -839,17 +1081,33 @@ class UpdateProductFlavour(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product flavour."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class DeleteProductFlavour(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,product_flavour_pk,format=None):
         try:
             product_flavour_pk = product_flavour_pk
@@ -862,17 +1120,34 @@ class DeleteProductFlavour(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting product flavour."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 #product
 class FetchProduct(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
@@ -910,17 +1185,33 @@ class FetchProduct(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class CreateProduct(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,format=None):
         try:
 
@@ -966,17 +1257,33 @@ class CreateProduct(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
 
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class UpdateProduct(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self,request,product_pk,format=None):
     
         try:
@@ -1021,17 +1328,33 @@ class UpdateProduct(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class DeleteProduct(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,product_pk,format=None):
 
         try:
@@ -1045,18 +1368,34 @@ class DeleteProduct(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting product."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 #product sku
 class FetchProductSKU(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
@@ -1091,17 +1430,33 @@ class FetchProductSKU(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product sku."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class CreateProductSKU(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -1138,17 +1493,33 @@ class CreateProductSKU(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product sku."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class UpdateProductSKU(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self,request,product_sku_pk,format=None):
         try:
 
@@ -1187,17 +1558,33 @@ class UpdateProductSKU(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product sku."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class DeleteProductSKU(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,product_sku_pk,format=None):
         try:
             product_sku_pk = product_sku_pk
@@ -1210,18 +1597,34 @@ class DeleteProductSKU(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
              
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting product sku."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 #product image
 class FetchProductImages(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             product_pk = self.request.query_params.get('product_pk',None)
@@ -1245,17 +1648,33 @@ class FetchProductImages(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product image."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class CreateProductImages(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
+    
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,product_id,format=None):
         try:
             product_id=product_id
@@ -1279,17 +1698,33 @@ class CreateProductImages(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product image."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )  
         
 class UpdateProductImage(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self,request,product_image_pk,format=None):
         try:
             product_image_pk=product_image_pk
@@ -1309,17 +1744,33 @@ class UpdateProductImage(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product image."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )  
         
 class DeleteProductImage(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,product_image_pk,format=None):
         try:
             product_image_pk = product_image_pk
@@ -1332,18 +1783,34 @@ class DeleteProductImage(APIView):
             else:
                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting image."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
         
 class FetchProductDiscount(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             
@@ -1378,18 +1845,34 @@ class FetchProductDiscount(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while fetching product discount."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class CreateProductDiscount(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,product_id):
 
         try:
@@ -1428,18 +1911,34 @@ class CreateProductDiscount(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while creating product discount."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 class UpdateProductDiscount(APIView):
     
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
     def put(self,request,product_discount_pk,format=None):
 
         try:
@@ -1484,18 +1983,34 @@ class UpdateProductDiscount(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while updating product discount."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
         
 class DeleteProductDiscount(APIView):
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
     def delete(self,request,product_discount_pk,format=None):
         
         try:
@@ -1509,9 +2024,24 @@ class DeleteProductDiscount(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e),
-                "message": "An error occurred while deleting product discount."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

@@ -1,7 +1,7 @@
 from django.test import TestCase,RequestFactory
 from .admin_management import AdminManagement
 from .models import AdminPositions
-from django.contrib.auth.models import User
+from system.models import *
 from .models import BusinessAdminUser
 
 # Create your tests here.
@@ -17,7 +17,11 @@ class BusinessAdminTest(TestCase):
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
-        return User.objects.create(username='testuser', is_superuser=True)
+        return Accounts(
+            email='user@example.com',
+            username='testuser',
+            is_superuser = True
+        )
 
     # def _create_mock_businessadmin_user(self):
     #     #user = User.objects.create(username='testuser2', is_superuser=False)
