@@ -1,5 +1,5 @@
 from django.db import models
-from customer.models import Customer
+from customer.models import Accounts
 from products.models import Product_SKU
 from business_admin.models import BusinessAdminUser
 
@@ -32,7 +32,7 @@ class Order(models.Model):
     ]
     
     order_id = models.CharField(max_length=100, unique=True, null=False, blank=False)
-    customer_id = models.ForeignKey(Customer, on_delete=models.CASCADE, null=False, blank=False)
+    customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, null=False, blank=False)
     order_date = models.DateTimeField(auto_now_add=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending', null=False)
@@ -181,7 +181,7 @@ class Cart(models.Model):
         verbose_name_plural (str): A human-readable name for the model (plural).
     """
     device_ip = models.GenericIPAddressField(verbose_name="Device IP")
-    customer_id = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="Cart")
+    customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, related_name="Cart")
     cart_total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cart Total Amount")
     cart_checkout_status = models.BooleanField(default=False, verbose_name="Cart Checkout Status")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
