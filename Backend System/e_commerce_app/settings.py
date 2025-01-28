@@ -40,6 +40,7 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
+    'system',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,12 +53,11 @@ INSTALLED_APPS = [
     'rest_framework_api_key',
     'corsheaders',
     'storages',
-    'system',
     'business_company',
     'products',
     'inventory',
-    'customer',
     'orders',
+    'customer',
     'business_admin',
     'server_api',
     'client_api',
@@ -185,8 +185,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = "customer.CustomCustomerManager"
+AUTH_USER_MODEL = "system.Accounts"
 
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
 
 
 # Internationalization

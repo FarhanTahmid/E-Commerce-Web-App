@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
-from .models import CustomerUser
+from .models import CustomCustomerManager
 
 class CustomerSignupViewTests(APITestCase):
     """
@@ -13,7 +13,7 @@ class CustomerSignupViewTests(APITestCase):
         """
         self.signup_url = '/customer/signup/'  # Replace with your actual endpoint URL
         self.existing_email = 'existing@example.com'
-        CustomerUser.objects.create(
+        CustomCustomerManager.objects.create(
             email=self.existing_email, 
             password='existing_password'
         )
@@ -30,7 +30,7 @@ class CustomerSignupViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('message', response.data)
         self.assertEqual(response.data['message'], 'Customer created successfully')
-        self.assertTrue(CustomerUser.objects.filter(email='new_user@example.com').exists())
+        self.assertTrue(CustomCustomerManager.objects.filter(email='new_user@example.com').exists())
 
     def test_signup_with_missing_email(self):
         """

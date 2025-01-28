@@ -3,7 +3,7 @@ from django_resized import ResizedImageField
 from django.utils import timezone
 from inventory.models import *
 from django.core.validators import MaxValueValidator
-from customer.models import Customer
+from customer.models import Accounts
 from django_resized import ResizedImageField
 import hashlib
 
@@ -246,7 +246,7 @@ class Product_Review(models.Model):
     ''''This table stores all the reviews of a product'''
 
     product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE)
-    customer_id = models.ForeignKey(Customer, null=False, blank=False, on_delete=models.CASCADE)
+    customer_id = models.ForeignKey(Accounts, null=False, blank=False, on_delete=models.CASCADE)
     product_review = models.TextField(null=False, blank=False)
     product_rating = models.PositiveIntegerField(validators=[MaxValueValidator(5)], null=False, blank=False)
     created_at=models.DateTimeField(auto_now_add=True)
