@@ -103,6 +103,7 @@ class SystemLogs:
         """
         #checking type of user
         try:
+            print(request.user)
             user = SystemLogs.get_logged_in_user(request)
             if user.is_superuser and not user.is_admin:
                 user_type = {

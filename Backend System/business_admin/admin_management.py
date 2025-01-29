@@ -286,7 +286,7 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
     #business admin users
-    def fetch_business_admin_user(admin_unique_id=None,admin_user_name=None):
+    def fetch_business_admin_user(admin_unique_id=None,admin_email=None):
 
         """
         Fetch business admin users based on various optional parameters
@@ -334,8 +334,8 @@ class AdminManagement:
             if admin_unique_id:
                 admin_user = BusinessAdminUser.objects.get(admin_unique_id = admin_unique_id)
                 return admin_user, "Business Admin user fetched successfully"
-            elif admin_user_name:
-                admin_user = BusinessAdminUser.objects.get(admin_user_name = admin_user_name)
+            elif admin_email:
+                admin_user = BusinessAdminUser.objects.get(admin_email=admin_email)
                 return admin_user, "Business Admin user fetched successfully"
             else:
                 all_admin_users = BusinessAdminUser.objects.all()
@@ -413,7 +413,7 @@ class AdminManagement:
             #fetching all to check if this user
             all_admins,message = AdminManagement.fetch_business_admin_user()
             if any(p.admin_email == admin_email for p in all_admins):
-                return False, "Admin with this email already exists exists"
+                return False, "Admin with this email already exists"
             admin_user_name = admin_email.split('@')[0]
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             business_admin = BusinessAdminUser.objects.create(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
@@ -520,7 +520,7 @@ class AdminManagement:
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             user = Accounts.objects.get(username=business_admin_user.admin_user_name)
-
+            print(business_admin_user.admin_unique_id)
             if user.is_staff == False and is_staff_user == True:
                 user.is_staff = True
             if user.is_superuser == False and is_superuser == True:
@@ -556,7 +556,7 @@ class AdminManagement:
                         business_admin_user.admin_avatar.delete()
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
-
+            print(business_admin_user.admin_unique_id)
             updated,message = SystemLogs.updated_by(request,business_admin_user)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
             return True, "Business Admin successfully updated"
@@ -650,7 +650,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while updating admin password! Please try again later.")
     
-    def reset_business_admin_user_password(request,admin_user_name,new_password):
+    def reset_business_admin_user_password(request,admin_email,new_password):
 
         """
         Reset the password of an existing business admin user with detailed exception handling.
@@ -695,7 +695,7 @@ class AdminManagement:
         try:
 
             #fetching the Business Admin user using user name
-            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
             user = Accounts.objects.get(username = business_admin_user.admin_user_name)
             user.set_password(new_password)
             user.save()
