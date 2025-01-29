@@ -432,7 +432,7 @@ class CustomerLogoutView(APIView):
 
             return Response(
                 {'message': 'Logout successful. Tokens invalidated.'},
-                status=status.HTTP_200_OK
+                status=status.HTTP_403_FORBIDDEN
             )
 
         except Ratelimited:
