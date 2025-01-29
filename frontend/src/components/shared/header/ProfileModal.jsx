@@ -1,9 +1,18 @@
-import React, { Fragment } from 'react'
-import { FiActivity, FiBell, FiChevronRight, FiDollarSign, FiLogOut, FiSettings, FiUser } from "react-icons/fi"
+import React, { Fragment } from 'react';
+import { FiActivity, FiBell, FiChevronRight, FiDollarSign, FiLogOut, FiSettings, FiUser } from "react-icons/fi";
+import Cookies from 'js-cookie';
 
-const activePosition = ["Active", "Always", "Bussy", "Inactive", "Disabled", "Cutomization"]
-const subscriptionsList = ["Plan", "Billings", "Referrals", "Payments", "Statements", "Subscriptions"]
+const activePosition = ["Active", "Always", "Bussy", "Inactive", "Disabled", "Cutomization"];
+const subscriptionsList = ["Plan", "Billings", "Referrals", "Payments", "Statements", "Subscriptions"];
+
 const ProfileModal = () => {
+    const handleLogout = () => {
+        // Remove the authToken cookie
+        Cookies.remove('authToken');
+        // Redirect to the login page
+        window.location.href = '/';
+    };
+
     return (
         <div className="dropdown nxl-h-item">
             <a href="#" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside">
@@ -29,19 +38,17 @@ const ProfileModal = () => {
                     </a>
                     <div className="dropdown-menu user-active">
                         {
-                            activePosition.map((item, index) => {
-                                return (
-                                    <Fragment key={index}>
-                                        {index === activePosition.length - 1 && <div className="dropdown-divider"></div>}
-                                        <a href="#" className="dropdown-item">
-                                            <span className="hstack">
-                                                <i className={`wd-10 ht-10 border border-2 border-gray-1 rounded-circle me-2 ${getColor(item)}`}></i>
-                                                <span>{item}</span>
-                                            </span>
-                                        </a>
-                                    </Fragment>
-                                )
-                            })
+                            activePosition.map((item, index) => (
+                                <Fragment key={index}>
+                                    {index === activePosition.length - 1 && <div className="dropdown-divider"></div>}
+                                    <a href="#" className="dropdown-item">
+                                        <span className="hstack">
+                                            <i className={`wd-10 ht-10 border border-2 border-gray-1 rounded-circle me-2 ${getColor(item)}`}></i>
+                                            <span>{item}</span>
+                                        </span>
+                                    </a>
+                                </Fragment>
+                            ))
                         }
                     </div>
                 </div>
@@ -56,21 +63,18 @@ const ProfileModal = () => {
                     </a>
                     <div className="dropdown-menu">
                         {
-                            subscriptionsList.map((item, index) => {
-                                return (
-                                    <Fragment key={index}>
-                                        {index === activePosition.length - 1 && <div className="dropdown-divider"></div>}
-                                        <a href="#" className="dropdown-item">
-                                            <span className="hstack">
-                                                <i className="wd-5 ht-5 bg-gray-500 rounded-circle me-3"></i>
-                                                <span>{item}</span>
-                                            </span>
-                                        </a>
-                                    </Fragment>
-                                )
-                            })
+                            subscriptionsList.map((item, index) => (
+                                <Fragment key={index}>
+                                    {index === subscriptionsList.length - 1 && <div className="dropdown-divider"></div>}
+                                    <a href="#" className="dropdown-item">
+                                        <span className="hstack">
+                                            <i className="wd-5 ht-5 bg-gray-500 rounded-circle me-3"></i>
+                                            <span>{item}</span>
+                                        </span>
+                                    </a>
+                                </Fragment>
+                            ))
                         }
-
                     </div>
                 </div>
                 <div className="dropdown-divider"></div>
@@ -95,30 +99,30 @@ const ProfileModal = () => {
                     <span>Account Settings</span>
                 </a>
                 <div className="dropdown-divider"></div>
-                <a href="./auth-login-minimal.html" className="dropdown-item">
-                    <i> <FiLogOut /></i>
+                <a href="#" className="dropdown-item" onClick={handleLogout}>
+                    <i><FiLogOut /></i>
                     <span>Logout</span>
                 </a>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default ProfileModal
+export default ProfileModal;
 
 const getColor = (item) => {
     switch (item) {
         case "Always":
-            return "always_clr"
+            return "always_clr";
         case "Bussy":
-            return "bussy_clr"
+            return "bussy_clr";
         case "Inactive":
-            return "inactive_clr"
+            return "inactive_clr";
         case "Disabled":
-            return "disabled_clr"
+            return "disabled_clr";
         case "Cutomization":
-            return "cutomization_clr"
+            return "cutomization_clr";
         default:
             return "active-clr";
     }
-}
+};
