@@ -20,30 +20,6 @@ from django.utils.decorators import method_decorator
 # Create your views here.
 
 #business admin
-# class FetchToken(APIView):
-
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self,request,format=None):
-#         try:
-#             username = self.request.data.get('username',None)
-#             token,message = AdminManagement.fetch_token(username=username)
-#             token_data = TokenSerializer(token,many=False)
-#             if token_data:
-#                 return Response(
-#                     {"message": message,"token": token_data.data},
-#                     status=status.HTTP_200_OK
-#                 )
-#             else:
-#                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
-#         except Exception as e:
-#             return Response({
-#                 "success": False,
-#                 "error": str(e),
-#                 "message": "An error occurred while fetching token."
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 # class SignupBusinessAdminUser(APIView):
     
 #     permission_classes = [AllowAny]

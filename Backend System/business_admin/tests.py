@@ -12,21 +12,21 @@ class BusinessAdminTest(TestCase):
         self.factory = RequestFactory()
         self.adminposition1 = AdminPositions.objects.create(name="Manager",description="Manage of company")
         self.adminposition2 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
-        self.businessadmin1 = BusinessAdminUser.objects.create(admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition2
-                                                               )#user = User.objects.create(username='sami2186', is_superuser=False),
+        self.businessadmin1 = BusinessAdminUser.objects.create(admin_full_name="SAMI",admin_position=self.adminposition2,admin_email="sak@gmail.com",admin_user_name='sak')
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
-        return Accounts(
+        return Accounts.objects.create(
             email='user@example.com',
-            username='testuser',
-            is_superuser = True
+            username='user',
+            is_superuser = True,
+            password='1234',
         )
 
-    # def _create_mock_businessadmin_user(self):
-    #     #user = User.objects.create(username='testuser2', is_superuser=False)
-    #     BusinessAdminUser.objects.create(admin_full_name="testuser2",admin_position=self.adminposition1).save()#user=user,
-    #     return user
+    def _create_mock_businessadmin_user(self):
+        user = Accounts.objects.create(username='testuser2', is_superuser=True,is_admin = True,email='sami@gmail.com',password='1234')
+        BusinessAdminUser.objects.create(admin_full_name="testuser2",admin_position=self.adminposition1,admin_email='sami@gmail.com',admin_user_name='sami').save()
+        return user
 
     def test_fetch_admin_postion(self):
         """
@@ -111,13 +111,13 @@ class BusinessAdminTest(TestCase):
         Test for creating business admins
         """
         
-        success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",admin_user_name="sami218686",
-                                                                      password='2186',admin_position_pk=self.adminposition2.pk)
+        success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",
+                                                                      password='2186',admin_position_pk=self.adminposition2.pk,admin_email='saki@gmail.com')
         self.assertTrue(success,"Business Admin should be created successfully")
         self.assertEqual(message,"Business Admin created successfully","Success message is incorrect")
 
         #same username
-        success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",admin_user_name="sami218686",
+        success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",
                                                                       password='2186',admin_position_pk=self.adminposition2.pk)
         self.assertFalse(success,"Business Admin should not be created successfully")
         self.assertEqual(message,"Admin with this username exists","Error message is incorrect")
@@ -126,13 +126,12 @@ class BusinessAdminTest(TestCase):
         """
         Test for updating business admins
         """
-        # print(self.businessadmin1.admin_unique_id)
-        #SAMI_SAMI2186_1_a98961
+        print(self.businessadmin1.admin_unique_id)
         request = self.factory.post('/admins/update/')
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
         success, message = AdminManagement.update_business_admin_user(request,admin_unique_id="SAMI_SAMI2186_1_A98961",
-                                                                 admin_full_name="rafi",admin_position_pk=self.adminposition2.pk,
+                                                                 admin_full_name="rafi",admin_position_pk=self.adminposition2.pk,admin_email='saki@gmail.com',
                                                                  admin_contact_no="01306413841")
         self.assertTrue(success,"business admin should be successfully updated")
         self.assertEqual(message,"Business Admin successfully updated","Success message is incorrect")
