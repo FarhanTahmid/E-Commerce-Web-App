@@ -1,14 +1,18 @@
 from django.shortcuts import render
 from django_ratelimit.decorators import ratelimit
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import auth
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from system.models import Accounts
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken,AccessToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import AllowAny,IsAuthenticated
 from json.decoder import JSONDecodeError
+from datetime import timedelta
 # Create your views here.
 
 class CustomerSignupView(APIView):
@@ -273,4 +277,50 @@ class CustomerLoginView(APIView):
             return Response(
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CheckCustomerIsAuthenticatedView(APIView):
+
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    def get(self, request):
+        try:
+            user=request.user
+            if user.is_authenticated:
+                return Response({
+                    'message': 'User is authenticated'
+                    }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)            
+            
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+class CustomerLogoutView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response(
+                    {'error': 'Refresh token is required'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Blacklist the refresh token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': f'Invalid refresh token: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
