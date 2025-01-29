@@ -13,6 +13,9 @@ class BusinessAdminTest(TestCase):
         self.adminposition1 = AdminPositions.objects.create(name="Manager",description="Manage of company")
         self.adminposition2 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
         self.businessadmin1 = BusinessAdminUser.objects.create(admin_full_name="SAMI",admin_position=self.adminposition2,admin_email="sak@gmail.com",admin_user_name='sak')
+        self.businessadmin1.save()
+        self.user = Accounts(username='sak',password='1234',email="sak@gmail.com")
+        self.user.save()
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
@@ -24,8 +27,10 @@ class BusinessAdminTest(TestCase):
         )
 
     def _create_mock_businessadmin_user(self):
-        user = Accounts.objects.create(username='testuser2', is_superuser=True,is_admin = True,email='sami@gmail.com',password='1234')
-        BusinessAdminUser.objects.create(admin_full_name="testuser2",admin_position=self.adminposition1,admin_email='sami@gmail.com',admin_user_name='sami').save()
+        user = Accounts.objects.create(username='sami', is_superuser=True,is_admin = True,email='sami@gmail.com',password='1234')
+        user.save()
+        businessadmin_user = BusinessAdminUser.objects.create(admin_full_name="sami",admin_position=self.adminposition1,admin_email='sami@gmail.com',admin_user_name='sami')
+        businessadmin_user.save()
         return user
 
     def test_fetch_admin_postion(self):
@@ -126,38 +131,37 @@ class BusinessAdminTest(TestCase):
         """
         Test for updating business admins
         """
-        print(self.businessadmin1.admin_unique_id)
         request = self.factory.post('/admins/update/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
         success, message = AdminManagement.update_business_admin_user(request,admin_unique_id="SAMI_SAK_1_1C4759",
-                                                                 admin_full_name="rafi",admin_position_pk=self.adminposition2.pk,admin_email='saki@gmail.com',
+                                                                 admin_full_name="rafi",admin_position_pk=self.adminposition2.pk,admin_email='rrr@gmail.com',
                                                                  admin_contact_no="01306413841")
         self.assertTrue(success,"business admin should be successfully updated")
         self.assertEqual(message,"Business Admin successfully updated","Success message is incorrect")
     
-    # def test_update_password_reset(self):
-    #     """
-    #     Test for reseting the password
-    #     """
-    #     request = self.factory.post('/admins/reset_password/')
-    #     #request.user = self._create_mock_dev_user()
-    #     request.user = self._create_mock_businessadmin_user()
-    #     success,message = AdminManagement.reset_business_admin_user_password(request,"user@example.com","8585")
-    #     self.assertTrue(success,"Password should be successfully reset")
-    #     self.assertEqual(message,"Password reset successfull","Success message is incorrect")
+    def test_update_password_reset(self):
+        """
+        Test for reseting the password
+        """
+        request = self.factory.post('/admins/reset_password/')
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
+        success,message = AdminManagement.reset_business_admin_user_password(request,request.user.email,"8585")
+        self.assertTrue(success,"Password should be successfully reset")
+        self.assertEqual(message,"Password reset successfull","Success message is incorrect")
 
 
-    # def test_delete_business_admin(self):
-    #     """
-    #     Test for deleting business admins
-    #     """
-    #     request = self.factory.post('/admins/delete/')
-    #     request.user = self._create_mock_dev_user()
-    #     #request.user = self._create_mock_businessadmin_user()
-    #     success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAK_1_1C4759")
-    #     self.assertTrue(success,"business admin should be successfully deleted")
-    #     self.assertEqual(message,"Admin deleted successfully","Success message is incorrect")
+    def test_delete_business_admin(self):
+        """
+        Test for deleting business admins
+        """
+        request = self.factory.post('/admins/delete/')
+        request.user = self._create_mock_dev_user()
+        #request.user = self._create_mock_businessadmin_user()
+        success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAK_1_1C4759")
+        self.assertTrue(success,"business admin should be successfully deleted")
+        self.assertEqual(message,"Admin deleted successfully","Success message is incorrect")
 
         #deleteing again
         # success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAMI2186_1_a98961")

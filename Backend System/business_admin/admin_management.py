@@ -520,7 +520,6 @@ class AdminManagement:
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             user = Accounts.objects.get(username=business_admin_user.admin_user_name)
-            print(business_admin_user.admin_unique_id)
             if user.is_staff == False and is_staff_user == True:
                 user.is_staff = True
             if user.is_superuser == False and is_superuser == True:
@@ -556,7 +555,6 @@ class AdminManagement:
                         business_admin_user.admin_avatar.delete()
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
-            print(business_admin_user.admin_unique_id)
             updated,message = SystemLogs.updated_by(request,business_admin_user)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
             return True, "Business Admin successfully updated"

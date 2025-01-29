@@ -103,7 +103,6 @@ class SystemLogs:
         """
         #checking type of user
         try:
-            print(request.user)
             user = SystemLogs.get_logged_in_user(request)
             if user.is_superuser and not user.is_admin:
                 user_type = {
@@ -206,7 +205,6 @@ class SystemLogs:
             user = SystemLogs.get_logged_in_user(request)
             try:
                 business_admin = BusinessAdminUser.objects.get(admin_user_name = user)
-                print("ppp")
                 activity = ActivityLog.objects.create(activity_done_by_admin=business_admin,action=action)
                 activity.save()
                 details = {
