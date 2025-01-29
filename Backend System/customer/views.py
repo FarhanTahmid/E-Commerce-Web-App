@@ -8,12 +8,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from system.models import Accounts
 from rest_framework_simplejwt.tokens import RefreshToken,AccessToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from django_ratelimit.exceptions import Ratelimited
+from django.core.exceptions import PermissionDenied
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from json.decoder import JSONDecodeError
 from datetime import timedelta
-# Create your views here.
 
 class CustomerSignupView(APIView):
     """
@@ -280,47 +281,179 @@ class CustomerLoginView(APIView):
             )
 
 class CheckCustomerIsAuthenticatedView(APIView):
+    """
+    API endpoint to verify customer authentication status.
 
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
+    This protected endpoint requires valid JWT authentication and:
+    - Confirms valid authentication status for authenticated users
+    - Enforces rate limiting (5 requests/minute per IP)
+    - Handles various error scenarios with appropriate status codes
+
+    Authentication:
+    Requires valid JWT token in the Authorization header:
+    `Authorization: Bearer <access_token>`
+
+    Permissions:
+    - User must be authenticated
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
     @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self, request):
+        """
+        Handle GET request to check authentication status.
+
+        Request Requirements:
+        - Valid JWT access token in Authorization header
+        - GET method only
+
+        Responses:
+        - 200 OK: User is authenticated
+        - 401 UNAUTHORIZED: Missing/invalid credentials (handled automatically)
+        - 429 TOO_MANY_REQUESTS: Rate limit exceeded
+        - 500 INTERNAL_SERVER_ERROR: Server-side error
+
+        Example Request:
+        ```
+        GET /api/check-auth/
+        Headers:
+            Authorization: Bearer <access_token>
+        ```
+
+        Example Success Response:
+        {
+            "message": "User is authenticated"
+        }
+
+        Example Error Response (429):
+        {
+            "error": "Request limit exceeded"
+        }
+        """
         try:
-            user=request.user
-            if user.is_authenticated:
-                return Response({
-                    'message': 'User is authenticated'
-                    }, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)            
-            
-        except Exception as e:
+            # Explicit user check (redundant but demonstrates usage)
+            # Permission classes already ensure authentication
+            if not request.user.is_authenticated:
+                raise PermissionDenied()
+
             return Response(
-                {'error': f'An unexpected error occurred: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
+                {'message': 'User is authenticated'},
+                status=status.HTTP_200_OK
+            )
+
+        except Ratelimited:
+            return Response(
+                {'error': 'Request limit exceeded - try again in 1 minute'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        except PermissionDenied as exc:
+            return Response(
+                {'error': 'Authentication credentials invalid or expired'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as exc:
+            # Log full error details here (server-side)
+            return Response(
+                {
+                    'error': 'Internal server error',
+                    'detail': str(exc)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 class CustomerLogoutView(APIView):
+    """
+    API endpoint for secure user logout functionality.
+
+    Features:
+    - Invalidates refresh token server-side (blacklists)
+    - Rate limiting (5 requests/minute per IP)
+    - Comprehensive error handling
+    - JWT authentication requirement
+
+    Frontend Requirements:
+    1. Remove both access and refresh tokens from client storage
+    2. Clear Authorization header after logout
+    3. Handle 401 errors by redirecting to login
+
+    Authentication:
+    Requires valid JWT access token in Authorization header:
+    `Authorization: Bearer <access_token>`
+    """
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self, request):
+        """
+        Handle user logout by invalidating refresh token.
+
+        Request Format:
+        POST /api/auth/logout/
+        Headers:
+            Authorization: Bearer <access_token>
+        Body (JSON):
+            {
+                "refresh": "<refresh_token>"
+            }
+
+        Responses:
+        - 200 OK: Logout successful
+        - 400 BAD_REQUEST: Missing/invalid refresh token
+        - 401 UNAUTHORIZED: Invalid authentication credentials
+        - 429 TOO_MANY_REQUESTS: Rate limit exceeded
+        - 500 INTERNAL_SERVER_ERROR: Server error
+
+        Frontend Directions:
+        1. On successful logout (200):
+           - Remove both tokens from storage (localStorage/cookies)
+           - Clear Authorization header
+           - Redirect to login page
+        2. On 400/401 errors:
+           - Force client-side token cleanup
+           - Redirect to login
+        3. On 429 errors:
+           - Show retry timer (1 minute)
+        """
         try:
             refresh_token = request.data.get('refresh')
+            
             if not refresh_token:
                 return Response(
-                    {'error': 'Refresh token is required'},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {'error': 'Missing refresh token in request body'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Blacklist the refresh token
+            # Validate and blacklist token
             token = RefreshToken(refresh_token)
             token.blacklist()
 
-            return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
-        except Exception as e:
             return Response(
-                {'error': f'Invalid refresh token: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'message': 'Logout successful. Tokens invalidated.'},
+                status=status.HTTP_200_OK
+            )
+
+        except Ratelimited:
+            return Response(
+                {'error': 'Too many requests - try again in 1 minute'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        except TokenError as e:
+            return Response(
+                {
+                    'error': 'Invalid refresh token',
+                    'detail': str(e)
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            # Log full error details internally
+            return Response(
+                {
+                    'error': 'Logout failed',
+                    'detail': 'Please try again or contact support'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
