@@ -1,6 +1,11 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from .models import Accounts
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+from django.urls import reverse
+
 
 class CustomerAuthViewTests(APITestCase):
     """
@@ -167,3 +172,143 @@ class CustomerAuthViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
         self.assertEqual(response.data['error'], 'Account with this email does not exist!')
+
+User = get_user_model()
+class TestAuthenticationViews(APITestCase):
+    def setUp(self):
+        # Create test user
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            username='testuser',
+            password='testpass123'
+        )
+        
+        # Get valid tokens
+        refresh = RefreshToken.for_user(self.user)
+        self.valid_access = str(refresh.access_token)
+        self.valid_refresh = str(refresh)
+        
+        # Direct URLs
+        self.check_auth_url = '/customer/is-authenticated/'
+        self.logout_url = '/customer/logout/'
+
+    # ----------------------------
+    # CheckCustomerIsAuthenticatedView Tests
+    # ----------------------------
+    
+    def test_check_auth_authenticated(self):
+        """Authenticated user receives 200 OK"""
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+        response = self.client.get(self.check_auth_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('message', response.data)
+    
+    def test_check_auth_unauthenticated(self):
+        """Missing credentials returns 401"""
+        response = self.client.get(self.check_auth_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_check_auth_invalid_token(self):
+        """Invalid token returns 401"""
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer invalidtoken123')
+        response = self.client.get(self.check_auth_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_check_auth_rate_limit(self):
+        """Exceed 5 requests/minute limit returns 429"""
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+        for _ in range(5):
+            self.client.get(self.check_auth_url)  # 5 successful requests
+        
+        # 6th request should be blocked
+        response = self.client.get(self.check_auth_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    # ----------------------------
+    # CustomerLogoutView Tests  
+    # ----------------------------
+    
+    # def test_successful_logout(self):
+    #     """Valid logout request blacklists refresh token"""
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+    #     response = self.client.post(self.logout_url, {'refresh': self.valid_refresh})
+        
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertIn('message', response.data)
+    #     self.assertTrue(
+    #         BlacklistedToken.objects.filter(token__token=self.valid_refresh).exists()
+    #     )
+    
+    # def test_logout_missing_refresh_token(self):
+    #     """Missing refresh token returns 400"""
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+    #     response = self.client.post(self.logout_url, {})
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    #     self.assertIn('error', response.data)
+    
+    # def test_logout_invalid_refresh_token(self):
+    #     """Invalid refresh token returns 400"""
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+    #     response = self.client.post(self.logout_url, {'refresh': 'invalid_refresh'})
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    #     self.assertIn('error', response.data)
+    
+    # def test_logout_blacklisted_refresh_token(self):
+    #     """Already blacklisted token returns 400"""
+    #     # First successful logout
+    #     self.test_successful_logout()
+        
+    #     # Try same token again
+    #     response = self.client.post(self.logout_url, {'refresh': self.valid_refresh})
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    # def test_logout_unauthenticated(self):
+    #     """Missing access token returns 401"""
+    #     response = self.client.post(self.logout_url, {'refresh': self.valid_refresh})
+    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    # def test_logout_rate_limit(self):
+    #     """Exceed 5 logout attempts/minute returns 429"""
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+        
+    #     for _ in range(5):
+    #         response = self.client.post(self.logout_url, {'refresh': self.valid_refresh})
+    #         if response.status_code == 200:  # Refresh token after blacklisting
+    #             new_refresh = RefreshToken.for_user(self.user)
+    #             self.valid_refresh = str(new_refresh)
+        
+    #     # 6th attempt
+    #     response = self.client.post(self.logout_url, {'refresh': self.valid_refresh})
+    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    # def test_logout_invalid_method(self):
+    #     """GET request returns 405"""
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+    #     response = self.client.get(self.logout_url)
+    #     self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    # # ----------------------------
+    # # Cross-Feature Tests
+    # # ----------------------------
+    
+    # def test_access_after_logout(self):
+    #     """Access token remains valid until expiration"""
+    #     # Logout first
+    #     self.test_successful_logout()
+        
+    #     # Try accessing protected endpoint
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.valid_access}')
+    #     response = self.client.get(self.check_auth_url)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    # def test_refresh_after_logout(self):
+    #     """Blacklisted refresh token cannot refresh"""
+    #     # Logout first
+    #     self.test_successful_logout()
+        
+    #     # Try refreshing tokens
+    #     response = self.client.post(
+    #         '/api/token/refresh/',  # Assuming standard JWT refresh URL
+    #         {'refresh': self.valid_refresh}
+    #     )
+    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
