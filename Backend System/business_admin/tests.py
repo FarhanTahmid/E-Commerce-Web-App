@@ -117,7 +117,7 @@ class BusinessAdminTest(TestCase):
         """
         
         success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",
-                                                                      password='2186',admin_position_pk=self.adminposition2.pk,admin_email='saki@gmail.com')
+                                                                      password='2186',admin_position_pk=self.adminposition2.pk,admin_email='saki@gmail.com',is_superuser=True)
         self.assertTrue(success,"Business Admin should be created successfully")
         self.assertEqual(message,"Business Admin created successfully","Success message is incorrect")
 

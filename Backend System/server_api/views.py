@@ -1,279 +1,377 @@
 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
 from products import product_serializers
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from products.product_management import ManageProducts
 from business_admin.admin_management import AdminManagement
-from business_admin.serializers import TokenSerializer
-from django.contrib.auth import authenticate, login
-from rest_framework.authtoken.models import Token
-from system.system_log import SystemLogs
 from rest_framework.permissions import AllowAny
 from json.decoder import JSONDecodeError
 from django_ratelimit.decorators import ratelimit
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import TokenError
 from django.utils.decorators import method_decorator
+from rest_framework_simplejwt.tokens import RefreshToken
+from django_ratelimit.exceptions import Ratelimited
+from system.models import *
 
 # Create your views here.
 
 #business admin
-# class SignupBusinessAdminUser(APIView):
+class SignupBusinessAdminUser(APIView):
     
-#     permission_classes = [AllowAny]
-#     def post(self,request,format=None):
-#         try:
-#             admin_full_name = self.request.data.get('admin_full_name',None)
-#             admin_user_name = self.request.data.get('admin_user_name',None)
-#             password = self.request.data.get('password',None)
-#             confirm_password = self.request.data.get('confirm_password',None)
-#             admin_position_pk = self.request.data.get('admin_position_pk',None)
-#             admin_contact_no = self.request.data.get('admin_contact_no',None)
-#             admin_email = self.request.data.get('admin_email',None)
-#             admin_avatar = self.request.data.get('admin_avatar', None)
+    permission_classes = [AllowAny]
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+            admin_full_name = self.request.data.get('admin_full_name',None)
+            admin_email = self.request.data.get('admin_email',None)
+            password = self.request.data.get('password',None)
+            confirm_password = self.request.data.get('confirm_password',None)
+
+            admin_position_pk = self.request.data.get('admin_position_pk',None)
+            admin_contact_no = self.request.data.get('admin_contact_no',None)
+            admin_avatar = self.request.data.get('admin_avatar', None)
+            is_superuser = self.request.data.get('is_superuser',False)
+            is_staff = self.request.data.get('is_superuser',False)
             
-#             if ' ' in admin_user_name:
-#                 return Response(
-#                     {
-#                         "error": "Admin user name should not contain spaces."
-#                     },
-#                     status=status.HTTP_400_BAD_REQUEST
-#                 )
 
-#             missing_fields = []
-#             if not admin_full_name:
-#                 missing_fields.append('admin full name')
-#             if not admin_user_name:
-#                 missing_fields.append('admin user name')
-#             if not password:
-#                 missing_fields.append('password')
-#             if not confirm_password:
-#                 missing_fields.append('confirm password')
-#             if not admin_position_pk:
-#                 missing_fields.append('admin position')
+            missing_fields = []
+            if not admin_full_name:
+                missing_fields.append('admin full name')
+            if not admin_email:
+                missing_fields.append('admin email')
+            if not password:
+                missing_fields.append('password')
+            if not confirm_password:
+                missing_fields.append('confirm password')
+            if not admin_position_pk:
+                missing_fields.append('admin position')
 
-#             if missing_fields:
-#                 return Response(
-#                     {
-#                         "error": f"The following fields are required: {', '.join(missing_fields)}"
-#                     },
-#                     status=status.HTTP_400_BAD_REQUEST
-#                 )
+            if missing_fields:
+                return Response(
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-#             if password != confirm_password:
-#                 return Response(
-#                     {"error": "Password does not match. Try again!"},
-#                     status=status.HTTP_400_BAD_REQUEST
-#                 )
+            if password != confirm_password:
+                return Response(
+                    {"error": "Password does not match. Try again!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
-#             business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
-#                                                                                     password=password,admin_position_pk=admin_position_pk,
-#                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
-#                                                                                     admin_avatar=admin_avatar)
-#             if business_admin_user:
-#                 # authenticated_user = authenticate(username=admin_user_name, password=password)
-#                 # if authenticated_user:
-#                 #     login(request, authenticated_user)
-#                 #     return Response(
-#                 #         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
-#                 #         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-#                 #         status=status.HTTP_201_CREATED
-#                 #     )
-#                 # else:
-#                 #     return Response(
-#                 #         {"error": "Business Admin created, but login failed. Please log in manually."},
-#                 #         status=status.HTTP_400_BAD_REQUEST
-#                 #     )
-#                 return Response(
-#                         {"message": "Business Admin created successfully. Redirecting to dashboard...", 
-#                         "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-#                         status=status.HTTP_201_CREATED)
-#             else:
-#                 return Response(
-#                     {"error": message},
-#                     status=status.HTTP_400_BAD_REQUEST
-#                 )
-#         except Exception as e:
-#             return Response({
-#                 "success": False,
-#                 "error": str(e),
-#                 "message": "An error occurred while creating Business Admin."
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-# class LoginInBusinessAdminUser(APIView):
-
-#     permission_classes = [AllowAny]
-#     def post(self,request,format=None):
-#         try:
-#             username = self.request.data.get('username',None)
-#             password = self.request.data.get('password',None)
-
-#             if username == None or password == None:
-#                 return Response(
-#                     {"error": "Username or Password must be provided!"},
-#                     status=status.HTTP_400_BAD_REQUEST
-#                 )
-            
-#             authenticated_user = authenticate(username=username, password=password)
-#             if authenticated_user:
-#                 user = User.objects.get(username = username)
-#                 Token.objects.filter(user=user).delete()
-#                 token = Token.objects.create(user=user)
-#                 token.save()
-#                 login(request, authenticated_user)
-#                 return Response(
-#                     {"message": "Logged In", 
-#                     "redirect_url": "/dashboard"},  # TODO: Provide the dashboard URL
-#                     status=status.HTTP_200_OK
-#                 )
-#             else:
-#                 return Response(
-#                     {"error": "Username or Password incorrect!"},
-#                     status=status.HTTP_401_UNAUTHORIZED
-#                 )
-#         except Exception as e:
-#             return Response({
-#                 "success": False,
-#                 "error": str(e),
-#                 "message": "An error occurred while logging in."
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,
+                                                                                    password=password,admin_position_pk=admin_position_pk,
+                                                                                    admin_contact_no=admin_contact_no,admin_email=admin_email,
+                                                                                    admin_avatar=admin_avatar,is_superuser=is_superuser,is_staff_user=is_staff)
+            if business_admin_user:
+                return Response({
+                    'message':"Business Admin created successfully. Redirecting to login page",
+                    "redirect_url": "/login-page"
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
-# class LogOutBusinessAdminUser(APIView):
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
+class LoginInBusinessAdminUser(APIView):
+
+    permission_classes = [AllowAny]
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+            email = self.request.data.get('email',None)
+            password = self.request.data.get('password',None)
+
+            if email == None or password == None:
+                return Response(
+                    {"error": "Email or Password must be provided!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            authenticated_user = authenticate(email=email, password=password)
+            if authenticated_user:
+                refresh=RefreshToken.for_user(authenticated_user)
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'message': 'Login successful',
+                    'redirect_url':'dashoard-link/'
+                    }, status=status.HTTP_200_OK)
+            else:
+                # Check which input was wrong
+                if Accounts.objects.filter(email=email).exists():
+                    return Response(
+                        {'error': 'Wrong password'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                else:
+                    return Response(
+                        {'error': 'Account with this email does not exist!'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class LogOutBusinessAdminUser(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None):
 
-#     def post(self,request,format=None):
+        try:
+            refresh_token = request.data.get('refresh')
+            
+            if not refresh_token:
+                return Response(
+                    {'error': 'Missing refresh token in request body'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-#         try:
-#             # Delete the user's token
-#             user = SystemLogs.get_logged_in_user(request)
-#             Token.objects.filter(user=user).delete()
-#         except Token.DoesNotExist:
-#             pass
+            # Validate and blacklist token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
 
-#         return Response({
-#             "message": "Successfully logged out.",
-#             "redirect_url": "/server_api/business_admin/login/"
-#         }, status=status.HTTP_200_OK)
+            return Response(
+                {'message': 'Logout successful. Tokens invalidated.'},
+                status=status.HTTP_200_OK
+            )
 
-# class UpdateBusinessAdminUser(APIView):
+        except Ratelimited:
+            return Response(
+                {'error': 'Too many requests - try again in 1 minute'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        except TokenError as e:
+            return Response(
+                {
+                    'error': 'Invalid refresh token',
+                    'detail': str(e)
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            # Log full error details internally
+            return Response(
+                {
+                    'error': 'Logout failed',
+                    'detail': 'Please try again or contact support'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
+class UpdateBusinessAdminUser(APIView):
 
-#     def put(self,request,admin_user_name,format=None):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def put(self,request,admin_user_name,format=None):
 
-#         try:
-#             admin_user_name = admin_user_name
-#             admin_full_name = self.request.data.get('admin_full_name',None)
-#             admin_position_pk = self.request.data.get('admin_position_pk',None)
-#             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+        try:
+            admin_user_name = admin_user_name
+            admin_full_name = self.request.data.get('admin_full_name',None)
+            admin_position_pk = self.request.data.get('admin_position_pk',None)
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+            admin_email = self.request.data.get('admin_email',None)
 
-#             #can none
-#             admin_contact_no = self.request.data.get('admin_contact_no',None)
-#             admin_email = self.request.data.get('admin_email',None)
-#             admin_avatar = self.request.data.get('admin_avatar',None)
-#             old_password = self.request.data.get('old_password',None)
-#             password = self.request.data.get('password',None)
+            #can none
+            admin_contact_no = self.request.data.get('admin_contact_no',None)
+            admin_avatar = self.request.data.get('admin_avatar',None)
+            old_password = self.request.data.get('old_password',None)
+            password = self.request.data.get('password',None)
+            is_superuser = self.request.get('is_superuser',False)
+            is_staff_user = self.request.get('is_staff_user',False)
 
-#             missing_fields = []
-#             if not admin_full_name:
-#                 missing_fields.append("Admin full name")
-#             if not admin_position_pk:
-#                 missing_fields.append("Admin position")
-#             if missing_fields:
-#                 return Response(
-#                     {
-#                         "error": f"The following fields are required: {', '.join(missing_fields)}"
-#                     },
-#                     status=status.HTTP_400_BAD_REQUEST
-#                 )
-#             admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
-#                                                                                 admin_contact_no,admin_email,admin_avatar,old_password,password,admin_user_name)
-#             if admin_updated:
-#                 return Response({
-#                     'message':message
-#                 },status=status.HTTP_200_OK)
-#             else:
-#                 return Response({
-#                     'message':message
-#                 },status=status.HTTP_400_BAD_REQUEST)
-#         except Exception as e:
-#             return Response({
-#                 "success": False,
-#                 "error": str(e),
-#                 "message": "An error occurred while updating business admin user"
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            missing_fields = []
+            if not admin_full_name:
+                missing_fields.append("Admin full name")
+            if not admin_position_pk:
+                missing_fields.append("Admin position")
+            if missing_fields:
+                return Response(
+                    {
+                        "error": f"The following fields are required: {', '.join(missing_fields)}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+                                                                                admin_email,admin_contact_no,admin_avatar,old_password,password,is_superuser,is_staff_user)
+            if admin_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
-# class UpdateBusinessAdminUserPassword(APIView):
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def put(self,request,admin_user_name,format=None):
-#         try:
-
-#             admin_user_name = admin_user_name
-#             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
-#             old_password = self.request.data.get('old_password',None)
-#             new_password = self.request.data.get('new_password',None)
-#             new_password_confirm = self.request.data.get('new_password_confirm',None)
-
-#             if not new_password or not new_password_confirm:
-#                 return Response({
-#                     'error':"Please provide new password"
-#                 },status=status.HTTP_400_BAD_REQUEST)
-#             if not old_password:
-#                 return Response({
-#                     'error':"Please provide old password"
-#                 },status=status.HTTP_400_BAD_REQUEST)
-#             if new_password == new_password_confirm:
-#                 password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
-
-#                 if password_update:
-#                     return Response({
-#                         'message':message
-#                     },status=status.HTTP_200_OK)
-#                 else:
-#                     return Response({
-#                         'error':message
-#                     },status=status.HTTP_400_BAD_REQUEST)
-#             else:
-#                 return Response({
-#                     'error':"Password does not match"
-#                 },status=status.HTTP_400_BAD_REQUEST)
-#         except Exception as e:
-#             return Response({
-#                 "success": False,
-#                 "error": str(e),
-#                 "message": "An error occurred while updating business admin user password"
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
-# class DeleteBusinessAdminUser(APIView):
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
+class UpdateBusinessAdminUserPassword(APIView):
 
-#     def delete(self,request,admin_user_name,format=None):
-#         try:
-#             admin_user_name=admin_user_name
-#             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
-#             deleted,message = AdminManagement.delete_business_admin_user(request,admin_unique_id)
-#             if deleted:
-#                 return Response(
-#                     {"message": message},
-#                     status=status.HTTP_204_NO_CONTENT
-#                 )
-#             else:
-#                 return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
-#         except Exception as e:
-#             return Response({
-#                 "success": False,
-#                 "error": str(e),
-#                 "message": "An error occurred while deleting business admin user"
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def put(self,request,admin_user_name,format=None):
+        try:
+
+            admin_user_name = admin_user_name
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
+            old_password = self.request.data.get('old_password',None)
+            new_password = self.request.data.get('new_password',None)
+            new_password_confirm = self.request.data.get('new_password_confirm',None)
+
+            if not new_password or not new_password_confirm:
+                return Response({
+                    'error':"Please provide new password"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if not old_password:
+                return Response({
+                    'error':"Please provide old password"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if new_password == new_password_confirm:
+                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
+
+                if password_update:
+                    return Response({
+                        'message':message
+                    },status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'error':message
+                    },status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({
+                    'error':"Password does not match"
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class DeleteBusinessAdminUser(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    def delete(self,request,admin_user_name,format=None):
+        try:
+            admin_user_name=admin_user_name
+            admin_email = Accounts.objects.get(username = admin_user_name)
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_email=admin_email)[0].admin_unique_id
+            deleted,message = AdminManagement.delete_business_admin_user(request,admin_unique_id)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         
 
 
