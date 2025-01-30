@@ -13,13 +13,12 @@ from orders.serializers import CartSerializer
 logging=ManageErrorLog()
 
 def get_client_ip(request):
-    """More robust IP extraction"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
+    address = request.META.get('HTTP_X_FORWARDED_FOR')
+    if address:
+        ip = address.split(',')[-1].strip()
     else:
         ip = request.META.get('REMOTE_ADDR')
-    return ip.strip() if ip else None
+    return ip
 
 class SafeJWTAuthentication(JWTAuthentication):
     """JWT authentication that doesn't raise exceptions for unverified tokens"""
@@ -113,7 +112,7 @@ class UserCartViewSet(viewsets.ViewSet):
                 source_cart.delete()
                 
         except Exception as e:
-            logging.create_error_log(error_type=type(e).__name__,error_message=str(e))
+            # logging.create_error_log(error_type=type(e).__name__,error_message=str(e))
             raise CartMergeError("Failed to merge carts") from e
 
     def _validate_post_merge_stock(self, cart, stock_map):
@@ -165,14 +164,158 @@ class UserCartViewSet(viewsets.ViewSet):
      
             
     @action(detail=True, methods=['post'])
-    def addProductToCart(self,request):
-        pass
+    def add_product(self, request, pk=None):
+        """Add product to cart with stock validation"""
+        try:
+            with transaction.atomic():
+                cart = self.get_object()
+                serializer = CartSerializer(cart)
+                
+                try:
+                    sku_id = request.data['sku_id']
+                    quantity = int(request.data.get('quantity', 1))
+                    sku = Product_SKU.objects.select_for_update().get(pk=sku_id)
+                except (KeyError, Product_SKU.DoesNotExist, ValueError):
+                    return Response(
+                        {'error': 'Invalid product or quantity'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                if quantity < 1:
+                    return Response(
+                        {'error': 'Quantity must be at least 1'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                if quantity > sku.product_stock:
+                    return Response(
+                        {'error': 'Insufficient stock'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Get or create cart item
+                item, created = CartItems.objects.get_or_create(
+                    cart_id=cart,
+                    product_sku=sku,
+                    defaults={'quantity': quantity}
+                )
+
+                if not created:
+                    new_quantity = item.quantity + quantity
+                    if new_quantity > sku.product_stock:
+                        return Response(
+                            {'error': 'Exceeds available stock'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    item.quantity = new_quantity
+                    item.save()
+
+                return Response(serializer.data)
+
+        except Exception as e:
+            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
-    @action(detail=True, methods=['post','update'])
-    def updateCart(self,request):
-        pass
+    @action(detail=True, methods=['put'])
+    def update_item(self, request, pk=None):
+        """Update cart item quantity with stock validation"""
+        try:
+            with transaction.atomic():
+                cart = self.get_object()
+                item_id = request.data.get('item_id')
+                new_quantity = int(request.data.get('quantity', 1))
+
+                if new_quantity < 0:
+                    return Response(
+                        {'error': 'Invalid quantity'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                try:
+                    item = CartItems.objects.select_related('product_sku').get(
+                        pk=item_id, 
+                        cart_id=cart
+                    )
+                    sku = item.product_sku
+                    
+                    if new_quantity > sku.product_stock:
+                        return Response(
+                            {'error': 'Insufficient stock'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                        
+                    if new_quantity == 0:
+                        item.delete()
+                    else:
+                        item.quantity = new_quantity
+                        item.save()
+
+                    return Response(CartSerializer(cart).data)
+                    
+                except CartItems.DoesNotExist:
+                    return Response(
+                        {'error': 'Item not found in cart'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+        except Exception as e:
+            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
+            return Response(
+                {'error': 'Failed to update cart item'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
-    @action(detail=True, methods=['post','delete'])
-    def deleteProductFromCart(self,request):
-        pass
+    @action(detail=True, methods=['delete'])
+    def remove_item(self, request, pk=None):
+        """Remove item from cart"""
+        try:
+            with transaction.atomic():
+                cart = self.get_object()
+                item_id = request.query_params.get('item_id')
+
+                if not item_id:
+                    return Response(
+                        {'error': 'Missing item_id parameter'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                try:
+                    item = CartItems.objects.get(pk=item_id, cart_id=cart)
+                    item.delete()
+                    return Response(CartSerializer(cart).data)
+                except CartItems.DoesNotExist:
+                    return Response(
+                        {'error': 'Item not found in cart'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+        except Exception as e:
+            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
+            return Response(
+                {'error': 'Failed to remove item from cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+    @action(detail=True, methods=['delete'])
+    def clear_cart(self, request, pk=None):
+        """Clear all items from the user's cart"""
+        try:
+            with transaction.atomic():
+                cart = self.get_object()
+                cart.cartitems_set.all().delete()  # Delete all cart items
+                
+                return Response(
+                    {"message": "Cart has been cleared successfully"},
+                    status=status.HTTP_200_OK
+                )
+
+        except Exception as e:
+            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
+            return Response(
+                {"error": "Failed to clear cart"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
