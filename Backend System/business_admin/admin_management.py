@@ -286,7 +286,7 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
     #business admin users
-    def fetch_business_admin_user(admin_unique_id=None,admin_email=None):
+    def fetch_business_admin_user(admin_unique_id=None,admin_email=None,admin_user_name=None):
 
         """
         Fetch business admin users based on various optional parameters
@@ -337,6 +337,9 @@ class AdminManagement:
             elif admin_email:
                 admin_user = BusinessAdminUser.objects.get(admin_email=admin_email)
                 return admin_user, "Business Admin user fetched successfully"
+            elif admin_user_name:
+                admin_user = BusinessAdminUser.objects.get(admin_user_name=admin_user_name)
+                return admin_user,"Business Admin user fetched successfully"
             else:
                 all_admin_users = BusinessAdminUser.objects.all()
                 return all_admin_users, "All Business Admin users fetched successfully" if len(all_admin_users)>0 else "No Admin users found"
@@ -525,7 +528,6 @@ class AdminManagement:
             if user.is_superuser == False and is_superuser == True:
                 user.is_superuser = True
             user.save()
-
             #checking conditions to update as necessarily
             if password:
                 if user.check_password(old_password):
@@ -546,6 +548,8 @@ class AdminManagement:
                         return False, "This email is already taken"
                 business_admin_user.admin_user_name = admin_email.split('@')[0]
                 business_admin_user.admin_email = admin_email
+                user.email = admin_email
+                user.username = admin_email.split('@')[0]
             if admin_avatar:
                 if not business_admin_user.admin_avatar or business_admin_user.admin_avatar != admin_avatar:
                     if business_admin_user.admin_avatar:
@@ -555,6 +559,7 @@ class AdminManagement:
                         business_admin_user.admin_avatar.delete()
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
+            user.save()
             updated,message = SystemLogs.updated_by(request,business_admin_user)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
             return True, "Business Admin successfully updated"

@@ -179,7 +179,8 @@ class LogOutBusinessAdminUser(APIView):
             token.blacklist()
 
             return Response(
-                {'message': 'Logout successful. Tokens invalidated.'},
+                {'message': 'Logout successful. Tokens invalidated.',
+                 'redirect_url':'/server_api/business_admin/login/'},
                 status=status.HTTP_200_OK
             )
 
@@ -220,15 +221,13 @@ class UpdateBusinessAdminUser(APIView):
             admin_position_pk = self.request.data.get('admin_position_pk',None)
             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
             admin_email = self.request.data.get('admin_email',None)
-
             #can none
             admin_contact_no = self.request.data.get('admin_contact_no',None)
             admin_avatar = self.request.data.get('admin_avatar',None)
             old_password = self.request.data.get('old_password',None)
             password = self.request.data.get('password',None)
-            is_superuser = self.request.get('is_superuser',False)
-            is_staff_user = self.request.get('is_staff_user',False)
-
+            is_superuser = self.request.data.get('is_superuser',False)
+            is_staff_user = self.request.data.get('is_staff_user',False)
             missing_fields = []
             if not admin_full_name:
                 missing_fields.append("Admin full name")
@@ -287,7 +286,6 @@ class UpdateBusinessAdminUserPassword(APIView):
             old_password = self.request.data.get('old_password',None)
             new_password = self.request.data.get('new_password',None)
             new_password_confirm = self.request.data.get('new_password_confirm',None)
-
             if not new_password or not new_password_confirm:
                 return Response({
                     'error':"Please provide new password"
@@ -298,7 +296,6 @@ class UpdateBusinessAdminUserPassword(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
             if new_password == new_password_confirm:
                 password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
-
                 if password_update:
                     return Response({
                         'message':message
@@ -341,8 +338,8 @@ class DeleteBusinessAdminUser(APIView):
     def delete(self,request,admin_user_name,format=None):
         try:
             admin_user_name=admin_user_name
-            admin_email = Accounts.objects.get(username = admin_user_name)
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_email=admin_email)[0].admin_unique_id
+            admin = Accounts.objects.get(username = admin_user_name)
+            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_email=admin.email)[0].admin_unique_id
             deleted,message = AdminManagement.delete_business_admin_user(request,admin_unique_id)
             if deleted:
                 return Response(

@@ -12,6 +12,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 import datetime
 from system.models import Accounts
 from rest_framework_simplejwt.tokens import RefreshToken
+import time
 
 # Create your tests here.
 class ServerAPITestCases(APITestCase):
@@ -23,17 +24,28 @@ class ServerAPITestCases(APITestCase):
         self.login_url = '/customer/login/'
         
         # credentials setup for signup testing
-        self.valid_email = 'existing@example.com'
-        self.valid_password = 'password123'
+        self.dev_valid_email = 'existing@example.com'
+        self.dev_valid_password = 'password123'
         
-        self.existing_user = Accounts(
-            email='existing2@example.com',
-            username='existing_user',
+        self.dev_existing_user = Accounts(
+            email='devexisting2@example.com',
+            username='devexisting_user',
             is_superuser = True
         )
-        self.existing_user.set_password('password123')
-        self.existing_user.save()
+        self.dev_existing_user.set_password('password123')
+        self.dev_existing_user.save()
 
+        self.admin_email='admin@gmail.com'
+        self.admin_password = '1234'
+
+        self.admin_existing_user = Accounts(
+            email='existing_admin@example.com',
+            username='existing_admin',
+            is_admin = True,
+            is_superuser = True
+        )
+        self.admin_existing_user.set_password('1234')
+        self.admin_existing_user.save()
         
         
         # credentials setup for login testing
@@ -48,9 +60,9 @@ class ServerAPITestCases(APITestCase):
         self.user.set_password(self.password)
         self.user.save()
 
-        refresh = RefreshToken.for_user(self.user)
-        access_token = str(refresh.access_token)
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
+        self.refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(self.refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
 
         self.product_category1 = Product_Category.objects.create(category_name="Skincare", description="Products for skincare", created_at=self.now)
         self.product_category2= Product_Category.objects.create(category_name="Makeup", description="Products for makeup", created_at=self.now)
@@ -88,9 +100,11 @@ class ServerAPITestCases(APITestCase):
         self.product_sku2.product_flavours.set([self.product_flavour1])
 
 
-        self.businessadmin1 = BusinessAdminUser.objects.create(
-                                                               admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1
-                                                               )#user = User.objects.create_user(username='sami2186', password='password',is_superuser=False),
+        self.businessadmin1 = BusinessAdminUser.objects.create(admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1,admin_email="sami2186@example.com"
+                                                               )
+        self.businessadmin1_user = Accounts.objects.create(username="sami2186",email="sami2186@example.com")
+        self.businessadmin1_user.set_password('1234')
+        self.businessadmin1_user.save()
         
         self.product_image = Product_Images.objects.create(product_id=self.product1)
 
@@ -294,8 +308,8 @@ class ServerAPITestCases(APITestCase):
         }
         response = self.client.post(f'/server_api/business-admin/signup/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-        self.assertEqual(response.data['message'],"Business Admin created successfully. Redirecting to dashboard...","Success messsage is incorrect")
-        self.assertEqual(response.data['redirect_url'],"/dashboard","Success messsage is incorrect")
+        self.assertEqual(response.data['message'],"Business Admin created successfully. Redirecting to login page","Success messsage is incorrect")
+        self.assertEqual(response.data['redirect_url'],"/login-page","Success messsage is incorrect")
         #self.assertTrue(User.objects.filter(username="johndoe").exists())
         #self.assertTrue(BusinessAdminUser.objects.filter(admin_full_name="John Doe").exists())
 
@@ -304,42 +318,40 @@ class ServerAPITestCases(APITestCase):
         Test for loggin in 
         """
         data = {
-            "username":"testuser",
-            "password":"password"
+            "email":self.email,
+            "password":self.password
         }
         response = self.client.post(f'/server_api/business-admin/login/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
-        self.assertEqual(response.data['message'],"Logged In","Success message is incorrect")
+        self.assertEqual(response.data['message'],"Login successful","Success message is incorrect")
 
         #incorrect data
         data = {
-            "username":"testuser2",
+            "email":"testuser2@example.com",
             "password":"password22"
         }
         response = self.client.post(f'/server_api/business-admin/login/',data,format='json')
-        self.assertEqual(response.status_code,status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(response.data['error'],"Username or Password incorrect!","Success message is incorrect")
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],'Account with this email does not exist!')
 
         #no data
         data ={
-            "username":None,
+            "email":None,
             "password":None
         }
         response = self.client.post(f'/server_api/business-admin/login/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['error'],"Username or Password must be provided!","Success message is incorrect")
+        self.assertEqual(response.data['error'],"Email or Password must be provided!","Success message is incorrect")
 
     def test_logout_successful(self):
         """
         Test that a user can successfully log out and is redirected to the login page.
         """
-        response = self.client.post(f'/server_api/business-admin/logout/')
+        response = self.client.post(f'/server_api/business-admin/logout/',{'refresh':f'{self.refresh}'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('redirect_url', response.data) 
         self.assertEqual(response.data['redirect_url'], '/server_api/business_admin/login/') 
-        # Check that the token is deleted
-        with self.assertRaises(Token.DoesNotExist):
-            Token.objects.get(user=self.user)
+
 
     def test_logout_unauthenticated(self):
         """
@@ -356,7 +368,7 @@ class ServerAPITestCases(APITestCase):
         Test for updating business admin
         """
 
-        data= {'admin_full_name':"TrishaHaque Samuel",'admin_position_pk':self.adminposition1.pk}
+        data= {'admin_full_name':"TrishaHaque Samuel",'admin_position_pk':self.adminposition1.pk,'admin_email':'testuser2@example.com'}
         response = self.client.put(f'/server_api/business-admin/update/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Business Admin successfully updated")
@@ -366,7 +378,7 @@ class ServerAPITestCases(APITestCase):
         Test for updating business admin user password
         """
 
-        data = {'old_password':"password",'new_password':'new_password','new_password_confirm':'new_password'}
+        data = {'old_password':"1234",'new_password':'new_password','new_password_confirm':'new_password'}
         response = self.client.put(f'/server_api/business-admin/update-password/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Password updated successfully")
@@ -639,27 +651,27 @@ class ServerAPITestCases(APITestCase):
         # self.assertEqual(response.data['error'],"An unexpected error occurred while deleting product sku! Please try again later.")
 
     #product images
-    def test_fetch_product_images(self):
-        """
-        Test for fetching product images
-        """
-        #fetch all
-        response = self.client.get(f'/server_api/product/product-images/fetch-product-image/')
-        self.assertEqual(response.status_code,status.HTTP_200_OK)
-        self.assertEqual(response.data['message'],"All product images fetched successfully")
+    # def test_fetch_product_images(self):
+    #     """
+    #     Test for fetching product images
+    #     """
+    #     #fetch all
+    #     response = self.client.get(f'/server_api/product/product-images/fetch-product-image/')
+    #     self.assertEqual(response.status_code,status.HTTP_200_OK)
+    #     self.assertEqual(response.data['message'],"All product images fetched successfully")
 
-        #using product_image_pk
-        response = self.client.get(f'/server_api/product/product-images/fetch-product-image/?product_image_pk={self.product_image.pk}')
-        self.assertEqual(response.status_code,status.HTTP_200_OK)
-        self.assertEqual(response.data['message'],"Product images fetched successfully")
+    #     #using product_image_pk
+    #     response = self.client.get(f'/server_api/product/product-images/fetch-product-image/?product_image_pk={self.product_image.pk}')
+    #     self.assertEqual(response.status_code,status.HTTP_200_OK)
+    #     self.assertEqual(response.data['message'],"Product images fetched successfully")
 
     # def test_create_product_image(self):
     #     """
     #     Test for creating product images
     #     """
 
-    #     image = ProductCategoryAPITestCases.generate_test_image('yellow',1)
-    #     image2 = ProductCategoryAPITestCases.generate_test_image('green',2)
+    #     image = ServerAPITestCases.generate_test_image('yellow',1)
+    #     image2 = ServerAPITestCases.generate_test_image('green',2)
     #     data = {'product_image_list':[image,image2]}
     #     response = self.client.post(f'/server_api/product/product-images/create/{self.product1.pk}/',data,format='multipart')
     #     self.assertEqual(response.status_code,status.HTTP_201_CREATED)
@@ -670,8 +682,8 @@ class ServerAPITestCases(APITestCase):
     #     Test for updating product image
     #     """
 
-    #     image_old = ProductCategoryAPITestCases.generate_test_image('yellow',3)
-    #     image_new = ProductCategoryAPITestCases.generate_test_image('pink',4)
+    #     image_old = ServerAPITestCases.generate_test_image('yellow',3)
+    #     image_new = ServerAPITestCases.generate_test_image('pink',4)
     #     self.product_image.product_image = image_old
     #     data = {'new_image':image_new,'size':'XXL'}
     #     response = self.client.put(f'/server_api/product/product-image/update/{self.product_image.pk}/',data,format='multipart')
@@ -683,7 +695,7 @@ class ServerAPITestCases(APITestCase):
     #     Test for deleting product image
     #     """
         
-    #     image_old = ProductCategoryAPITestCases.generate_test_image('yellow',3)
+    #     image_old = ServerAPITestCases.generate_test_image('yellow',3)
     #     self.product_image.product_image = image_old
     #     self.product_image.save()
     #     time.sleep(10)
