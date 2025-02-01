@@ -180,9 +180,9 @@ class Cart(models.Model):
         verbose_name (str): A human-readable name for the model (singular).
         verbose_name_plural (str): A human-readable name for the model (plural).
     """
-    device_ip = models.GenericIPAddressField(verbose_name="Device IP")
-    customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, related_name="Cart")
-    cart_total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cart Total Amount")
+    device_ip = models.GenericIPAddressField(verbose_name="Device IP",null=True,blank=True) #if the user is not loggedin, we are going to use device ip to track carts
+    customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, related_name="Cart",null=True,blank=True) #If the user is logged in, we are going to user customer id to track carts
+    cart_total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cart Total Amount",default=0,null=True,blank=True)
     cart_checkout_status = models.BooleanField(default=False, verbose_name="Cart Checkout Status")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
@@ -206,9 +206,9 @@ class CartItems(models.Model):
         created_at (DateTimeField): The timestamp when the record was created.
         updated_at (DateTimeField): The timestamp when the record was last updated.
     """
-    cart_id = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    product_sku = models.ForeignKey(Product_SKU, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1, verbose_name="Quantity")
+    cart_id = models.ForeignKey(Cart, on_delete=models.CASCADE,null=False,blank=False)
+    product_sku = models.ForeignKey(Product_SKU, on_delete=models.CASCADE,null=False,blank=False)
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Quantity",null=False,blank=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
 
