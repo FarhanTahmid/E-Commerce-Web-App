@@ -1,16 +1,18 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny,IsAuthenticated,BasePermission,SAFE_METHODS
+from rest_framework.permissions import AllowAny, BasePermission, SAFE_METHODS
 from system.manage_error_log import ManageErrorLog
-from orders.models import Cart,CartItems,Product_SKU
+from orders.models import Cart, CartItems, Product_SKU
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.exceptions import PermissionDenied,AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed
 from django.db import transaction
 from rest_framework.response import Response
 from orders.serializers import CartSerializer
+from django.core.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 
-logging=ManageErrorLog()
+logging = ManageErrorLog()
 
 def get_client_ip(request):
     address = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -34,15 +36,15 @@ class CartOwnerPermission(BasePermission):
         # Allow read-only for all
         if request.method in SAFE_METHODS:
             return True
-            
+
         # For authenticated users
         if request.user.is_authenticated:
             return obj.customer_id == request.user
-            
+
         # For guests - strict IP matching
         client_ip = get_client_ip(request)
         return obj.device_ip == client_ip
-    
+
 class CartMergeError(Exception):
     """Custom exception for merge failures"""
     pass
@@ -55,7 +57,7 @@ class InsufficientStockError(Exception):
 class UserCartViewSet(viewsets.ViewSet):
     authentication_classes = [SafeJWTAuthentication]  # Use our custom auth
     permission_classes = [CartOwnerPermission]
-    
+
     def get_permissions(self):
         # Special case for create_or_fetch
         if self.action == 'create_or_fetch':
@@ -68,101 +70,104 @@ class UserCartViewSet(viewsets.ViewSet):
         obj = get_object_or_404(queryset, pk=self.kwargs['pk'])
         self.check_object_permissions(self.request, obj)
         return obj
-    
+
     def _merge_carts(self, source_cart, target_cart):
-        """Merges two carts with comprehensive stock validation and error handling"""
+        """Merge items from source_cart into target_cart with real-time stock validation."""
         try:
             with transaction.atomic():
-                # Create temporary mapping for stock checks
-                stock_map = {
-                    item.product_sku: item.product_sku.product_stock
-                    for item in target_cart.cartitems_set.all()
-                }
-
-                # Process all source cart items
+                # For each item in the source cart
                 for source_item in source_cart.cartitems_set.select_related('product_sku').all():
-                    current_stock = source_item.product_sku.product_stock
-                    target_item = target_cart.cartitems_set.filter(
-                        product_sku=source_item.product_sku
-                    ).first()
+                    sku = source_item.product_sku
+                    current_stock = sku.product_stock
+
+                    # Check if target cart already has this SKU
+                    target_item = target_cart.cartitems_set.filter(product_sku=sku).first()
 
                     if target_item:
-                        # Calculate potential new quantity
-                        potential_qty = target_item.quantity + source_item.quantity
-                        final_qty = min(potential_qty, current_stock)
-                        
-                        if final_qty > target_item.quantity:
-                            target_item.quantity = final_qty
-                            target_item.save()
-                            stock_map[source_item.product_sku] = final_qty
-                    else:
-                        # Check if we can add new item
-                        if source_item.quantity <= current_stock:
-                            CartItems.objects.create(
-                                cart_id=target_cart,
-                                product_sku=source_item.product_sku,
-                                quantity=source_item.quantity
+                        # Add quantities together
+                        new_quantity = target_item.quantity + source_item.quantity
+                        if new_quantity > current_stock:
+                            raise InsufficientStockError(
+                                f"Not enough stock for {sku}. "
+                                f"Available: {current_stock}, Requested: {new_quantity}"
                             )
-                            stock_map[source_item.product_sku] = source_item.quantity
-
-                # Verify final stock availability
-                self._validate_post_merge_stock(target_cart, stock_map)
-                
-                # Delete source cart after successful merge
+                        target_item.quantity = new_quantity
+                        target_item.save()
+                    else:
+                        # If it's a new SKU for the target cart
+                        if source_item.quantity > current_stock:
+                            raise InsufficientStockError(
+                                f"Not enough stock for {sku}. "
+                                f"Available: {current_stock}, Requested: {source_item.quantity}"
+                            )
+                        CartItems.objects.create(
+                            cart_id=target_cart,
+                            product_sku=sku,
+                            quantity=source_item.quantity
+                        )
+                # Delete the source cart after merging
                 source_cart.delete()
-                
-        except Exception as e:
-            # logging.create_error_log(error_type=type(e).__name__,error_message=str(e))
-            raise CartMergeError("Failed to merge carts") from e
 
-    def _validate_post_merge_stock(self, cart, stock_map):
-        """Post-merge validation to ensure data integrity"""
-        for item in cart.cartitems_set.select_related('product_sku').all():
-            current_stock = item.product_sku.product_stock
-            if stock_map.get(item.product_sku, 0) > current_stock:
-                raise InsufficientStockError(
-                    f"Insufficient stock for {item.product_sku} after merge"
-                )
-    
-    
+        except Exception as e:
+            raise CartMergeError(f"Cart merge aborted: {str(e)}") from e
 
     @action(detail=False, methods=['post'])
     def create_or_fetch(self, request):
+        """
+        For guest users:
+           - Create/fetch cart by IP.
+        For authenticated users:
+           - If a guest cart exists for the same IP, merge it into the user cart.
+           - Then return/create the user cart.
+        """
         try:
             with transaction.atomic():
-                # Handle both authenticated and guest users
                 user = request.user if request.user.is_authenticated else None
                 ip = get_client_ip(request)
+                merged = False
 
-                # Existing cart lookup logic
                 if user:
-                    cart, created = Cart.objects.get_or_create(
+                    # Check for a guest cart with the same IP
+                    guest_cart = Cart.objects.filter(
+                        device_ip=ip,
+                        cart_checkout_status=False,
+                        customer_id__isnull=True
+                    ).first()
+
+                    # Create or fetch the user's cart
+                    user_cart, created = Cart.objects.get_or_create(
                         customer_id=user,
                         cart_checkout_status=False,
                         defaults={'device_ip': ip}
                     )
-                    # Merge guest cart if exists
-                    self._merge_carts(user, ip)
+
+                    # Merge if guest cart exists
+                    if guest_cart:
+                        self._merge_carts(guest_cart, user_cart)
+                        merged = True
+
+                    cart = user_cart
+
                 else:
+                    # Guest user
                     cart, created = Cart.objects.get_or_create(
                         device_ip=ip,
                         cart_checkout_status=False
                     )
 
-                return Response(
-                    CartSerializer(cart).data,
-                    status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+                status_code = (
+                    status.HTTP_201_CREATED 
+                    if (created and not merged) 
+                    else status.HTTP_200_OK
                 )
+                return Response(CartSerializer(cart).data, status=status_code)
 
         except Exception as e:
-            # logging.create_error_log(error_type=type(e).__name__ , error_message=str(e))
-            print(e)
             return Response(
-                {'error': 'Cart operation failed'},
+                {'error': f'Cart operation failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-     
-            
+
     @action(detail=True, methods=['post'])
     def add_product(self, request, pk=None):
         """Add product to cart with stock validation"""
@@ -170,7 +175,7 @@ class UserCartViewSet(viewsets.ViewSet):
             with transaction.atomic():
                 cart = self.get_object()
                 serializer = CartSerializer(cart)
-                
+
                 try:
                     sku_id = request.data['sku_id']
                     quantity = int(request.data.get('quantity', 1))
@@ -193,13 +198,14 @@ class UserCartViewSet(viewsets.ViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-                # Get or create cart item
+                # Get or create the cart item
                 item, created = CartItems.objects.get_or_create(
                     cart_id=cart,
                     product_sku=sku,
                     defaults={'quantity': quantity}
                 )
 
+                # If item already exists, update quantity
                 if not created:
                     new_quantity = item.quantity + quantity
                     if new_quantity > sku.product_stock:
@@ -211,14 +217,15 @@ class UserCartViewSet(viewsets.ViewSet):
                     item.save()
 
                 return Response(serializer.data)
-
+        except (PermissionDenied, DRFPermissionDenied) as pd:
+            # Let DRF handle it; this will become a 403 response
+            raise pd
         except Exception as e:
-            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
             return Response(
                 {'error': 'Failed to add product to cart'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
+
     @action(detail=True, methods=['put'])
     def update_item(self, request, pk=None):
         """Update cart item quantity with stock validation"""
@@ -236,17 +243,17 @@ class UserCartViewSet(viewsets.ViewSet):
 
                 try:
                     item = CartItems.objects.select_related('product_sku').get(
-                        pk=item_id, 
+                        pk=item_id,
                         cart_id=cart
                     )
                     sku = item.product_sku
-                    
+
                     if new_quantity > sku.product_stock:
                         return Response(
                             {'error': 'Insufficient stock'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
-                        
+
                     if new_quantity == 0:
                         item.delete()
                     else:
@@ -254,7 +261,7 @@ class UserCartViewSet(viewsets.ViewSet):
                         item.save()
 
                     return Response(CartSerializer(cart).data)
-                    
+
                 except CartItems.DoesNotExist:
                     return Response(
                         {'error': 'Item not found in cart'},
@@ -262,15 +269,14 @@ class UserCartViewSet(viewsets.ViewSet):
                     )
 
         except Exception as e:
-            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
             return Response(
                 {'error': 'Failed to update cart item'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
+
     @action(detail=True, methods=['delete'])
     def remove_item(self, request, pk=None):
-        """Remove item from cart"""
+        """Remove a specific item from the cart."""
         try:
             with transaction.atomic():
                 cart = self.get_object()
@@ -293,29 +299,26 @@ class UserCartViewSet(viewsets.ViewSet):
                     )
 
         except Exception as e:
-            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
             return Response(
                 {'error': 'Failed to remove item from cart'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            
+
     @action(detail=True, methods=['delete'])
     def clear_cart(self, request, pk=None):
-        """Clear all items from the user's cart"""
+        """Clear all items from the user's cart."""
         try:
             with transaction.atomic():
                 cart = self.get_object()
                 cart.cartitems_set.all().delete()  # Delete all cart items
-                
+
                 return Response(
                     {"message": "Cart has been cleared successfully"},
                     status=status.HTTP_200_OK
                 )
 
         except Exception as e:
-            # logging.create_error_log(error_type=type(e).__name__, error_message=str(e))
             return Response(
                 {"error": "Failed to clear cart"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
