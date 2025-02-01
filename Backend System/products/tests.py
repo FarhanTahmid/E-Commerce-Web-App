@@ -140,12 +140,17 @@ class TestManageProducts(TestCase):
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
-        return User.objects.create(username='testuser', is_superuser=True)
+        return Accounts.objects.create(
+            email='user@example.com',
+            username='user',
+            is_superuser = True,
+            password='1234',
+        )
 
-    # def _create_mock_businessadmin_user(self):
-    #     user = User.objects.create(username='testuser2', is_superuser=False)
-    #     BusinessAdminUser.objects.create(user=user,admin_full_name="testuser2",admin_position=self.adminposition1).save()
-    #     return user
+    def _create_mock_businessadmin_user(self):
+        user = Accounts.objects.create(username='testuser2', is_superuser=True,is_admin = True,email='sami@gmail.com',password='1234')
+        BusinessAdminUser.objects.create(admin_full_name="testuser2",admin_position=self.adminposition1,admin_email='sami@gmail.com',admin_user_name='sami').save()
+        return user
 
     def test_fetch_product_categories_success(self):
         """
@@ -171,8 +176,8 @@ class TestManageProducts(TestCase):
         Test creating a new product category successfully.
         """
         request = self.factory.post('/product/category/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.create_product_category(request,"Perfume", "Perfume Items")
         self.assertTrue(success, "Product category should be created successfully.")
         self.assertEqual(message, "New Product category. Perfume successfully added!", "Success message is incorrect.")
@@ -182,8 +187,8 @@ class TestManageProducts(TestCase):
         Test updating a product category successfully.
         """
         request = self.factory.post('/product/category/update/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.update_product_category(request,self.category_fragrance.pk, "Perfumes Updated", "Perfumes Description")
         self.assertTrue(success, "Product category should be updated successfully.")
         self.assertEqual(message, "Product Category updated successfully!", "Success message is incorrect.")
@@ -193,8 +198,8 @@ class TestManageProducts(TestCase):
         Test deleting a product category successfully.
         """
         request = self.factory.post('/product/category/delete/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.delete_product_category(request,self.category_haircare.pk)#deleting Haricare
         self.assertTrue(success, "Product category should be deleted successfully.")
         self.assertEqual(message, "Product Category deleted successfully!", "Success message is incorrect.")
@@ -216,8 +221,8 @@ class TestManageProducts(TestCase):
         Test creating a new product sub-category successfully.
         """
         request = self.factory.post('/product/subcategory/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.create_product_sub_category(request,self.category_makeup.pk, "Hair Spray", "HairSpray Item")
         self.assertTrue(success, "Product sub-category should be created successfully.")
         self.assertEqual(message, "New Product sub-category, Hair Spray successfully added!", "Success message is incorrect.")
@@ -227,8 +232,8 @@ class TestManageProducts(TestCase):
         Test creating a duplicate product sub-category.
         """
         request = self.factory.post('/product/subcategory/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.create_product_sub_category(request,self.category_skincare.pk, "Moisturizers", "Moisturizers Item")
         self.assertFalse(success, "Product sub-category should not be created if it already exists.")
         self.assertEqual(message, "Same type exists in Database!", "Duplicate message is incorrect.")
@@ -239,8 +244,8 @@ class TestManageProducts(TestCase):
         Test updating a product sub-category successfully.
         """
         request = self.factory.post('/product/subcategory/update/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.update_product_sub_category(request,self.sub_category1.pk,[self.category_skincare.pk,self.category_makeup.pk,self.category_fragrance.pk], "Moistorizer", "Moistorizer to make skin soft")
         self.assertTrue(success, "Product Sub Category updated successfully!")
         self.assertEqual(message, "Product Sub Category updated successfully!", "Success message is incorrect.")
@@ -251,8 +256,8 @@ class TestManageProducts(TestCase):
         Test deleting a product sub-category successfully.
         """
         request = self.factory.post('/product/subcategory/delete/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.delete_product_sub_category(request,self.sub_category1.pk)
         self.assertTrue(success,"Product Sub Category deleted successfully!")
         self.assertEqual(message,"Product Sub Category deleted successfully!", "Delete message is incorrect.")
@@ -263,8 +268,8 @@ class TestManageProducts(TestCase):
         Test creating a new product brand successfully.
         """
         request = self.factory.post('/product/product_brand/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.create_product_brand(request,"Lux", 1889,True, "USA", "Lux Paris")#,self.brand_logo
         self.assertTrue(success, "Product brand should be created successfully.")
         self.assertEqual(message, "New Product brand, Lux successfully added!", "Success message is incorrect.")
@@ -275,8 +280,8 @@ class TestManageProducts(TestCase):
 
         """
         request = self.factory.post('/product/product_brand/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success,message = ManageProducts.create_product_brand(request,"Loreal", 1909,False, "USA", "Loreal Paris")
         self.assertFalse(success,"Product brand should not be created if it already exists.")
         self.assertEqual(message,"Same brand exists in Database!", "Duplicate message is incorrect.")
@@ -327,8 +332,8 @@ class TestManageProducts(TestCase):
         Test deleting a product brand successfully.
         """
         request = self.factory.post('/product/product_brand/delete/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.delete_product_brand(request,self.brand1.pk)
         self.assertTrue(success, "Product brand should be deleted successfully.")
         self.assertEqual(message, "Product brand deleted successfully!", "Success message is incorrect.")
@@ -363,8 +368,8 @@ class TestManageProducts(TestCase):
         Test creating a new product flavour successfully.
         """
         request = self.factory.post('/product/product_flavour/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.create_product_flavour(request,"Rose")
         self.assertTrue(success, "Product flavour should be created successfully.")
         self.assertEqual(message, "New Product flavour, Rose successfully added!", "Success message is incorrect.")
@@ -374,8 +379,8 @@ class TestManageProducts(TestCase):
         Test creating a duplicate product flavour.
         """
         request = self.factory.post('/product/product_flavour/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success,message = ManageProducts.create_product_flavour(request,"Vanilla")
         self.assertFalse(success,"Product flavour should not be created if it already exists.")
         self.assertEqual(message,"Same flavour exists in Database!", "Duplicate message is incorrect.")
@@ -385,8 +390,8 @@ class TestManageProducts(TestCase):
         Test updating a product flavour successfully.
         """
         request = self.factory.post('/product/product_flavour/update/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.update_product_flavour(request,self.product_flavour1.pk, "Vanilla changed to icecream")
         self.assertTrue(success, "Product flavour should be updated successfully.")
         self.assertEqual(message, "Product flavour updated successfully!", "Success message is incorrect.")
@@ -396,14 +401,14 @@ class TestManageProducts(TestCase):
         Test deleting a product flavour successfully.
         """
         request = self.factory.post('/product/product_flavour/delete/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
+        #request.user = self._create_mock_dev_user()
+        request.user = self._create_mock_businessadmin_user()
         success, message = ManageProducts.delete_product_flavour(request,self.product_flavour2.pk)
         self.assertTrue(success, "Product flavour should be deleted successfully.")
         self.assertEqual(message, "Product flavour deleted successfully!", "Success message is incorrect.")
 
 
-    #test for products
+    # #test for products
     def test_fetch_product_using_pk(self):
         """
         Test fetching products using pk including found and not found
@@ -515,7 +520,7 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product should be deleted successfully!")
         self.assertEqual(message,"Product deleted successfully","Success message is incorrect")
 
-    #test product sku
+    # #test product sku
     def test_fetch_product_sku(self):
         """
         Test for fetching product sku
@@ -580,7 +585,7 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product sku should be deleted successfully!")
         self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
 
-    #test product image
+    # #test product image
     #This test are working fine, as they create files so commenting them
 
     # def test_create_product_image(self):
@@ -625,7 +630,7 @@ class TestManageProducts(TestCase):
     #     self.assertTrue(success,"Product image should be deleted successsfully")
     #     self.assertEqual(message,"Product image deleted successfully")
 
-    #product discount
+    # #product discount
     def test_fetch_product_discount(self):
         """
         Test for fetching product discount

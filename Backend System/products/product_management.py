@@ -157,8 +157,8 @@ class ManageProducts:
             # Create a new product type if no duplicates are found
             product_category = Product_Category.objects.create(category_name=product_category_name, description=description)
             product_category.save()
-            #updated,message = SystemLogs.updated_by(request,product_category)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Category {product_category_name}",message="Created")
+            updated,message = SystemLogs.updated_by(request,product_category)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Category {product_category_name}",message="Created")
             return True, f"New Product category. {product_category_name} successfully added!"
 
 
@@ -238,8 +238,8 @@ class ManageProducts:
             if product_category.description != description:
                 product_category.description = description
             product_category.save()
-            #updated, message = SystemLogs.updated_by(request,product_category)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Category, {new_category_name}",message="Updated")
+            updated, message = SystemLogs.updated_by(request,product_category)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Category, {new_category_name}",message="Updated")
             return True, "Product Category updated successfully!"
         
         except Product_Category.DoesNotExist:
@@ -304,7 +304,7 @@ class ManageProducts:
 
         try:
             get_product_category = Product_Category.objects.get(pk=product_category_pk)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Category {get_product_category.category_name}",message="Deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Category {get_product_category.category_name}",message="Deleted")
             get_product_category.delete()
             return True, "Product Category deleted successfully!"
         except Product_Category.DoesNotExist:
@@ -454,8 +454,8 @@ class ManageProducts:
             product_category = Product_Category.objects.get(pk=product_category_pk)
             sub_category = Product_Sub_Category.objects.create(sub_category_name=sub_category_name,description=description)
             sub_category.category_id.add(product_category)
-            #updated, message = SystemLogs.updated_by(request,sub_category)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Sub Category {sub_category_name}",message="Created")
+            updated, message = SystemLogs.updated_by(request,sub_category)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Sub Category {sub_category_name}",message="Created")
             return True, f"New Product sub-category, {sub_category_name} successfully added!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -541,8 +541,8 @@ class ManageProducts:
                 product_sub_categories.description = description
             #saving the changes made
             product_sub_categories.save()
-            #updated, message = SystemLogs.updated_by(request,product_sub_categories)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Sub Category {product_sub_categories.sub_category_name}",message="Updated")
+            updated, message = SystemLogs.updated_by(request,product_sub_categories)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Sub Category {product_sub_categories.sub_category_name}",message="Updated")
             return True, "Product Sub Category updated successfully!"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -608,7 +608,7 @@ class ManageProducts:
         """
         try:
             get_product_sub_category = Product_Sub_Category.objects.get(pk=product_sub_category_pk)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Sub Category {get_product_sub_category.sub_category_name}",message="Deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Sub Category {get_product_sub_category.sub_category_name}",message="Deleted")
             get_product_sub_category.delete()
             return True, "Product Sub Category deleted successfully!"
         except Product_Sub_Category.DoesNotExist:
@@ -695,8 +695,8 @@ class ManageProducts:
             if (brand_logo):
                 product_brand.brand_logo=brand_logo
             product_brand.save()
-            #updated, message = SystemLogs.updated_by(request,product_brand)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Brand {brand_name}",message="Created")
+            updated, message = SystemLogs.updated_by(request,product_brand)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Brand {brand_name}",message="Created")
             return True, f"New Product brand, {brand_name} successfully added!"
                                               
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -857,8 +857,8 @@ class ManageProducts:
                         os.remove(path)
                     product_brand.brand_logo.delete()
             product_brand.save()
-            #updated,message = SystemLogs.updated_by(request,product_brand)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
+            updated,message = SystemLogs.updated_by(request,product_brand)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
             return True, f"Product brand, {brand_name} updated successfully!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -922,7 +922,7 @@ class ManageProducts:
                 path = settings.MEDIA_ROOT+str(product_brand.brand_logo)
                 if os.path.exists(path):
                     os.remove(path)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Brand {product_brand.brand_name}",message="Deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Brand {product_brand.brand_name}",message="Deleted")
             product_brand.delete()
             return True, "Product brand deleted successfully!"
 
@@ -1059,8 +1059,8 @@ class ManageProducts:
                     return False, "Same flavour exists in Database!"
             
             product_flavour = Product_Flavours.objects.create(product_flavour_name=product_flavour_name)
-            #updated,message = SystemLogs.updated_by(request,product_flavour)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Flavour {product_flavour_name}",message="Created")
+            updated,message = SystemLogs.updated_by(request,product_flavour)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Flavour {product_flavour_name}",message="Created")
             return True, f"New Product flavour, {product_flavour_name} successfully added!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1126,8 +1126,8 @@ class ManageProducts:
                         return False, "Same product flavour already exists!"
                 product_flavour.product_flavour_name = product_flavour_name
             product_flavour.save()
-            #updated,message = SystemLogs.updated_by(request,product_flavour)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Flavour {product_flavour.product_flavour_name}",message="Updated")
+            updated,message = SystemLogs.updated_by(request,product_flavour)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Flavour {product_flavour.product_flavour_name}",message="Updated")
             return True, "Product flavour updated successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1183,7 +1183,7 @@ class ManageProducts:
         try:
             #fetch product flavour with pk
             product_flavour,message = ManageProducts.fetch_product_flavour(pk=product_flavour_pk)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Flavour {product_flavour.product_flavour_name}",message="Deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Flavour {product_flavour.product_flavour_name}",message="Deleted")
             product_flavour.delete()
             return True, "Product flavour deleted successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1382,8 +1382,8 @@ class ManageProducts:
                 if product_usage_direction:
                     product.product_usage_direction = product_usage_direction
                 product.save()
-                #updated, message = SystemLogs.updated_by(request,product)
-                #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product {product_name}",message="Created")
+                updated, message = SystemLogs.updated_by(request,product)
+                activity_updated, message = SystemLogs.admin_activites(request,f"Created Product {product_name}",message="Created")
                 return product, f"Product, {product_name} created!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1494,8 +1494,8 @@ class ManageProducts:
                 if not product.product_usage_direction or product.product_usage_direction.lower() != product_usage_direction.lower():
                     product.product_usage_direction = product_usage_direction
             product.save()
-            #updated,message = SystemLogs.updated_by(request,product)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
+            updated,message = SystemLogs.updated_by(request,product)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
             return True, "Product updated successfully!"
             
         
@@ -1554,7 +1554,7 @@ class ManageProducts:
         try:
             #getting the product
             product,message = ManageProducts.fetch_product(product_pk=product_pk)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product {product.product_name}",message="Deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product {product.product_name}",message="Deleted")
             product.delete()
             return True, "Product deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1723,8 +1723,8 @@ class ManageProducts:
                 else:
                     product_sku.product_size = product_size
             product_sku.save()
-            #updated, message = SystemLogs.updated_by(request,product_sku)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product sku with sku - {product_sku.product_sku}",message="Created")
+            updated, message = SystemLogs.updated_by(request,product_sku)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product sku with sku - {product_sku.product_sku}",message="Created")
             return True, "Product sku created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1822,8 +1822,8 @@ class ManageProducts:
                     else:
                         product_sku.product_size = product_size
             product_sku.save()
-            #updated,message = SystemLogs.updated_by(request,product_sku)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product sku with sku - {product_sku.product_sku}",message="Updated")
+            updated,message = SystemLogs.updated_by(request,product_sku)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product sku with sku - {product_sku.product_sku}",message="Updated")
             return True, f"Product sku updated with new sku id"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1881,7 +1881,7 @@ class ManageProducts:
         try:
             #getting the product sku
             product_sku, message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product sku with sku - {product_sku.product_sku}",message="Deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product sku with sku - {product_sku.product_sku}",message="Deleted")
             product_sku.delete()
             return True, "Product sku successfully deleted!"
 
@@ -2036,8 +2036,8 @@ class ManageProducts:
                         else:
                             product_image_created.size = size
                     product_image_created.save()
-                    #updated, message = SystemLogs.updated_by(request,product_image_created)
-                    #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
+                    updated, message = SystemLogs.updated_by(request,product_image_created)
+                    activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
                 return True, "Product image created successfully"
             except:
                 return False, "No product image found"
@@ -2123,8 +2123,8 @@ class ManageProducts:
                     product_image.size = size
             
             product_image.save()
-            #updated, message = SystemLogs.updated_by(request,product_image)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product image for the product, {product_image.product_id.product_name}",message="Updated Product Image")
+            updated, message = SystemLogs.updated_by(request,product_image)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product image for the product, {product_image.product_id.product_name}",message="Updated Product Image")
             return True,"Product image updated successfully"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -2192,7 +2192,7 @@ class ManageProducts:
                 if os.path.exists(path):
                     os.remove(path)
                 product_image.product_image.delete()
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product image for the product, {product_image.product_id.product_name}",message="Deleted Product Image")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product image for the product, {product_image.product_id.product_name}",message="Deleted Product Image")
             product_image.delete()
             return True,"Product image deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -2260,8 +2260,8 @@ class ManageProducts:
                 pass
             product_discount= Product_Discount.objects.create(product_id=product,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
             product_discount.save()
-            #updated, message = SystemLogs.updated_by(request,product_discount)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+            updated, message = SystemLogs.updated_by(request,product_discount)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
             return True,"Product discount created successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -2296,8 +2296,8 @@ class ManageProducts:
             if product_discount.end_date != end_date and end_date >= product_discount.start_date:
                 product_discount.end_date = end_date
             product_discount.save()
-            #updated, message = SystemLogs.updated_by(request,product_discount)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
+            updated, message = SystemLogs.updated_by(request,product_discount)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
             return True, "Product Discount updated"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -2320,7 +2320,7 @@ class ManageProducts:
         try:
             #getting the product discount
             product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
             product_discount.delete()
             return True,"Product discount deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

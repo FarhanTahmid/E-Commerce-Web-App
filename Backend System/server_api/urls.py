@@ -6,7 +6,6 @@ app_name='server_api'
 urlpatterns = [                                                                                                       #NOTE: FOR FRONTEND DEV TO CONNECT APIS
 
     #business admin
-    path('business-admin/fetch-token/',views.FetchToken.as_view(),name='fetch_token'),
     path('business-admin/signup/',views.SignupBusinessAdminUser.as_view(),name='create_business_admin_user'),
     path('business-admin/update/<str:admin_user_name>/',views.UpdateBusinessAdminUser.as_view(),name='update_business_admin_user'),
     path('business-admin/login/',views.LoginInBusinessAdminUser.as_view(),name='login_business_admin_user'),
@@ -60,5 +59,7 @@ urlpatterns = [                                                                 
     #product discount
     path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),#pass parameters either /?product_id= OR discount_name= OR is_active= OR product_discount_pk OR none to fetch all
     path('product/product-discounts/create-product-discount/<int:product_id>/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
+    path('product/product-discounts/update-product-discount/<int:product_discount_pk>/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
+    path('product/product-discounts/delete-product-discount/<int:product_discount_pk>/',views.DeleteProductDiscount.as_view(),name='delete_product_discount'),
 
 ]

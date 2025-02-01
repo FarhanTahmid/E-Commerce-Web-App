@@ -128,8 +128,8 @@ class AdminManagement:
             if description:
                 admin_position.description = description
             admin_position.save()
-            #updated,message = SystemLogs.updated_by(request,admin_position)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Created admin position {admin_position.name}",message="created")
+            updated,message = SystemLogs.updated_by(request,admin_position)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Created admin position {admin_position.name}",message="created")
             return True, "Admin position created successfully"
     
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -205,8 +205,8 @@ class AdminManagement:
                 if not admin_position.description or admin_position.description.lower() != description.lower():
                     admin_position.description = description
             admin_position.save()
-            #updated,message = SystemLogs.updated_by(request,admin_position)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
+            updated,message = SystemLogs.updated_by(request,admin_position)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
             return True, "Admin position successfully updated"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -265,7 +265,7 @@ class AdminManagement:
         try:
             #get the position
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin position {admin_position.name}",message="deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin position {admin_position.name}",message="deleted")
             admin_position.delete()
             return True, "Admin position deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -286,81 +286,7 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
     #business admin users
-    def fetch_token(username=None,admin_unique_id=None):
-
-        """
-        Fetch tokens based on various optional parameters with detailed exception handling.
-
-        This function attempts to retrieve tokens from the database based on the provided parameters,
-        username or admin_unique_id.
-        With no parameter passed, returns all tokens.
-        It handles various errors that might occur during the process, logging each error for further analysis.
-
-        Args:
-            username (str, optional): The username of the user to fetch the token for. Defaults to None.
-            admin_unique_id (str, optional): The unique ID of the admin to fetch the token for. Defaults to None.
-
-        Returns:
-            tuple:
-                - Token or QuerySet: A single Token object or a QuerySet of tokens matching the criteria.
-                - str: A message indicating the success or failure of the operation.
-
-        Example Usage:
-            token, message = fetch_token(username="admin")
-            print(message)
-
-            token, message = fetch_token(admin_unique_id="12345")
-            print(message)
-
-            tokens, message = fetch_token()
-            print(message)
-
-        Exception Handling:
-            - **DatabaseError**: Catches general database-related issues.
-                Message: "An unexpected error in Database occurred while fetching admin user token! Please try again later."
-            - **OperationalError**: Handles server-related issues such as connection problems.
-                Message: "An unexpected error in server occurred while fetching admin user token! Please try again later."
-            - **ProgrammingError**: Catches programming errors such as invalid queries.
-                Message: "An unexpected error in server occurred while fetching admin user token! Please try again later."
-            - **IntegrityError**: Handles data integrity issues.
-                Message: "Same type exists in Database!"
-            - **Exception**: A catch-all for any other unexpected errors.
-                Message: "An unexpected error occurred while fetching admin users! Please try again later."
-
-        Notes:
-            - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
-        """
-        
-        try:
-            if username:
-                user = User.objects.get(username=username)
-                token = Token.objects.get(user=user)
-                return token, "Token fetched successfully"
-            elif admin_unique_id:
-                business_admin_user, message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
-                user = User.objects.get(username = business_admin_user.admin_user_name)
-                token = Token.objects.get(user=user)
-                return token, "Token fetched successfully"
-            else:
-                return Token.objects.all(), "All tokens fetched successfully"
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
-
-            # Return appropriate messages based on the error type
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while fetching admin user token! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while fetching admin user token! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while fetching admin user token! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
-
-            return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin users! Please try again later.")  
-        
-    def fetch_business_admin_user(admin_unique_id=None,admin_user_name=None):
+    def fetch_business_admin_user(admin_unique_id=None,admin_email=None,admin_user_name=None):
 
         """
         Fetch business admin users based on various optional parameters
@@ -408,9 +334,12 @@ class AdminManagement:
             if admin_unique_id:
                 admin_user = BusinessAdminUser.objects.get(admin_unique_id = admin_unique_id)
                 return admin_user, "Business Admin user fetched successfully"
-            elif admin_user_name:
-                admin_user = BusinessAdminUser.objects.get(admin_user_name = admin_user_name)
+            elif admin_email:
+                admin_user = BusinessAdminUser.objects.get(admin_email=admin_email)
                 return admin_user, "Business Admin user fetched successfully"
+            elif admin_user_name:
+                admin_user = BusinessAdminUser.objects.get(admin_user_name=admin_user_name)
+                return admin_user,"Business Admin user fetched successfully"
             else:
                 all_admin_users = BusinessAdminUser.objects.all()
                 return all_admin_users, "All Business Admin users fetched successfully" if len(all_admin_users)>0 else "No Admin users found"
@@ -431,8 +360,8 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin users! Please try again later.")
     
-    def create_business_admin_user(admin_full_name,admin_user_name,password,admin_position_pk,
-                                   admin_contact_no=None,admin_email=None,admin_avatar=None):
+    def create_business_admin_user(admin_full_name,password,admin_position_pk,
+                                   admin_email,admin_contact_no=None,admin_avatar=None,is_superuser=False,is_staff_user=False):
         
         """
         Create a new business admin user with detailed exception handling.
@@ -444,12 +373,13 @@ class AdminManagement:
 
         Args:
             admin_full_name (str): The full name of the admin user to be added.
-            admin_user_name (str): The username of the admin user to be added.
             password (str): The password for the admin user.
             admin_position_pk (int): The primary key (ID) of the admin position to be associated with the admin user.
+            admin_email (str, optional): The email address of the admin user.
             admin_contact_no (str, optional): The contact number of the admin user. Defaults to None.
-            admin_email (str, optional): The email address of the admin user. Defaults to None.
             admin_avatar (str, optional): The avatar image of the admin user. Defaults to None.
+            is_staff_user = False default
+            is_superuser = False default
 
         Returns:
             tuple:
@@ -459,7 +389,6 @@ class AdminManagement:
         Example Usage:
             success, message = create_business_admin_user(
                 admin_full_name="John Doe",
-                admin_user_name="johndoe",
                 password="securepassword",
                 admin_position_pk=1,
                 admin_contact_no="1234567890",
@@ -486,13 +415,24 @@ class AdminManagement:
         try:
             #fetching all to check if this user
             all_admins,message = AdminManagement.fetch_business_admin_user()
-            if any(p.admin_user_name.lower() == admin_user_name.lower() for p in all_admins):
-                return False, "Admin with this username exists"
-            #user = User.objects.create_user(username=admin_user_name,password=password)
+            if any(p.admin_email == admin_email for p in all_admins):
+                return False, "Admin with this email already exists"
+            admin_user_name = admin_email.split('@')[0]
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             business_admin = BusinessAdminUser.objects.create(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
-                                                              admin_position = admin_position)#,user=user
+                                                              admin_position = admin_position)
             business_admin.save()
+            #creating admin account
+            new_business_admin_user = Accounts(email = admin_email,username = admin_user_name,is_admin=True)
+            new_business_admin_user.set_password(password)
+            new_business_admin_user.save()
+
+            if is_staff_user:
+                new_business_admin_user.is_staff = True
+            if is_superuser:
+                new_business_admin_user.is_superuser = True
+            new_business_admin_user.save()
+
             if admin_contact_no:
                 business_admin.admin_contact_no = admin_contact_no
             if admin_email:
@@ -519,9 +459,9 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin user! Please try again later.")
 
-    def update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
-                                   admin_contact_no=None,admin_email=None,admin_avatar=None,old_password=None,
-                                   password=None,admin_user_name=None):
+    def update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,admin_email,
+                                   admin_contact_no=None,admin_avatar=None,old_password=None,
+                                   password=None,is_superuser=False,is_staff_user=False):
         
         """
         Update an existing business admin user with detailed exception handling.
@@ -540,7 +480,8 @@ class AdminManagement:
             admin_avatar (str, optional): The updated avatar image of the admin user. Defaults to None.
             old_password (str, optional): The old password of the admin user for verification. Defaults to None.
             password (str, optional): The new password for the admin user. Defaults to None.
-            admin_user_name (str, optional): The new username for the admin user. Defaults to None.
+            is_superuser: False default
+            is_staff_user: False default
 
         Returns:
             tuple:
@@ -557,8 +498,7 @@ class AdminManagement:
                 admin_email="johndoe@example.com",
                 admin_avatar="path/to/avatar.jpg",
                 old_password="oldpassword",
-                password="newpassword",
-                admin_user_name="johndoe"
+                password="newpassword"
             )
             print(message)
 
@@ -582,32 +522,34 @@ class AdminManagement:
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
+            user = Accounts.objects.get(username=business_admin_user.admin_user_name)
+            if user.is_staff == False and is_staff_user == True:
+                user.is_staff = True
+            if user.is_superuser == False and is_superuser == True:
+                user.is_superuser = True
+            user.save()
             #checking conditions to update as necessarily
-            # if password:
-            #     user = business_admin_user.user
-            #     if user.check_password(old_password):
-            #         user.set_password(password)
-            #         user.save()
-            #     else:
-            #         return False, "Old password is incorrect"
+            if password:
+                if user.check_password(old_password):
+                    user.set_password(password)
+                    user.save()
+                else:
+                    return False, "Old password is incorrect"
             if business_admin_user.admin_full_name.lower() != admin_full_name.lower():
                 business_admin_user.admin_full_name = admin_full_name
-            if admin_user_name and business_admin_user.admin_user_name.lower() != admin_user_name.lower():
-                for p in all_business_admin_user:
-                    if p != business_admin_user and p.admin_user_name.lower() == admin_user_name.lower():
-                        return False, "This user name is taken"
-                business_admin_user.admin_user_name = admin_user_name
             if business_admin_user.admin_position != admin_position:
                 business_admin_user.admin_position = admin_position
             if admin_contact_no:
                 if not business_admin_user.admin_contact_no or business_admin_user.admin_contact_no != admin_contact_no:
                     business_admin_user.admin_contact_no = admin_contact_no
-            if admin_email:
-                if not business_admin_user.admin_email or business_admin_user.admin_email != admin_email:
-                    business_admin_user.admin_email = admin_email
-                    # user = business_admin_user.user
-                    # user.email = admin_email
-                    # user.save()
+            if admin_email and business_admin_user.admin_email != admin_email:
+                for p in all_business_admin_user:
+                    if p != business_admin_user and p.admin_email == admin_email:
+                        return False, "This email is already taken"
+                business_admin_user.admin_user_name = admin_email.split('@')[0]
+                business_admin_user.admin_email = admin_email
+                user.email = admin_email
+                user.username = admin_email.split('@')[0]
             if admin_avatar:
                 if not business_admin_user.admin_avatar or business_admin_user.admin_avatar != admin_avatar:
                     if business_admin_user.admin_avatar:
@@ -617,9 +559,9 @@ class AdminManagement:
                         business_admin_user.admin_avatar.delete()
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
-
-            #updated,message = SystemLogs.updated_by(request,business_admin_user)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
+            user.save()
+            updated,message = SystemLogs.updated_by(request,business_admin_user)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
             return True, "Business Admin successfully updated"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -684,14 +626,14 @@ class AdminManagement:
         """
         try:
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
-            # user = business_admin_user.user
-            # if user.check_password(old_password):
-            #     user.set_password(new_password)
-            #     user.save()
-            # else:
-            #     return False, "Old password is incorrect"
-            #updated,message = SystemLogs.updated_by(request,business_admin_user)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin password {business_admin_user.admin_user_name}",message="Updated password")
+            user = Accounts.objects.get(username = business_admin_user.admin_user_name)
+            if user.check_password(old_password):
+                user.set_password(new_password)
+                user.save()
+            else:
+                return False, "Old password is incorrect"
+            updated,message = SystemLogs.updated_by(request,business_admin_user)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin password {business_admin_user.admin_user_name}",message="Updated password")
             return True, "Password updated successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -711,7 +653,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while updating admin password! Please try again later.")
     
-    def reset_business_admin_user_password(request,admin_user_name,new_password):
+    def reset_business_admin_user_password(request,admin_email,new_password):
 
         """
         Reset the password of an existing business admin user with detailed exception handling.
@@ -756,12 +698,12 @@ class AdminManagement:
         try:
 
             #fetching the Business Admin user using user name
-            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
-            # user = business_admin_user.user
-            # user.set_password(new_password)
-            # user.save()
-            #updated,message = SystemLogs.updated_by(request,business_admin_user)
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Reset admin password {business_admin_user.admin_user_name}",message="Reset password")
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
+            user = Accounts.objects.get(username = business_admin_user.admin_user_name)
+            user.set_password(new_password)
+            user.save()
+            updated,message = SystemLogs.updated_by(request,business_admin_user)
+            activity_updated, message = SystemLogs.admin_activites(request,f"Reset admin password {business_admin_user.admin_user_name}",message="Reset password")
             return True, "Password reset successfull"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -820,13 +762,15 @@ class AdminManagement:
         try:
             #getting the admin
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+            user = Accounts.objects.get(username = business_admin_user.admin_user_name)
             if business_admin_user.admin_avatar:
                 path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
                 if os.path.exists(path):
                     os.remove(path)
                 business_admin_user.admin_avatar.delete()
-            #activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin {business_admin_user.admin_user_name}",message="Deleted")
+            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin {business_admin_user.admin_user_name}",message="Deleted")
             business_admin_user.delete()
+            user.delete()
             return True, "Admin deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
