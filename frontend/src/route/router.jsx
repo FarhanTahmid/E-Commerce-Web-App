@@ -72,6 +72,7 @@ import RequireAuth from '../components/RequireAuth';
 import Cookies from 'js-cookie';
 import ProductCategory from "../pages/product-category";
 import ProductCategoryCreate from "@/components/products/ProductCategoryCreate";
+import ProductCategoryUpdate from "@/components/products/ProductCategoryUpdate";
 
 const parseJwt = (token) => {
     try {
@@ -231,6 +232,10 @@ export const router = createBrowserRouter([
             {
                 path: "/products/category/create",
                 element: <ProductCategoryCreate />
+            },
+            {
+                path: "/product-category/:id",
+                element: <ProductCategoryUpdate />
             }
 
         ]

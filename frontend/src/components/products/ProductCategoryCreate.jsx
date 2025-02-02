@@ -31,24 +31,25 @@ const ProductCategoryCreate = () => {
 
     useEffect(() => {
         if (selectedCategory) {
-
             axios.get(`${API_BASE_URL}/sub-categories/fetch-all-product-sub-categories-for-a-category/${selectedCategory}/`, {
                 headers: {
-                    Authorization: `Bearer ${Cookies.get("accessToken")}`, // Ensure token is not undefined/null
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"
                 }
             })
                 .then(response => {
-                    console.log("Categories Response:", response.data); // Debug response
-                    // Ensure response.data is an array
-                    setPrevSubCategories(Array.isArray(response.data.product_category) ? response.data.product_category : []);
+                    console.log("Subcategories Response:", response.data); // Debug response
+                    setPrevSubCategories(Array.isArray(response.data.product_sub_category) ? response.data.product_sub_category : []);
                 })
                 .catch(error => {
-                    console.error("Error fetching categories:", error.response ? error.response.data : error);
+                    console.error("Error fetching subcategories:", error.response ? error.response.data : error);
                 });
-        }
 
-    }, []);
+        } else {
+            setPrevSubCategories([]); // Reset when no category is selected
+        }
+    }, [selectedCategory]); // Depend on selectedCategory
+
 
 
     const handleAddSubCategory = () => {
@@ -105,37 +106,41 @@ const ProductCategoryCreate = () => {
             });
     };
 
-    const handleSubmitSubCategories = (e) => {
+    const handleSubmitSubCategories = async (e) => {
         e.preventDefault();
 
-        // Validation: Check if a category is selected
         if (!selectedCategory) {
             alert("Please select a category first!");
             return;
         }
 
-        // Validation: Ensure no empty subcategories and descriptions
         const validSubCategories = subCategories
-            .map(sub => ({ name: sub.name.trim(), description: sub.description.trim() }))
-            .filter(sub => sub.name !== "" && sub.description !== ""); // Ensure both name and description are filled
+            .map(sub => ({ sub_category_name: sub.name.trim(), description: sub.description.trim() }))
+            .filter(sub => sub.sub_category_name !== "" && sub.description !== "");
 
         if (validSubCategories.length === 0) {
             alert("Please enter at least one valid subcategory name and description.");
             return;
         }
 
-        // Submit each valid subcategory
-        validSubCategories.forEach(subCategory => {
-            axios.post(`${API_BASE_URL}/product/sub-categories/create/${selectedCategory}/`, subCategory)
-                .then(response => {
-                    alert(`Subcategory "${subCategory.name}" Created Successfully!`);
-                })
-                .catch(error => console.error("Error creating subcategory:", error));
-        });
+        for (const subCategory of validSubCategories) {
+            try {
+                await axios.post(`${API_BASE_URL}/sub-categories/create/${selectedCategory}/`, subCategory, {
+                    headers: {
+                        Authorization: `Bearer ${Cookies.get('accessToken')}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+                console.log(`Subcategory "${subCategory.sub_category_name}" Created Successfully!`);
+            } catch (error) {
+                console.error("Error creating subcategory:", error.response ? error.response.data : error);
+            }
+        }
 
-        // Reset input fields after successful submission
-        setSubCategories([{ name: '', description: '' }]);
+        alert("All subcategories submitted successfully!");
+        setSubCategories([{ name: '', description: '' }]); // Reset input fields
     };
+
 
 
 
@@ -161,7 +166,7 @@ const ProductCategoryCreate = () => {
                                         required
                                     />
                                     <label htmlFor="Category" className="form-label">Category Description:</label>
-                                    <input
+                                    <textarea
                                         type="text"
                                         className="form-control mb-2"
                                         id="CategoryDescription"
@@ -203,17 +208,21 @@ const ProductCategoryCreate = () => {
                                     {prevSubCategories.length > 0 && (
                                         <>
                                             <h6 className="fw-bold">Sub Categories:</h6>
-                                            <ul className='list-unstyled'>
-                                                {prevSubCategories.map((subCategory, index) => (
-                                                    <li key={index} className="d-flex gap-2 mb-2">
-                                                        {subCategory.name}
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                            <div className="border rounded p-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                                <ul className="list-unstyled mb-0">
+                                                    {prevSubCategories.map((subCategory, index) => (
+                                                        <li key={index} className="d-flex flex-column mb-2">
+                                                            <span className="fw-bold">{subCategory.sub_category_name}</span>
+                                                            <span className="text-muted">{subCategory.description}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
                                         </>
                                     )}
 
-                                    <h6 className="fw-bold">New Sub Categories:</h6>
+
+                                    <h6 className="fw-bold mt-4">New Sub Categories:</h6>
                                     {subCategories.map((subCategory, index) => (
                                         <div key={index} className="d-flex gap-2 mb-2">
                                             <input
@@ -221,15 +230,15 @@ const ProductCategoryCreate = () => {
                                                 className={`form-control ${subCategory.name.trim() === "" ? "border-danger" : ""}`}
                                                 value={subCategory.name}
                                                 onChange={(e) => handleSubCategoryChange(index, 'name', e.target.value)}
-                                                placeholder="Subcategory Name"
+                                                placeholder="Name"
                                                 required
                                             />
-                                            <input
+                                            <textarea
                                                 type="text"
                                                 className={`form-control ${subCategory.description.trim() === "" ? "border-danger" : ""}`}
                                                 value={subCategory.description}
                                                 onChange={(e) => handleSubCategoryChange(index, 'description', e.target.value)}
-                                                placeholder="Subcategory Description"
+                                                placeholder="Description"
                                                 required
                                             />
                                             <button type="button" className="btn btn-danger" onClick={() => handleRemoveSubCategory(index)}>-</button>
