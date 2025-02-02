@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { FiFacebook, FiGithub, FiTwitter } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 const LoginForm = ({ registerPath, resetPath }) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const navigate = useNavigate();
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,16 +19,23 @@ const LoginForm = ({ registerPath, resetPath }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ email, password }),
             });
 
             const data = await response.json();
 
             if (response.ok) {
                 // Assuming the API returns a token or success message
-                // Save token or handle as needed
-                Cookies.set('authToken', data.token || 'dummyToken', { expires: 7 }); // Set a dummy token
-                navigate('/'); // Redirect to home page
+                // Set cookies with expiration times
+                const accessTokenExpiry = new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days
+                const refreshTokenExpiry = new Date(new Date().getTime() + 4 * 24 * 60 * 60 * 1000); // 4 days
+
+                Cookies.set('accessToken', data.access, { expires: accessTokenExpiry });
+                Cookies.set('refreshToken', data.refresh, { expires: refreshTokenExpiry });
+                Cookies.set('username', data.username, { expires: accessTokenExpiry }); // Optional: Set username cookie
+
+                // Redirect to home page
+                navigate('/', { replace: true }); // ✅ Corrected navigation
             } else {
                 // Handle error response
                 setError(data.message || 'Login failed. Please try again.');
@@ -48,11 +55,11 @@ const LoginForm = ({ registerPath, resetPath }) => {
                 <div className="mb-4">
                     <input
                         type="text"
-                        name="username"
+                        name="email"
                         className="form-control"
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Email Address"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                     />
                 </div>

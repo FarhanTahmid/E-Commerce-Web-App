@@ -6,11 +6,47 @@ const activePosition = ["Active", "Always", "Bussy", "Inactive", "Disabled", "Cu
 const subscriptionsList = ["Plan", "Billings", "Referrals", "Payments", "Statements", "Subscriptions"];
 
 const ProfileModal = () => {
-    const handleLogout = () => {
-        // Remove the authToken cookie
-        Cookies.remove('authToken');
-        // Redirect to the login page
-        window.location.href = '/';
+    const handleLogout = async () => {
+        const refreshToken = Cookies.get('refreshToken');
+
+        if (!refreshToken) {
+            console.error('No refresh token found');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/server_api/business-admin/logout/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Cookies.get('accessToken')}` // Include the access token in the Authorization header
+                },
+                body: JSON.stringify({ refresh: refreshToken })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Remove the authToken cookie
+            Cookies.remove('accessToken');
+            Cookies.remove('refreshToken');
+            Cookies.remove('username');
+
+            // Redirect to the login page
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Logout failed:', error);
+
+            // Optionally, you can handle specific errors here
+            if (error.message.includes('429')) {
+                alert('Too many requests - try again in 1 minute');
+            } else {
+                alert('Logout failed. Please try again or contact support.');
+            }
+        }
     };
 
     return (

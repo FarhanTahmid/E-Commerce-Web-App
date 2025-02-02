@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "../layout/root";
 import Home from "../pages/home";
 import Analytics from "../pages/analytics";
@@ -70,17 +70,42 @@ import WidgetsStatistics from "../pages/widgets-statistics";
 import WidgetsMiscellaneous from "../pages/widgets-miscellaneous";
 import RequireAuth from '../components/RequireAuth';
 import Cookies from 'js-cookie';
+import ProductCategory from "../pages/product-category";
+import ProductCategoryCreate from "@/components/products/ProductCategoryCreate";
+
+const parseJwt = (token) => {
+    try {
+        const base64Url = token.split('.')[1]; // Get payload
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/'); // Fix URL-safe characters
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) =>
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        ).join(''));
+
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        return null; // Invalid token
+    }
+};
 
 const PublicRoute = ({ children }) => {
-    const authToken = Cookies.get('authToken');
+    const authToken = Cookies.get('accessToken');
 
     if (authToken) {
-        // Redirect to the home page if logged in
-        return <Navigate to="/" replace />;
-    }
+        const decodedToken = parseJwt(authToken);
 
+        if (decodedToken && decodedToken.exp * 1000 > Date.now()) {
+            // Token exists & is valid -> Redirect to home
+            return <Navigate to="/" replace />;
+        } else {
+            // Token expired -> Remove it
+            Cookies.remove('accessToken');
+            Cookies.remove('refreshToken');
+            Cookies.remove('username');
+        }
+    }
     return children;
 };
+
 
 export const router = createBrowserRouter([
     {
@@ -199,6 +224,14 @@ export const router = createBrowserRouter([
                 path: "/help/knowledgebase",
                 element: <HelpKnowledgebase />
             },
+            {
+                path: "/products/category",
+                element: <ProductCategory />
+            },
+            {
+                path: "/products/category/create",
+                element: <ProductCategoryCreate />
+            }
 
         ]
     },
@@ -229,7 +262,7 @@ export const router = createBrowserRouter([
             {
                 path: "/applications/storage",
                 element: <AppsStorage />
-            },
+            }
         ]
     },
     {
@@ -295,76 +328,28 @@ export const router = createBrowserRouter([
         element: <LayoutAuth />,
         children: [
             {
-                path: "/authentication/login/cover",
-                element: <PublicRoute><LoginCover /></PublicRoute>,
-            },
-            {
                 path: "/authentication/login/minimal",
                 element: <PublicRoute><LoginMinimal /></PublicRoute>
             },
             {
-                path: "/authentication/login/creative",
-                element: <LoginCreative />
-            },
-            {
-                path: "/authentication/register/cover",
-                element: <PublicRoute><RegisterCover /></PublicRoute>
-            },
-            {
                 path: "/authentication/register/minimal",
-                element: <RegisterMinimal />
-            },
-            {
-                path: "/authentication/register/creative",
-                element: <RegisterCreative />
-            },
-            {
-                path: "/authentication/reset/cover",
-                element: <ResetCover />
+                element: <PublicRoute><RegisterMinimal /></PublicRoute>
             },
             {
                 path: "/authentication/reset/minimal",
                 element: <ResetMinimal />
             },
             {
-                path: "/authentication/reset/creative",
-                element: <ResetCreative />
-            },
-            {
-                path: "/authentication/404/cover",
-                element: <ErrorCover />
-            },
-            {
                 path: "/authentication/404/minimal",
                 element: <ErrorMinimal />
-            },
-            {
-                path: "/authentication/404/creative",
-                element: <ErrorCreative />
-            },
-            {
-                path: "/authentication/verify/cover",
-                element: <OtpCover />
             },
             {
                 path: "/authentication/verify/minimal",
                 element: <OtpMinimal />
             },
             {
-                path: "/authentication/verify/creative",
-                element: <OtpCreative />
-            },
-            {
-                path: "/authentication/maintenance/cover",
-                element: <MaintenanceCover />
-            },
-            {
                 path: "/authentication/maintenance/minimal",
                 element: <MaintenanceMinimal />
-            },
-            {
-                path: "/authentication/maintenance/creative",
-                element: <MaintenanceCreative />
             },
         ]
     },

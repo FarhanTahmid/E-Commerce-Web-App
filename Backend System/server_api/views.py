@@ -122,7 +122,8 @@ class LoginInBusinessAdminUser(APIView):
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
                     'message': 'Login successful',
-                    'redirect_url':'dashoard-link/'
+                    'redirect_url': 'dashoard-link/',
+                    'username': authenticated_user.username,
                     }, status=status.HTTP_200_OK)
             else:
                 # Check which input was wrong
