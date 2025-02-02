@@ -63,6 +63,8 @@ INSTALLED_APPS = [
     
 ]
 
+API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -74,28 +76,29 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React frontend domain
-    "http://127.0.0.1:8000",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:8000',
+
+# ]
 
 CORS_ALLOW_HEADERS = [
     "content-type",
     "authorization",
-    "x-api-key",
+    "HTTP_X_API_KEY",
 ]
+
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework_api_key.permissions.HasAPIKey',
-    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework_api_key.permissions.HasAPIKey",
+    ]
 }
 
-CSRF_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:8000',
+# CSRF_COOKIE_SECURE = True
+# CSRF_TRUSTED_ORIGINS = [
+#     'http://localhost:8000',
+#     # 'http://127.0.0.1:8000',
 
-]
+# ]
 
 
 ROOT_URLCONF = 'e_commerce_app.urls'
