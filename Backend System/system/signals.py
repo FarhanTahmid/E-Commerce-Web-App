@@ -8,12 +8,7 @@ from .models import *
 def update_last_login_at(sender, request, user, **kwargs):
     try:
         if isinstance(user,Accounts):
-            # Get the BusinessAdminUser associated with the logged-in user
-            business_admin_user = BusinessAdminUser.objects.get(user=user)
-            # Update the last_login_at field
-            business_admin_user.last_login_at = now()
-            business_admin_user.save()
-            user = Accounts.objects.get(username = business_admin_user.admin_user_name)
+            user = Accounts.objects.get(pk=user.pk)
             user.last_login = now()
             user.save()
     except BusinessAdminUser.DoesNotExist:
