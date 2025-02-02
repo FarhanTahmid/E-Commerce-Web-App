@@ -385,7 +385,7 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.data['message'],"Password updated successfully")
 
         #missing data
-        data = {'old_password':"password",'new_password':'new_password','new_password_confirm':None}
+        data = {'old_password':"password",'new_password':'new_password'}
         response = self.client.put(f'/server_api/business-admin/update-password/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Please provide new password")
