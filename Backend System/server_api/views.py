@@ -16,7 +16,7 @@ from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
-from system.models import *
+from business_admin import serializers
 
 # Create your views here.
 
@@ -40,15 +40,15 @@ class SignupBusinessAdminUser(APIView):
             
 
             missing_fields = []
-            if not admin_full_name:
+            if admin_full_name == "":
                 missing_fields.append('admin full name')
-            if not admin_email:
+            if admin_email == "":
                 missing_fields.append('admin email')
-            if not password:
+            if password == "":
                 missing_fields.append('password')
-            if not confirm_password:
+            if confirm_password == "":
                 missing_fields.append('confirm password')
-            if not admin_position_pk:
+            if admin_position_pk == "":
                 missing_fields.append('admin position')
 
             if missing_fields:
@@ -109,7 +109,7 @@ class LoginInBusinessAdminUser(APIView):
             email = self.request.data.get('email',None)
             password = self.request.data.get('password',None)
 
-            if email == None or password == None:
+            if email == "" or password == "":
                 return Response(
                     {"error": "Email or Password must be provided!"},
                     status=status.HTTP_400_BAD_REQUEST
@@ -230,9 +230,9 @@ class UpdateBusinessAdminUser(APIView):
             is_superuser = self.request.data.get('is_superuser',False)
             is_staff_user = self.request.data.get('is_staff_user',False)
             missing_fields = []
-            if not admin_full_name:
+            if not admin_full_name or admin_full_name == "":
                 missing_fields.append("Admin full name")
-            if not admin_position_pk:
+            if not admin_position_pk or admin_position_pk == "":
                 missing_fields.append("Admin position")
             if missing_fields:
                 return Response(
@@ -287,11 +287,11 @@ class UpdateBusinessAdminUserPassword(APIView):
             old_password = self.request.data.get('old_password',None)
             new_password = self.request.data.get('new_password',None)
             new_password_confirm = self.request.data.get('new_password_confirm',None)
-            if not new_password or not new_password_confirm:
+            if (not new_password or new_password == "") or (not new_password_confirm or new_password_confirm == ""):
                 return Response({
                     'error':"Please provide new password"
                 },status=status.HTTP_400_BAD_REQUEST)
-            if not old_password:
+            if not old_password or old_password == "":
                 return Response({
                     'error':"Please provide old password"
                 },status=status.HTTP_400_BAD_REQUEST)
@@ -370,7 +370,200 @@ class DeleteBusinessAdminUser(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+#business admin position
+
+class FetchBusinessAdminPosition(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+
+            name = self.request.query_params.get('name',None)
+            pk = self.request.query_params.get('pk',None)
+
+            if name:
+                fetched_position,message = AdminManagement.fetch_admin_position(name=name)
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+            elif pk:
+                fetched_position,message = AdminManagement.fetch_admin_position(pk=pk)
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+            else:
+                fetched_position,message = AdminManagement.fetch_admin_position()
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
+
+            if fetched_position:
+                return Response({
+                    'message':message,
+                    'admin_positions':fetched_position_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class CreateBusinessAdminPosition(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None,*args, **kwargs):
+        try:
+
+            name = self.request.data.get('name',None)
+            description = self.request.data.get('description',None)
+
+            if not name or name == "":
+                return Response({
+                    'error':"Admin position name is required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            admin_position_created,message = AdminManagement.create_admin_position(request,name,description)
+            if admin_position_created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class UpdateBusinessAdminPosition(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def put(self,request,admin_position_pk,format=None,*args, **kwargs):
+        try:
+
+            admin_position_pk= admin_position_pk
+            name = self.request.data.get('name',None)
+            description = self.request.data.get('description',None)
+
+            if not name or name == "":
+                return Response({
+                    'message':"Admin position name is required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            admin_position_updated,message = AdminManagement.update_admin_position(request,admin_position_pk,name,description)
+            if admin_position_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )  
+
+class DeleteBusinessAdminPosition(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def delete(self,request,admin_position_pk,format=None,*args, **kwargs):
+
+        try:
+            admin_position_pk =admin_position_pk
+            deleted,message = AdminManagement.delete_admin_position(request,admin_position_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )   
 
 
 #product categories
@@ -474,9 +667,9 @@ class CreateProductCategoryView(APIView):
             product_category_description = self.request.data.get('description',None)
 
             missing_fields = []
-            if not product_category_name:
+            if not product_category_name or product_category_name == "":
                 missing_fields.append("Product category name")
-            if not product_category_description:
+            if not product_category_description or product_category_description == "":
                 missing_fields.append("Product category description")
             
             if missing_fields:
@@ -532,9 +725,9 @@ class UpdateProductCategoryView(APIView):
             product_category_name = self.request.data.get('category_name',None)
             product_category_description = self.request.data.get('description',None)
             missing_fields = []
-            if not product_category_name:
+            if not product_category_name or product_category_name == "":
                 missing_fields.append("Product category name")
-            if not product_category_description:
+            if not product_category_description or product_category_description == "":
                 missing_fields.append("Product category description")
             if missing_fields:
                 return Response(
@@ -669,9 +862,9 @@ class CreateProductSubCategoryView(APIView):
             product_sub_category_name = request.data.get('sub_category_name',None)
             product_sub_category_description = request.data.get('description',None)
             missing_fields = []
-            if not product_sub_category_name:
+            if not product_sub_category_name or product_sub_category_name=="":
                 missing_fields.append("Product Sub Category name")
-            if not product_sub_category_description:
+            if not product_sub_category_description or product_sub_category_description == "":
                 missing_fields.append("Product Sub Category description")
             if missing_fields:
                 return Response(
@@ -724,11 +917,11 @@ class UpdateProductSubCategoryView(APIView):
             sub_category_name = request.data.get('sub_category_name',None)
             description = request.data.get('description',None)
             missing_fields = []
-            if not category_pk_list:
+            if not category_pk_list or len(category_pk_list) == 0 :
                 missing_fields.append("Product Categories")
-            if not sub_category_name:
+            if not sub_category_name or sub_category_name == "":
                 missing_fields.append("Product Sub Category name")
-            if not description:
+            if not description or description == "":
                 missing_fields.append("Product Sub Category descrpition")
             if missing_fields:
                 return Response(
@@ -878,9 +1071,9 @@ class CreateProductBrands(APIView):
             brand_logo = self.request.data.get('brand_logo',None)
 
             missing_fields = []
-            if not brand_name:
+            if not brand_name or brand_name == "":
                 missing_fields.append("Brand name")
-            if not brand_established_year:
+            if not brand_established_year or brand_established_year == "":
                 missing_fields.append("Brand established year")
             if missing_fields:
                 return Response(
@@ -941,9 +1134,9 @@ class UpdateProductBrands(APIView):
             brand_logo = self.request.data.get('brand_logo',None)
 
             missing_fields = []
-            if not brand_name:
+            if not brand_name or brand_name=="":
                 missing_fields.append("Product Brand name")
-            if not brand_established_year:
+            if not brand_established_year or brand_established_year == "":
                 missing_fields.append("PRoduct Brand established year")
             if missing_fields:
                 return Response(
@@ -1090,7 +1283,7 @@ class CreateProductFlavour(APIView):
 
         try:
             product_flavour_name = self.request.data.get('product_flavour_name',None)
-            if not product_flavour_name:
+            if not product_flavour_name or product_flavour_name == "":
                 return Response(
                     {
                         'error':'Product flavour name required'
@@ -1139,7 +1332,7 @@ class UpdateProductFlavour(APIView):
         try:
             product_flavour_pk=product_flavour_pk
             product_flavour_name = self.request.data.get('product_flavour_name',None)
-            if not product_flavour_name:
+            if not product_flavour_name or product_flavour_name == "":
                 return Response({
                     'error':"Product flavour name required"
                 },status=status.HTTP_400_BAD_REQUEST)
@@ -1300,15 +1493,15 @@ class CreateProduct(APIView):
             product_usage_direction = self.request.data.get('product_usage_direction',None)
 
             missing_fields = []
-            if not product_name:
+            if not product_name or product_name == "":
                 missing_fields.append("Product Name")
-            if not product_category_pk_list:
+            if not product_category_pk_list or len(product_category_pk_list) == 0:
                 missing_fields.append("Product Categories")
-            if not product_sub_category_pk_list:
+            if not product_sub_category_pk_list or len(product_sub_category_pk_list) == 0:
                 missing_fields.append("Product Sub Categories")
-            if not product_description:
+            if not product_description or product_description == "":
                 missing_fields.append("Product Description")
-            if not product_summary:
+            if not product_summary or product_summary=="":
                 missing_fields.append("Product Summary")
             
             if missing_fields:
@@ -1372,15 +1565,15 @@ class UpdateProduct(APIView):
             product_usage_direction = self.request.data.get('product_usage_direction',None)
 
             missing_fields = []
-            if not product_name:
+            if not product_name or product_name == "":
                 missing_fields.append("Product Name")
-            if not product_category_pk_list:
+            if not product_category_pk_list or len(product_category_pk_list) == 0:
                 missing_fields.append("Product Categories")
-            if not product_sub_category_pk_list:
+            if not product_sub_category_pk_list or len(product_sub_category_pk_list) == 0:
                 missing_fields.append("Product Sub Categories")
-            if not product_description:
+            if not product_description or product_description == "":
                 missing_fields.append("Product Description")
-            if not product_summary:
+            if not product_summary or product_summary == "":
                 missing_fields.append("Product Summary")
             
             if missing_fields:
@@ -1542,13 +1735,13 @@ class CreateProductSKU(APIView):
             product_size = self.request.data.get('product_size',None)
 
             missing_fields = []
-            if not product_pk:
+            if not product_pk or product_pk == "":
                 missing_fields.append("Product")
-            if not product_price:
+            if not product_price or product_price=="":
                 missing_fields.append("Price")
-            if not product_stock:
+            if not product_stock or product_stock == "":
                 missing_fields.append("Product stock")
-            if not product_flavours_pk_list:
+            if not product_flavours_pk_list or len(product_flavours_pk_list)==0:
                 missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
@@ -1606,13 +1799,13 @@ class UpdateProductSKU(APIView):
             product_size = self.request.data.get('product_size',None)
 
             missing_fields = []
-            if not product_id:
+            if not product_id or product_id=="":
                 missing_fields.append("Product")
-            if not product_price:
+            if not product_price or product_price == "":
                 missing_fields.append("Price")
-            if not product_stock:
+            if not product_stock or product_stock == "":
                 missing_fields.append("Product stock")
-            if not product_flavours_pk_list:
+            if not product_flavours_pk_list or len(product_flavours_pk_list)==0:
                 missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
@@ -1756,7 +1949,7 @@ class CreateProductImages(APIView):
             size = self.request.data.get('size',None)
 
 
-            if not product_image_list:
+            if not product_image_list or len(product_image_list)==0:
                 return Response({
                     'error':'Please select atleast 1 image'
                 },status=status.HTTP_400_BAD_REQUEST)
@@ -1955,13 +2148,13 @@ class CreateProductDiscount(APIView):
             end_date = self.request.get('end_date',None)
 
             missing_fields = []
-            if not discount_name:
+            if not discount_name or discount_name == "":
                 missing_fields.append("Discount Name")
-            if not discount_amount:
+            if not discount_amount or discount_amount == "":
                 missing_fields.append("Discount Amount")
-            if not start_date:
+            if not start_date or start_date == "":
                 missing_fields.append("Start date")
-            if not end_date:
+            if not end_date or end_date == "":
                 missing_fields.append("End date")
 
             if missing_fields:
@@ -2023,15 +2216,15 @@ class UpdateProductDiscount(APIView):
             end_data = self.request.data.get('end_date',None)
 
             missing_fields = []
-            if not product_id:
+            if not product_id or product_id == "":
                 missing_fields.append("Product")
-            if not discount_name:
+            if not discount_name or discount_name == "":
                 missing_fields.append("Discount name")
-            if not discount_amount:
+            if not discount_amount or discount_amount == "":
                 missing_fields.append("Discount amount")
-            if not start_date:
+            if not start_date or start_date == "":
                 missing_fields.append("Start date")
-            if not end_data:
+            if not end_data or end_data == "":
                 missing_fields.appned("End date")
 
             if missing_fields:
