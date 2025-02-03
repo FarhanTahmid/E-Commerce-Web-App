@@ -13,6 +13,7 @@ import datetime
 from system.models import Accounts
 from rest_framework_simplejwt.tokens import RefreshToken
 import time
+from business_admin import serializers
 
 # Create your tests here.
 class ServerAPITestCases(APITestCase):
@@ -54,7 +55,7 @@ class ServerAPITestCases(APITestCase):
         
         self.user = Accounts(
             email=self.email,
-            username='testuser',
+            username='user',
             is_superuser = True
         )
         self.user.set_password(self.password)
@@ -336,8 +337,8 @@ class ServerAPITestCases(APITestCase):
 
         #no data
         data ={
-            "email":None,
-            "password":None
+            "email":"",
+            "password":""
         }
         response = self.client.post(f'/server_api/business-admin/login/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
@@ -384,7 +385,7 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.data['message'],"Password updated successfully")
 
         #missing data
-        data = {'old_password':"password",'new_password':'new_password','new_password_confirm':None}
+        data = {'old_password':"password",'new_password':'new_password'}
         response = self.client.put(f'/server_api/business-admin/update-password/{str(self.businessadmin1.admin_user_name)}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'],"Please provide new password")
@@ -397,6 +398,56 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         self.assertEqual(response.data['message'],"Admin deleted successfully")
 
+    #test admin positions
+    def test_fetch_admin_positions(self):
+        """
+        Test for fetching admin postions
+        """
+        #all
+        response = self.client.get(f'/server_api/business-admin/admin-position/fetch-positions/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(len(response.data['admin_positions']),1)
+        self.assertEqual(response.data['message'],"All Admin positions fetched successfully!")
+    
+        #name
+        response = self.client.get(f'/server_api/business-admin/admin-position/fetch-positions/?name={self.adminposition1.name}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        existing_data = serializers.AdminPositionSerializer(self.adminposition1).data
+        returned_data = response.data['admin_positions']
+        self.assertEqual(returned_data,existing_data)
+        self.assertEqual(response.data['message'],"Admin position fetched successfully!")
+    
+    def test_create_admin_position(self):
+        """
+        Test for creating admin position
+        """
+
+        data = {'name':'ppp'}
+        response = self.client.post(f'/server_api/business-admin/admin-position/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Admin position created successfully")
+
+        #no name
+        data = {}
+        response = self.client.post(f'/server_api/business-admin/admin-position/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+
+    def test_update_admin_position(self):
+        """
+        Test for updating admin postion
+        """
+        data = {'name':'pppl','description':'okoko'}
+        response = self.client.put(f'/server_api/business-admin/admin-position/update/{self.adminposition1.pk}',data,format='json')
+        self.assertEqual(response.data['message'],"Admin position successfully updated")
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+
+    def test_delete_admin_position(self):
+        """
+        Test delete admin postion
+        """
+        response = self.client.delete(f'/server_api/business-admin/admin-position/delete/{self.adminposition1.pk}')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Admin position deleted successfully")
 
     #product brands
     def test_fetch_product_brand(self):
