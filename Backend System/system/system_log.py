@@ -104,6 +104,7 @@ class SystemLogs:
         #checking type of user
         try:
             user = SystemLogs.get_logged_in_user(request)
+            user_type = {}
             if user.is_superuser and not user.is_admin:
                 user_type = {
                 "user_type": " Developer - Superuser",

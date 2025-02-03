@@ -17,6 +17,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
 from business_admin import serializers
+from system.permissions import IsAdminWithPermission
+from business_admin.models import *
 
 # Create your views here.
 
@@ -428,13 +430,17 @@ class FetchBusinessAdminPosition(APIView):
         
 class CreateBusinessAdminPosition(APIView):
 
+    """Permissions"""
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    required_permissions = [
+        AdminPermissions.CREATE
+    ] 
+    def get_permissions(self):
+        return [IsAdminWithPermission(self.required_permissions)]
 
     @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
         try:
-
             name = self.request.data.get('name',"")
             description = self.request.data.get('description',"")
 

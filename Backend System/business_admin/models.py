@@ -2,6 +2,7 @@ from django.db import models
 from django_resized import ResizedImageField
 from django.contrib.auth.models import User
 import hashlib
+from system.models import Accounts
 # Create your models here.
 
 # Admin Positions Model
@@ -72,6 +73,12 @@ class BusinessAdminUser(models.Model):
 
 # Permission Model
 class AdminPermissions(models.Model):
+    
+    CREATE = "create"
+    DELETE = "delete"
+    UPDATE= "update"
+    VIEW = "view"
+
     '''All the permissions for admin users'''
     permission_name = models.CharField(max_length=100, unique=True)
     permission_description = models.TextField(blank=True, null=True)
@@ -97,6 +104,14 @@ class AdminRolePermission(models.Model):
 
     def __str__(self):
         return f"{self.role.name} - {self.permission.name}"
+    
+class AdminUserRole(models.Model):
+
+    user = models.OneToOneField(Accounts, on_delete=models.CASCADE, related_name='admin_role')
+    role = models.ForeignKey(AdminPositions, on_delete=models.CASCADE, related_name='users')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.role.name}"
 
 
 # Audit Log Model
