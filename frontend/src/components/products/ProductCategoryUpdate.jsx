@@ -3,6 +3,8 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import ConfirmationModal from '../ConfirmationModal'; // Import the modal component
+
 
 
 
@@ -11,14 +13,89 @@ const ProductCategoryUpdate = () => {
     const [categoryName, setCategoryName] = useState('');
     const [categoryDescription, setCategoryDescription] = useState("");
     const [subCategories, setSubCategories] = useState([{ name: '', description: '' }]); // Add description field
-    const [categories, setCategories] = useState([]);
     const [prevSubCategories, setPrevSubCategories] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('');
     const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
     const [newSubCategoryName, setNewSubCategoryName] = useState('');
     const [newSubCategoryDescription, setNewSubCategoryDescription] = useState('');
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState(''); // 'success' or 'danger'
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteAction, setDeleteAction] = useState(null);  // To track what is being deleted (category or subcategory)
+
+
     // Inside your component:
     const navigate = useNavigate();
+
+
+    const handleDeleteSubCategory = (index) => {
+        setDeleteAction({ type: 'subcategory', index });
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteCategory = () => {
+        setDeleteAction({ type: 'category' });
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        if (deleteAction.type === 'subcategory') {
+            const subCategoryId = prevSubCategories[deleteAction.index].id;
+
+            fetch(`${API_BASE_URL}/sub-categories/delete/${subCategoryId}/`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                    "Content-Type": "application/json"
+                },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete subcategory');
+                    }
+                    setPrevSubCategories(prevSubCategories.filter((_, i) => i !== deleteAction.index));
+                    setMessage('Subcategory deleted successfully!');
+                    setMessageType('success');
+                })
+                .catch(error => {
+                    setMessage(error.message);
+                    setMessageType('danger');
+                });
+        } else if (deleteAction.type === 'category') {
+            fetch(`${API_BASE_URL}/categories/delete/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                    "Content-Type": "application/json"
+                },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete category');
+                    }
+                    setMessage('Category deleted successfully!');
+                    setMessageType('success');
+
+                    // Redirect to the category list page after deletion
+                    navigate('/products/category');
+                })
+                .catch(error => {
+                    setMessage(error.message);
+                    setMessageType('danger');
+                });
+        }
+
+        // Close the modal after confirmation
+        setShowDeleteModal(false);
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+    };
+
+
+
+
 
     const handleAddSubCategory = () => {
         if (newSubCategoryName.trim() && newSubCategoryDescription.trim()) {
@@ -27,57 +104,56 @@ const ProductCategoryUpdate = () => {
                 description: newSubCategoryDescription
             };
 
-            // Make the API call to create a new subcategory
             fetch(`${API_BASE_URL}/sub-categories/create/${id}/`, {
                 method: 'POST',
                 body: JSON.stringify(newSubCategory),
                 headers: {
-                    Authorization: `Bearer ${Cookies.get("accessToken")}`, // Ensure token is not undefined/null
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"
                 }
             })
                 .then((response) => {
-                    // Check if the response is successful
                     if (response.ok) {
-                        return response.json(); // Return the JSON response
+                        return response.json();
                     } else {
                         throw new Error('Failed to add subcategory');
                     }
                 })
-                .then((data) => {
-                    // Update the state with the new subcategory (Add it to the list)
+                .then(() => {
                     setPrevSubCategories((prev) => [
                         ...prev,
-                        newSubCategory // Assuming the API returns the new subcategory data
+                        newSubCategory
                     ]);
-                    // Clear input fields after adding the subcategory
                     setNewSubCategoryName('');
                     setNewSubCategoryDescription('');
+                    setMessage('Subcategory added successfully!');
+                    setMessageType('success');
                 })
                 .catch((error) => {
-                    console.error("Error adding subcategory:", error);
+                    setMessage(error.message);
+                    setMessageType('danger');
                 });
         } else {
-            console.error("Both name and description are required");
+            setMessage("Both name and description are required");
+            setMessageType('danger');
         }
     };
+
 
 
     const handleUpdateSubCategory = (index) => {
         const updatedSubCategories = [...prevSubCategories];
         const updatedSubCategory = updatedSubCategories[index];
-
-        const categoryPkList = id;  // Assuming category pk list needs to be passed
+        const categoryPkList = id;
         const subCategoryName = updatedSubCategory.sub_category_name;
         const description = updatedSubCategory.description;
 
-        // Check if all fields are present
         if (!subCategoryName || !description) {
-            alert("All fields are required: Product Categories, Sub Category Name, Description.");
+            setMessage("All fields are required: Product Categories, Sub Category Name, Description.");
+            setMessageType('danger');
             return;
         }
 
-        // API call to update the subcategory
         fetch(`${API_BASE_URL}/sub-categories/update/${updatedSubCategory.id}/`, {
             method: 'PUT',
             body: JSON.stringify({
@@ -90,58 +166,55 @@ const ProductCategoryUpdate = () => {
                 "Content-Type": "application/json",
             },
         })
-            .then((response) => response.json())  // Parse response
+            .then((response) => response.json())
             .then((data) => {
                 if (data && data.message) {
-                    alert("Sub-Category is Updated Successfully!");
+                    setMessage("Sub-Category is Updated Successfully!");
+                    setMessageType('success');
                     setPrevSubCategories(updatedSubCategories);
                 } else {
-                    console.error("Error updating subcategory:", data);
-                    alert(`Error: ${data.error || 'Something went wrong'}`);
+                    setMessage(`Error: ${data.error || 'Something went wrong'}`);
+                    setMessageType('danger');
                 }
             })
             .catch((error) => {
-                console.error("Error updating subcategory:", error);
-                alert("Error updating subcategory: " + error.message);
+                setMessage("Error updating subcategory: " + error.message);
+                setMessageType('danger');
             });
     };
 
 
 
 
-    const handleDeleteSubCategory = (index) => {
-        const subCategoryId = prevSubCategories[index].id;
+    // const handleDeleteSubCategory = (index) => {
+    //     const subCategoryId = prevSubCategories[index].id;
 
-        fetch(`${API_BASE_URL}/sub-categories/delete/${subCategoryId}/`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${Cookies.get("accessToken")}`, // Ensure token is not undefined/null
-                "Content-Type": "application/json"
-            },
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to delete subcategory: ${response.statusText}`);
-                }
+    //     fetch(`${API_BASE_URL}/sub-categories/delete/${subCategoryId}/`, {
+    //         method: 'DELETE',
+    //         headers: {
+    //             Authorization: `Bearer ${Cookies.get("accessToken")}`,
+    //             "Content-Type": "application/json"
+    //         },
+    //     })
+    //         .then((response) => {
+    //             if (!response.ok) {
+    //                 throw new Error(`Failed to delete subcategory: ${response.statusText}`);
+    //             }
 
-                // If the response is empty, we can proceed without trying to parse JSON
-                if (response.status === 204) {
-                    // Status 204 (No Content) typically means the deletion was successful
-                    const updatedSubCategories = prevSubCategories.filter((_, i) => i !== index);
-                    setPrevSubCategories(updatedSubCategories);
-                } else {
-                    // If there's content, parse it as JSON (for status codes other than 204)
-                    return response.json();
-                }
-            })
-            .then(() => {
-                // Optionally handle success or failure (e.g., display a success message)
-            })
-            .catch((error) => {
-                console.error("Error deleting subcategory:", error);
-                alert("Error deleting subcategory: " + error.message); // Optional: Display the error in an alert
-            });
-    };
+    //             if (response.status === 204) {
+    //                 const updatedSubCategories = prevSubCategories.filter((_, i) => i !== index);
+    //                 setPrevSubCategories(updatedSubCategories);
+    //                 setMessage('Subcategory deleted successfully!');
+    //                 setMessageType('success');
+    //             } else {
+    //                 return response.json();
+    //             }
+    //         })
+    //         .catch((error) => {
+    //             setMessage("Error deleting subcategory: " + error.message);
+    //             setMessageType('danger');
+    //         });
+    // };
 
 
 
@@ -155,7 +228,6 @@ const ProductCategoryUpdate = () => {
             }
         })
             .then(response => {
-                console.log("Categories Response:", response.data); // Debug response
                 setCategoryName(response.data.product_category.category_name);
                 setCategoryDescription(response.data.product_category.description);
             })
@@ -172,7 +244,6 @@ const ProductCategoryUpdate = () => {
             }
         })
             .then(response => {
-                console.log("Subcategories Response:", response.data); // Debug response
                 setPrevSubCategories(Array.isArray(response.data.product_sub_category) ? response.data.product_sub_category : []);
             })
             .catch(error => {
@@ -212,55 +283,50 @@ const ProductCategoryUpdate = () => {
         // Change the method to PUT or PATCH based on your backend
         axios.put(`${API_BASE_URL}/categories/update/${id}/`, {
             category_name: categoryName,
-            description: categoryDescription  // Now sending the description as well
-        },
-            {
-                headers: {
-                    Authorization: `Bearer ${Cookies.get('accessToken')}`,  // Send token in request headers
-                    "Content-Type": "application/json"
-                }
-            })
+            description: categoryDescription
+        }, {
+            headers: {
+                Authorization: `Bearer ${Cookies.get('accessToken')}`,
+                "Content-Type": "application/json"
+            }
+        })
             .then(response => {
-                alert("Category Updated Successfully!");
-                // Refresh the page after category creation
-                window.location.reload(); // This will reload the page
+                setCategoryName(response.data.category_name);
+                setCategoryDescription(response.data.description);
+                setMessage("Category Updated Successfully!");
+                setMessageType('success');
             })
             .catch(error => {
-                console.error("Error Updating category:", error);
+                console.error("Error Updating category:", error.response ? error.response.data : error.message);
             });
-    };
-    const handleDeleteCategory = () => {
-        // API call to delete using categoryId
-        fetch(`${API_BASE_URL}/categories/delete/${id}/`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${Cookies.get("accessToken")}`,
-                "Content-Type": "application/json",
-            },
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    // Handle error status (e.g., 400 or 500)
-                    throw new Error('Error deleting category');
-                }
 
-                // Check if the response body is empty
-                if (response.status === 204) {
-                    alert("Category is Deleted Successfully!");
-                    navigate('/products/category'); // Redirect
-                }
-                else {
-                    return response.json(); // Proceed to parse JSON
-                }
-            })
-            .then(() => {
-
-            })
-            .catch((error) => {
-                console.error("Error deleting category:", error);
-                alert("Error deleting category: " + error.message);
-            });
     };
+    // const handleDeleteCategory = () => {
+    //     fetch(`${API_BASE_URL}/categories/delete/${id}/`, {
+    //         method: 'DELETE',
+    //         headers: {
+    //             Authorization: `Bearer ${Cookies.get("accessToken")}`,
+    //             "Content-Type": "application/json",
+    //         },
+    //     })
+    //         .then((response) => {
+    //             if (!response.ok) {
+    //                 throw new Error('Error deleting category');
+    //             }
+
+    //             if (response.status === 204) {
+    //                 setMessage("Category is Deleted Successfully!");
+    //                 setMessageType('success');
+    //                 navigate('/products/category');
+    //             } else {
+    //                 return response.json();
+    //             }
+    //         })
+    //         .catch((error) => {
+    //             setMessage("Error deleting category: " + error.message);
+    //             setMessageType('danger');
+    //         });
+    // };
 
 
 
@@ -268,6 +334,23 @@ const ProductCategoryUpdate = () => {
 
     return (
         <div className="col-xl-12 p-2">
+            {/* Message Container */}
+            {message && (
+                <div
+                    className={`alert alert-${messageType} alert-dismissible fade show`}
+                    role="alert"
+                    style={{ marginBottom: '20px' }}
+                >
+                    <strong>{messageType === 'danger' ? 'Error: ' : 'Success: '}</strong> {message}
+                    <button
+                        type="button"
+                        className="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"
+                        onClick={() => setMessage('')} // Close message on button click
+                    ></button>
+                </div>
+            )}
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Category & Subcategory Update</h5>
@@ -374,7 +457,12 @@ const ProductCategoryUpdate = () => {
                         </div>
                     </form>
 
-
+                    <ConfirmationModal
+                        show={showDeleteModal}
+                        onClose={cancelDelete}
+                        onConfirm={confirmDelete}
+                        message={`Are you sure you want to delete this ${deleteAction?.type === 'subcategory' ? 'subcategory' : 'category'}?`}
+                    />
                 </div>
             </div>
         </div>

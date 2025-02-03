@@ -1,31 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-
 const ProductCategoryCreate = () => {
     const [categoryName, setCategoryName] = useState('');
-    const [categoryDescription, setCategoryDescription] = useState("");
-    const [subCategories, setSubCategories] = useState([{ name: '', description: '' }]); // Add description field
+    const [categoryDescription, setCategoryDescription] = useState('');
+    const [subCategories, setSubCategories] = useState([{ name: '', description: '' }]);
     const [categories, setCategories] = useState([]);
     const [prevSubCategories, setPrevSubCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState(''); // 'success' or 'danger'
+
     const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
 
-    useEffect(() => {
 
+
+    useEffect(() => {
         axios.get(`${API_BASE_URL}/categories/fetch-all/`, {
             headers: {
-                Authorization: `Bearer ${Cookies.get("accessToken")}`, // Ensure token is not undefined/null
+                Authorization: `Bearer ${Cookies.get("accessToken")}`,
                 "Content-Type": "application/json"
             }
         })
             .then(response => {
-                console.log("Categories Response:", response.data); // Debug response
                 setCategories(response.data.product_category);
             })
             .catch(error => {
-                console.error("Error fetching categories:", error.response ? error.response.data : error);
+                setMessage(error.response ? error.response.data.message : error.message);
+                setMessageType('danger');
             });
     }, []);
 
@@ -38,22 +41,19 @@ const ProductCategoryCreate = () => {
                 }
             })
                 .then(response => {
-                    console.log("Subcategories Response:", response.data); // Debug response
-                    setPrevSubCategories(Array.isArray(response.data.product_sub_category) ? response.data.product_sub_category : []);
+                    setPrevSubCategories(response.data.product_sub_category || []);
                 })
                 .catch(error => {
-                    console.error("Error fetching subcategories:", error.response ? error.response.data : error);
+                    setMessage(error.response ? error.response.data.message : error.message);
+                    setMessageType('danger');
                 });
-
         } else {
-            setPrevSubCategories([]); // Reset when no category is selected
+            setPrevSubCategories([]);
         }
-    }, [selectedCategory]); // Depend on selectedCategory
-
-
+    }, [selectedCategory]);
 
     const handleAddSubCategory = () => {
-        setSubCategories([...subCategories, { name: '', description: '' }]); // Add an empty description field
+        setSubCategories([...subCategories, { name: '', description: '' }]);
     };
 
     const handleSubCategoryChange = (index, field, value) => {
@@ -70,39 +70,51 @@ const ProductCategoryCreate = () => {
     const handleSubmitCategory = (e) => {
         e.preventDefault();
 
-        // Validate input fields
         if (!categoryName.trim()) {
-            alert("Category name is required!");
+            setMessage("Category name is required!");
+            setMessageType('danger');
             return;
         }
 
         if (!categoryDescription.trim()) {
-            alert("Category description is required!");
+            setMessage("Category description is required!");
+            setMessageType('danger');
             return;
         }
 
         axios.post(`${API_BASE_URL}/categories/create/`, {
             category_name: categoryName,
-            description: categoryDescription  // Now sending the description as well
-        },
-            {
-                headers: {
-                    Authorization: `Bearer ${Cookies.get('accessToken')}`,  // Send token in request headers
-                    "Content-Type": "application/json"
-                }
-            })
+            description: categoryDescription
+        }, {
+            headers: {
+                Authorization: `Bearer ${Cookies.get('accessToken')}`,
+                "Content-Type": "application/json"
+            }
+        })
             .then(response => {
-                alert("Category Created Successfully!");
-                setCategories([...categories, response.data.product_category]); // Update UI
+                setMessage(response.data.message);
+                setMessageType('success');
                 setCategoryName("");
-                setCategoryDescription("");  // Clear the input fields
+                setCategoryDescription("");
 
-                // Refresh the page after category creation
-                window.location.reload(); // This will reload the page
+                // Fetch updated categories instead of reloading
+                axios.get(`${API_BASE_URL}/categories/fetch-all/`, {
+                    headers: {
+                        Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(response => {
+                        setCategories(response.data.product_category);
+                    })
+                    .catch(error => {
+                        console.error("Error fetching categories:", error);
+                    });
+
             })
             .catch(error => {
-                console.error("Error creating category:", error);
-                alert("Failed to create category.");
+                setMessage(error.response ? error.response.data.message : error.message);
+                setMessageType('danger');
             });
     };
 
@@ -110,7 +122,8 @@ const ProductCategoryCreate = () => {
         e.preventDefault();
 
         if (!selectedCategory) {
-            alert("Please select a category first!");
+            setMessage("Please select a category first!");
+            setMessageType('danger');
             return;
         }
 
@@ -119,7 +132,8 @@ const ProductCategoryCreate = () => {
             .filter(sub => sub.sub_category_name !== "" && sub.description !== "");
 
         if (validSubCategories.length === 0) {
-            alert("Please enter at least one valid subcategory name and description.");
+            setMessage("Please enter at least one valid subcategory name and description.");
+            setMessageType('danger');
             return;
         }
 
@@ -131,21 +145,35 @@ const ProductCategoryCreate = () => {
                         "Content-Type": "application/json"
                     }
                 });
-                console.log(`Subcategory "${subCategory.sub_category_name}" Created Successfully!`);
             } catch (error) {
                 console.error("Error creating subcategory:", error.response ? error.response.data : error);
             }
         }
 
-        alert("All subcategories submitted successfully!");
+        setMessage("All subcategories submitted successfully!");
+        setMessageType('success');
         setSubCategories([{ name: '', description: '' }]); // Reset input fields
     };
 
-
-
-
     return (
         <div className="col-xl-12 p-2">
+            {/* Message Container */}
+            {message && (
+                <div
+                    className={`alert alert-${messageType} alert-dismissible fade show`}
+                    role="alert"
+                    style={{ marginBottom: '20px' }}
+                >
+                    <strong>{messageType === 'danger' ? 'Error: ' : 'Success: '}</strong> {message}
+                    <button
+                        type="button"
+                        className="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"
+                        onClick={() => setMessage('')} // Close message on button click
+                    ></button>
+                </div>
+            )}
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Category & Subcategory Creation</h5>
@@ -167,7 +195,6 @@ const ProductCategoryCreate = () => {
                                     />
                                     <label htmlFor="Category" className="form-label">Category Description:</label>
                                     <textarea
-                                        type="text"
                                         className="form-control mb-2"
                                         id="CategoryDescription"
                                         placeholder="Category Description"
@@ -184,7 +211,7 @@ const ProductCategoryCreate = () => {
                     <hr className="border-dashed" />
 
                     <form onSubmit={handleSubmitSubCategories}>
-                        <div className="row px-4 py-4">
+                        <div className="row px-4 py-2">
                             <div className="col-xl-6">
                                 <label htmlFor="CategorySelect" className="form-label">Select Category to create their Sub Categories</label>
                                 <select
@@ -202,62 +229,96 @@ const ProductCategoryCreate = () => {
                             </div>
                         </div>
 
-                        {selectedCategory && ( // Conditional rendering based on selectedCategory
+                        {selectedCategory && (
                             <div className="row px-4 py-4">
-                                <div className="col-xl-6">
-                                    {prevSubCategories.length > 0 && (
-                                        <>
-                                            <h6 className="fw-bold">Sub Categories:</h6>
-                                            <div className="border rounded p-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                                                <ul className="list-unstyled mb-0">
-                                                    {prevSubCategories.map((subCategory, index) => (
-                                                        <li key={index} className="d-flex flex-column mb-2">
-                                                            <span className="fw-bold">{subCategory.sub_category_name}</span>
-                                                            <span className="text-muted">{subCategory.description}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </>
-                                    )}
-
-
-                                    <h6 className="fw-bold mt-4">New Sub Categories:</h6>
-                                    {subCategories.map((subCategory, index) => (
-                                        <div key={index} className="d-flex gap-2 mb-2">
-                                            <input
-                                                type="text"
-                                                className={`form-control ${subCategory.name.trim() === "" ? "border-danger" : ""}`}
-                                                value={subCategory.name}
-                                                onChange={(e) => handleSubCategoryChange(index, 'name', e.target.value)}
-                                                placeholder="Name"
-                                                required
-                                            />
-                                            <textarea
-                                                type="text"
-                                                className={`form-control ${subCategory.description.trim() === "" ? "border-danger" : ""}`}
-                                                value={subCategory.description}
-                                                onChange={(e) => handleSubCategoryChange(index, 'description', e.target.value)}
-                                                placeholder="Description"
-                                                required
-                                            />
-                                            <button type="button" className="btn btn-danger" onClick={() => handleRemoveSubCategory(index)}>-</button>
+                                <div className="col-xl-12">
+                                    <div className='flex-wrap col-12 justify-content-between gap-3'>
+                                        {/* Previous Sub Categories */}
+                                        <div className='col-lg-12 col-md-12 col-sm-12 col-xl-6'>
+                                            {prevSubCategories.length > 0 && (
+                                                <>
+                                                    <div className="card shadow-sm">
+                                                        <div className="card-header d-flex justify-content-between align-items-center">
+                                                            <h6 className="fw-bold mb-0">Sub Categories</h6>
+                                                            <button
+                                                                className="btn btn-primary btn-sm"
+                                                                type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#subCategoriesCollapse"
+                                                                aria-expanded="false"
+                                                                aria-controls="subCategoriesCollapse"
+                                                                id="toggleButton"
+                                                            >
+                                                                SHOW
+                                                            </button>
+                                                        </div>
+                                                        <div id="subCategoriesCollapse" className="collapse">
+                                                            <div className="card-body p-2">
+                                                                <div className="border rounded p-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                                                    <ul className="list-unstyled mb-0">
+                                                                        {prevSubCategories.map((subCategory, index) => (
+                                                                            <li key={index} className="d-flex justify-content-between mb-3">
+                                                                                <div>
+                                                                                    {index + 1}. <strong>Name: {subCategory.sub_category_name}</strong>
+                                                                                    <p className="mb-0">Description: {subCategory.description}</p>
+                                                                                </div>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
-                                    ))}
 
-                                    <div className="d-flex gap-2">
-                                        <button type="button" className="btn btn-secondary mt-2" onClick={handleAddSubCategory}>+ Add Subcategory</button>
-                                        <button type="submit" className="btn btn-success mt-2">Create Subcategories</button>
+
+                                        {/* Sub Category Inputs */}
+                                        <div className='col-lg-12 col-md-12 col-sm-12 col-xl-6 mt-4'>
+                                            {subCategories.map((subCategory, index) => (
+                                                <div key={index} className="form-group mb-3">
+                                                    <label className="form-label">New Sub Category {index + 1}</label>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control mb-2"
+                                                        placeholder="Sub Category Name"
+                                                        value={subCategory.name}
+                                                        onChange={(e) => handleSubCategoryChange(index, 'name', e.target.value)}
+                                                    />
+                                                    <textarea
+                                                        type="text"
+                                                        className="form-control mb-2"
+                                                        placeholder="Sub Category Description"
+                                                        value={subCategory.description}
+                                                        onChange={(e) => handleSubCategoryChange(index, 'description', e.target.value)}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-danger mb-2"
+                                                        onClick={() => handleRemoveSubCategory(index)}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+
+                                    <hr className="border-dashed" />
+                                    <div className="d-flex gap-3">
+                                        <button type="button" className="btn btn-primary" onClick={handleAddSubCategory}>Add Sub Category</button>
+                                        <button type="submit" className="btn btn-success">Submit Sub Categories</button>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </form>
-
                 </div>
             </div>
         </div>
     );
-}
+};
 
 export default ProductCategoryCreate;

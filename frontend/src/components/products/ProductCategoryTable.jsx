@@ -105,17 +105,12 @@ const ProductCategoryTable = () => {
                                                 {filteredCategories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((category, index) => (
                                                     <tr key={category.id} className='single-item chat-single-item'>
                                                         <td>{index + 1 + page * rowsPerPage}</td> {/* Serial Number */}
-                                                        <td>
+                                                        <td className="truncate-text">
                                                             <Link to={`/product-category/${category.id}`} className='fw-bold'>
                                                                 {category.category_name}
                                                             </Link>
                                                         </td>
-                                                        <td>
-                                                            {category.description}
-                                                        </td>
-                                                        {/* <td>
-                                                            <Dropdown dropdownItems={actions} triggerIcon={<FiMoreHorizontal />} triggerClass='avatar-md' triggerPosition={"0,21"} />
-                                                        </td> */}
+                                                        <td className="truncate-text">{category.description}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
