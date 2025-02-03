@@ -13,6 +13,12 @@ urlpatterns = [                                                                 
     path('business-admin/update-password/<str:admin_user_name>/',views.UpdateBusinessAdminUserPassword.as_view(),name='update_business_admin_user_password'),
     path('business-admin/delete/<str:admin_user_name>/',views.DeleteBusinessAdminUser.as_view(),name='delete_business_admin_user'),
 
+    #business admin postion
+    path('business-admin/admin-position/fetch-positions/',views.FetchBusinessAdminPosition.as_view(),name='fetch_business_admin_position'),#pass parameters /?name= OR pk= OR none to retrieve all
+    path('business-admin/admin-position/create/',views.CreateBusinessAdminPosition.as_view(),name='create_business_admin_position'),
+    path('business-admin/admin-position/update/<int:admin_position_pk>',views.UpdateBusinessAdminPosition.as_view(),name='update_business_admin_position'),
+    path('business-admin/admin-position/delete/<int:admin_position_pk>',views.DeleteBusinessAdminPosition.as_view(),name='delete_business_admin_position'),
+
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
     path('product/categories/fetch-all/',views.FetchProductCategoryView.as_view(),name='fetch_all_product_categories'),#pass parameters /?pk = OR no paramter to fetch all

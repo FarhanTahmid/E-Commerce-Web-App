@@ -16,7 +16,7 @@ from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
-from system.models import *
+from business_admin import serializers
 
 # Create your views here.
 
@@ -27,28 +27,28 @@ class SignupBusinessAdminUser(APIView):
     @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,format=None):
         try:
-            admin_full_name = self.request.data.get('admin_full_name',None)
-            admin_email = self.request.data.get('admin_email',None)
-            password = self.request.data.get('password',None)
-            confirm_password = self.request.data.get('confirm_password',None)
+            admin_full_name = self.request.data.get('admin_full_name',"")
+            admin_email = self.request.data.get('admin_email',"")
+            password = self.request.data.get('password',"")
+            confirm_password = self.request.data.get('confirm_password',"")
 
-            admin_position_pk = self.request.data.get('admin_position_pk',None)
-            admin_contact_no = self.request.data.get('admin_contact_no',None)
-            admin_avatar = self.request.data.get('admin_avatar', None)
+            admin_position_pk = self.request.data.get('admin_position_pk',"")
+            admin_contact_no = self.request.data.get('admin_contact_no',"")
+            admin_avatar = self.request.data.get('admin_avatar',"")
             is_superuser = self.request.data.get('is_superuser',False)
             is_staff = self.request.data.get('is_superuser',False)
             
 
             missing_fields = []
-            if not admin_full_name:
+            if admin_full_name == "":
                 missing_fields.append('admin full name')
-            if not admin_email:
+            if admin_email == "":
                 missing_fields.append('admin email')
-            if not password:
+            if password == "":
                 missing_fields.append('password')
-            if not confirm_password:
+            if confirm_password == "":
                 missing_fields.append('confirm password')
-            if not admin_position_pk:
+            if admin_position_pk == "":
                 missing_fields.append('admin position')
 
             if missing_fields:
@@ -106,10 +106,10 @@ class LoginInBusinessAdminUser(APIView):
     @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
     def post(self,request,format=None):
         try:
-            email = self.request.data.get('email',None)
-            password = self.request.data.get('password',None)
+            email = self.request.data.get('email',"")
+            password = self.request.data.get('password',"")
 
-            if email == None or password == None:
+            if email == "" or password == "":
                 return Response(
                     {"error": "Email or Password must be provided!"},
                     status=status.HTTP_400_BAD_REQUEST
@@ -219,21 +219,21 @@ class UpdateBusinessAdminUser(APIView):
 
         try:
             admin_user_name = admin_user_name
-            admin_full_name = self.request.data.get('admin_full_name',None)
-            admin_position_pk = self.request.data.get('admin_position_pk',None)
+            admin_full_name = self.request.data.get('admin_full_name',"")
+            admin_position_pk = self.request.data.get('admin_position_pk',"")
             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
-            admin_email = self.request.data.get('admin_email',None)
+            admin_email = self.request.data.get('admin_email',"")
             #can none
-            admin_contact_no = self.request.data.get('admin_contact_no',None)
-            admin_avatar = self.request.data.get('admin_avatar',None)
-            old_password = self.request.data.get('old_password',None)
-            password = self.request.data.get('password',None)
+            admin_contact_no = self.request.data.get('admin_contact_no',"")
+            admin_avatar = self.request.data.get('admin_avatar',"")
+            old_password = self.request.data.get('old_password',"")
+            password = self.request.data.get('password',"")
             is_superuser = self.request.data.get('is_superuser',False)
             is_staff_user = self.request.data.get('is_staff_user',False)
             missing_fields = []
-            if not admin_full_name:
+            if admin_full_name == "":
                 missing_fields.append("Admin full name")
-            if not admin_position_pk:
+            if admin_position_pk == "":
                 missing_fields.append("Admin position")
             if missing_fields:
                 return Response(
@@ -285,14 +285,14 @@ class UpdateBusinessAdminUserPassword(APIView):
 
             admin_user_name = admin_user_name
             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
-            old_password = self.request.data.get('old_password',None)
-            new_password = self.request.data.get('new_password',None)
-            new_password_confirm = self.request.data.get('new_password_confirm',None)
-            if not new_password or not new_password_confirm:
+            old_password = self.request.data.get('old_password',"")
+            new_password = self.request.data.get('new_password',"")
+            new_password_confirm = self.request.data.get('new_password_confirm',"")
+            if new_password == "" or new_password_confirm == "":
                 return Response({
                     'error':"Please provide new password"
                 },status=status.HTTP_400_BAD_REQUEST)
-            if not old_password:
+            if not old_password or old_password == "":
                 return Response({
                     'error':"Please provide old password"
                 },status=status.HTTP_400_BAD_REQUEST)
@@ -371,7 +371,200 @@ class DeleteBusinessAdminUser(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+#business admin position
+
+class FetchBusinessAdminPosition(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+
+            name = self.request.query_params.get('name',"")
+            pk = self.request.query_params.get('pk',"")
+
+            if name!= "":
+                fetched_position,message = AdminManagement.fetch_admin_position(name=name)
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+            elif pk!= "":
+                fetched_position,message = AdminManagement.fetch_admin_position(pk=pk)
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+            else:
+                fetched_position,message = AdminManagement.fetch_admin_position()
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
+
+            if fetched_position:
+                return Response({
+                    'message':message,
+                    'admin_positions':fetched_position_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class CreateBusinessAdminPosition(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None,*args, **kwargs):
+        try:
+
+            name = self.request.data.get('name',"")
+            description = self.request.data.get('description',"")
+
+            if name == "":
+                return Response({
+                    'error':"Admin position name is required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            admin_position_created,message = AdminManagement.create_admin_position(request,name,description)
+            if admin_position_created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class UpdateBusinessAdminPosition(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def put(self,request,admin_position_pk,format=None,*args, **kwargs):
+        try:
+
+            admin_position_pk= admin_position_pk
+            name = self.request.data.get('name',"")
+            description = self.request.data.get('description',"")
+
+            if name == "":
+                return Response({
+                    'message':"Admin position name is required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            admin_position_updated,message = AdminManagement.update_admin_position(request,admin_position_pk,name,description)
+            if admin_position_updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )  
+
+class DeleteBusinessAdminPosition(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def delete(self,request,admin_position_pk,format=None,*args, **kwargs):
+
+        try:
+            admin_position_pk =admin_position_pk
+            deleted,message = AdminManagement.delete_admin_position(request,admin_position_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )   
 
 
 #product categories
@@ -383,8 +576,8 @@ class FetchProductCategoryView(APIView):
     @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
-            pk = request.query_params.get('pk')
-            if pk:
+            pk = request.query_params.get('pk',"")
+            if pk!= "":
                 product_categories,message = ManageProducts.fetch_product_categories(product_category_pk=pk)
                 product_category_data = product_serializers.Product_Category_Serializer(product_categories,many=False)
             else:
@@ -471,13 +664,13 @@ class CreateProductCategoryView(APIView):
         
         try:
 
-            product_category_name = self.request.data.get('category_name',None)
-            product_category_description = self.request.data.get('description',None)
+            product_category_name = self.request.data.get('category_name',"")
+            product_category_description = self.request.data.get('description',"")
 
             missing_fields = []
-            if not product_category_name:
+            if product_category_name == "":
                 missing_fields.append("Product category name")
-            if not product_category_description:
+            if product_category_description == "":
                 missing_fields.append("Product category description")
             
             if missing_fields:
@@ -530,12 +723,12 @@ class UpdateProductCategoryView(APIView):
         try:
 
             product_category_pk = pk
-            product_category_name = self.request.data.get('category_name',None)
-            product_category_description = self.request.data.get('description',None)
+            product_category_name = self.request.data.get('category_name',"")
+            product_category_description = self.request.data.get('description',"")
             missing_fields = []
-            if not product_category_name:
+            if  product_category_name == "":
                 missing_fields.append("Product category name")
-            if not product_category_description:
+            if product_category_description == "":
                 missing_fields.append("Product category description")
             if missing_fields:
                 return Response(
@@ -667,12 +860,12 @@ class CreateProductSubCategoryView(APIView):
         try:
 
             product_category_pk = product_category_pk
-            product_sub_category_name = request.data.get('sub_category_name',None)
-            product_sub_category_description = request.data.get('description',None)
+            product_sub_category_name = request.data.get('sub_category_name',"")
+            product_sub_category_description = request.data.get('description',"")
             missing_fields = []
-            if not product_sub_category_name:
+            if product_sub_category_name=="":
                 missing_fields.append("Product Sub Category name")
-            if not product_sub_category_description:
+            if product_sub_category_description == "":
                 missing_fields.append("Product Sub Category description")
             if missing_fields:
                 return Response(
@@ -721,15 +914,15 @@ class UpdateProductSubCategoryView(APIView):
         try:
 
             product_sub_category_pk = product_sub_category_pk
-            category_pk_list = request.data.get('category_pk_list',None)
-            sub_category_name = request.data.get('sub_category_name',None)
-            description = request.data.get('description',None)
+            category_pk_list = request.data.get('category_pk_list',[])
+            sub_category_name = request.data.get('sub_category_name',"")
+            description = request.data.get('description',"")
             missing_fields = []
-            if not category_pk_list:
+            if len(category_pk_list) == 0 :
                 missing_fields.append("Product Categories")
-            if not sub_category_name:
+            if sub_category_name == "":
                 missing_fields.append("Product Sub Category name")
-            if not description:
+            if description == "":
                 missing_fields.append("Product Sub Category descrpition")
             if missing_fields:
                 return Response(
@@ -821,12 +1014,12 @@ class FetchProductBrands(APIView):
     def get(self,request,format=None,*args, **kwargs):
 
         try:
-            pk = request.query_params.get('pk')
-            brand_name = request.query_params.get('brand_name')
-            if pk:
+            pk = request.query_params.get('pk',"")
+            brand_name = request.query_params.get('brand_name',"")
+            if pk!= "":
                 product_brands,message = ManageProducts.fetch_product_brand(pk=pk)
                 product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False)
-            elif brand_name:
+            elif brand_name!= "":
                 product_brands,message = ManageProducts.fetch_product_brand(brand_name=brand_name)
                 product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False)
             else:
@@ -871,17 +1064,17 @@ class CreateProductBrands(APIView):
     def post(self,request,format=None):
         try:
             
-            brand_name = self.request.data.get('brand_name',None)
-            brand_established_year = self.request.data.get('brand_established_year',None)
+            brand_name = self.request.data.get('brand_name',"")
+            brand_established_year = self.request.data.get('brand_established_year',"")
             is_own_brand = self.request.data.get('is_own_brand',False)
-            brand_country = self.request.data.get('brand_country',None)
-            brand_description = self.request.data.get('brand_description',None)
-            brand_logo = self.request.data.get('brand_logo',None)
+            brand_country = self.request.data.get('brand_country',"")
+            brand_description = self.request.data.get('brand_description',"")
+            brand_logo = self.request.data.get('brand_logo',"")
 
             missing_fields = []
-            if not brand_name:
+            if brand_name == "":
                 missing_fields.append("Brand name")
-            if not brand_established_year:
+            if brand_established_year == "":
                 missing_fields.append("Brand established year")
             if missing_fields:
                 return Response(
@@ -934,17 +1127,17 @@ class UpdateProductBrands(APIView):
     def put(self,request,product_brand_pk,format=None):
         try:
             product_brand_pk = product_brand_pk
-            brand_name = self.request.data.get('brand_name',None)
-            brand_established_year = self.request.data.get('brand_established_year',None)
+            brand_name = self.request.data.get('brand_name',"")
+            brand_established_year = self.request.data.get('brand_established_year',"")
             is_own_brand = self.request.data.get('is_own_brand',False)
-            brand_country = self.request.data.get('brand_country',None)
-            brand_description = self.request.data.get('brand_description',None)
-            brand_logo = self.request.data.get('brand_logo',None)
+            brand_country = self.request.data.get('brand_country',"")
+            brand_description = self.request.data.get('brand_description',"")
+            brand_logo = self.request.data.get('brand_logo',"")
 
             missing_fields = []
-            if not brand_name:
+            if brand_name=="":
                 missing_fields.append("Product Brand name")
-            if not brand_established_year:
+            if brand_established_year == "":
                 missing_fields.append("PRoduct Brand established year")
             if missing_fields:
                 return Response(
@@ -1039,13 +1232,13 @@ class FetchProductFlavour(APIView):
     @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
-            pk = request.query_params.get('pk')
-            product_flavour_name = request.query_params.get('product_flavour_name')
+            pk = request.query_params.get('pk',"")
+            product_flavour_name = request.query_params.get('product_flavour_name',"")
 
-            if pk:
+            if pk!= "":
                 product_flavours,message = ManageProducts.fetch_product_flavour(pk=pk)
                 product_flavours_data = product_serializers.Product_Flavour_Serializer(product_flavours,many=False)
-            elif product_flavour_name:
+            elif product_flavour_name!= "":
                 product_flavours,message = ManageProducts.fetch_product_flavour(product_flavour_name=product_flavour_name)
                 product_flavours_data = product_serializers.Product_Flavour_Serializer(product_flavours,many=False)
             else:
@@ -1090,8 +1283,8 @@ class CreateProductFlavour(APIView):
     def post(self,request,format=None):
 
         try:
-            product_flavour_name = self.request.data.get('product_flavour_name',None)
-            if not product_flavour_name:
+            product_flavour_name = self.request.data.get('product_flavour_name',"")
+            if product_flavour_name == "":
                 return Response(
                     {
                         'error':'Product flavour name required'
@@ -1139,8 +1332,8 @@ class UpdateProductFlavour(APIView):
     def put(self,request,product_flavour_pk,format=None):
         try:
             product_flavour_pk=product_flavour_pk
-            product_flavour_name = self.request.data.get('product_flavour_name',None)
-            if not product_flavour_name:
+            product_flavour_name = self.request.data.get('product_flavour_name',"")
+            if product_flavour_name == "":
                 return Response({
                     'error':"Product flavour name required"
                 },status=status.HTTP_400_BAD_REQUEST)
@@ -1224,25 +1417,25 @@ class FetchProduct(APIView):
     def get(self,request,format=None,*args, **kwargs):
         try:
 
-            product_pk = self.request.data.get('product_pk',None)
-            product_name = self.request.data.get('product_name',None)
-            product_brand_pk = self.request.data.get('product_brand_pk',None)
-            product_category_pk_list = self.request.data.get('product_category_pk_list',None)
-            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
+            product_pk = self.request.data.get('product_pk',"")
+            product_name = self.request.data.get('product_name',"")
+            product_brand_pk = self.request.data.get('product_brand_pk',"")
+            product_category_pk_list = self.request.data.get('product_category_pk_list',[])
+            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',[])
 
-            if product_pk:
+            if product_pk!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_pk)
                 product_data = product_serializers.Product_Serializer(product,many=False)
-            elif product_name:
+            elif product_name!= "":
                 product,message = ManageProducts.fetch_product(product_name=product_name)
                 product_data = product_serializers.Product_Serializer(product,many=False)
-            elif product_brand_pk:
+            elif product_brand_pk!= "":
                 product,message = ManageProducts.fetch_product(product_brand_pk=product_brand_pk)
                 product_data = product_serializers.Product_Serializer(product,many=False)
-            elif product_category_pk_list:
+            elif len(product_category_pk_list)!=0:
                 product,message = ManageProducts.fetch_product(product_category_pk_list=product_category_pk_list)
                 product_data = product_serializers.Product_Serializer(product,many=True)
-            elif product_sub_category_pk_list:
+            elif len(product_sub_category_pk_list)!= 0:
                 product,message = ManageProducts.fetch_product(product_sub_category_pk_list=product_sub_category_pk_list)
                 product_data = product_serializers.Product_Serializer(product,many=True)
             else:
@@ -1288,28 +1481,28 @@ class CreateProduct(APIView):
     def post(self,request,format=None):
         try:
 
-            product_name = self.request.data.get('product_name',None)
-            product_category_pk_list = self.request.data.get('product_category_pk_list',None)
-            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
-            product_description = self.request.data.get('product_description',None)
-            product_summary = self.request.data.get('product_summary',None)
+            product_name = self.request.data.get('product_name',"")
+            product_category_pk_list = self.request.data.get('product_category_pk_list',[])
+            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',[])
+            product_description = self.request.data.get('product_description',"")
+            product_summary = self.request.data.get('product_summary',"")
             
 
             #can none
-            product_brand_pk = self.request.data.get('product_brand_pk',None)
-            product_ingredients = self.request.data.get('product_ingredients',None)
-            product_usage_direction = self.request.data.get('product_usage_direction',None)
+            product_brand_pk = self.request.data.get('product_brand_pk',"")
+            product_ingredients = self.request.data.get('product_ingredients',"")
+            product_usage_direction = self.request.data.get('product_usage_direction',"")
 
             missing_fields = []
-            if not product_name:
+            if product_name == "":
                 missing_fields.append("Product Name")
-            if not product_category_pk_list:
+            if len(product_category_pk_list) == 0:
                 missing_fields.append("Product Categories")
-            if not product_sub_category_pk_list:
+            if len(product_sub_category_pk_list) == 0:
                 missing_fields.append("Product Sub Categories")
-            if not product_description:
+            if product_description == "":
                 missing_fields.append("Product Description")
-            if not product_summary:
+            if product_summary=="":
                 missing_fields.append("Product Summary")
             
             if missing_fields:
@@ -1361,27 +1554,27 @@ class UpdateProduct(APIView):
     
         try:
             product_pk = product_pk
-            product_name = self.request.data.get('product_name',None)
-            product_category_pk_list = self.request.data.get('product_category_pk_list',None)
-            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',None)
-            product_description = self.request.data.get('product_description',None)
-            product_summary = self.request.data.get('product_summary',None)
+            product_name = self.request.data.get('product_name',"")
+            product_category_pk_list = self.request.data.get('product_category_pk_list',[])
+            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',[])
+            product_description = self.request.data.get('product_description',"")
+            product_summary = self.request.data.get('product_summary',"")
 
             #can none
-            product_brand_pk = self.request.data.get('product_brand_pk',None)
-            product_ingredients = self.request.data.get('product_ingredients',None)
-            product_usage_direction = self.request.data.get('product_usage_direction',None)
+            product_brand_pk = self.request.data.get('product_brand_pk',"")
+            product_ingredients = self.request.data.get('product_ingredients',"")
+            product_usage_direction = self.request.data.get('product_usage_direction',"")
 
             missing_fields = []
-            if not product_name:
+            if product_name == "":
                 missing_fields.append("Product Name")
-            if not product_category_pk_list:
+            if len(product_category_pk_list) == 0:
                 missing_fields.append("Product Categories")
-            if not product_sub_category_pk_list:
+            if len(product_sub_category_pk_list) == 0:
                 missing_fields.append("Product Sub Categories")
-            if not product_description:
+            if product_description == "":
                 missing_fields.append("Product Description")
-            if not product_summary:
+            if product_summary == "":
                 missing_fields.append("Product Summary")
             
             if missing_fields:
@@ -1472,21 +1665,21 @@ class FetchProductSKU(APIView):
     def get(self,request,format=None,*args, **kwargs):
         try:
 
-            pk = self.request.query_params.get('pk',None)
-            product_id = self.request.query_params.get('product_id',None)
-            product_name = self.request.query_params.get('product_name',None)
-            product_sku = self.request.query_params.get('product_sku',None)
+            pk = self.request.query_params.get('pk',"")
+            product_id = self.request.query_params.get('product_id',"")
+            product_name = self.request.query_params.get('product_name',"")
+            product_sku = self.request.query_params.get('product_sku',"")
 
-            if pk:
+            if pk!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(pk=pk)
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
-            elif product_id:
+            elif product_id!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_id=product_id)
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
-            elif product_name:
+            elif product_name!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_name=product_name)
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
-            elif product_sku:
+            elif product_sku!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_sku=product_sku)
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
             else:
@@ -1533,23 +1726,23 @@ class CreateProductSKU(APIView):
     def post(self,request,format=None):
 
         try:
-            product_pk = self.request.data.get('product_pk',None)
-            product_price = self.request.data.get('product_price',None)
-            product_stock = self.request.data.get('product_stock',None)
-            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
+            product_pk = self.request.data.get('product_pk',"")
+            product_price = self.request.data.get('product_price',"")
+            product_stock = self.request.data.get('product_stock',"")
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',[])
 
             #can none
-            product_color = self.request.data.get('product_color',None)
-            product_size = self.request.data.get('product_size',None)
+            product_color = self.request.data.get('product_color',"")
+            product_size = self.request.data.get('product_size',"")
 
             missing_fields = []
-            if not product_pk:
+            if product_pk == "":
                 missing_fields.append("Product")
-            if not product_price:
+            if product_price=="":
                 missing_fields.append("Price")
-            if not product_stock:
+            if product_stock == "":
                 missing_fields.append("Product stock")
-            if not product_flavours_pk_list:
+            if len(product_flavours_pk_list)==0:
                 missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
@@ -1597,23 +1790,23 @@ class UpdateProductSKU(APIView):
         try:
 
             product_sku_pk=product_sku_pk
-            product_id = self.request.data.get('product_id',None)
-            product_price = self.request.data.get('product_price',None)
-            product_stock = self.request.data.get('product_stock',None)
-            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',None)
+            product_id = self.request.data.get('product_id',"")
+            product_price = self.request.data.get('product_price',"")
+            product_stock = self.request.data.get('product_stock',"")
+            product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',[])
 
             #can none
-            product_color = self.request.data.get('product_color',None)
-            product_size = self.request.data.get('product_size',None)
+            product_color = self.request.data.get('product_color',"")
+            product_size = self.request.data.get('product_size',"")
 
             missing_fields = []
-            if not product_id:
+            if product_id=="":
                 missing_fields.append("Product")
-            if not product_price:
+            if product_price == "":
                 missing_fields.append("Price")
-            if not product_stock:
+            if product_stock == "":
                 missing_fields.append("Product stock")
-            if not product_flavours_pk_list:
+            if len(product_flavours_pk_list)==0:
                 missing_fields.append("Product Flavours")
             if missing_fields:
                 return Response({
@@ -1700,12 +1893,12 @@ class FetchProductImages(APIView):
     @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
-            product_pk = self.request.query_params.get('product_pk',None)
-            product_image_pk = self.request.query_params.get('product_image_pk',None)
-            if product_pk:
+            product_pk = self.request.query_params.get('product_pk',"")
+            product_image_pk = self.request.query_params.get('product_image_pk',"")
+            if product_pk!= "":
                 product_images,message = ManageProducts.fetch_product_image(product_pk=product_pk)
                 product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
-            elif product_image_pk:
+            elif product_image_pk!= "":
                 product_images,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
                 product_images_data = product_serializers.Product_Images_Serializer(product_images,many=False)
             else:
@@ -1751,13 +1944,13 @@ class CreateProductImages(APIView):
     def post(self,request,product_id,format=None):
         try:
             product_id=product_id
-            product_image_list = self.request.data.getlist('product_image_list',None)#as multiform data need to use getlist
+            product_image_list = self.request.data.getlist('product_image_list',[])#as multiform data need to use getlist
             #can none
-            color = self.request.data.get('color',None)
-            size = self.request.data.get('size',None)
+            color = self.request.data.get('color',"")
+            size = self.request.data.get('size',"")
 
 
-            if not product_image_list:
+            if len(product_image_list)==0:
                 return Response({
                     'error':'Please select atleast 1 image'
                 },status=status.HTTP_400_BAD_REQUEST)
@@ -1803,9 +1996,9 @@ class UpdateProductImage(APIView):
             product_image_pk=product_image_pk
 
             #can none
-            new_image = self.request.data.get('new_image',None)
-            color = self.request.data.get('color',None)
-            size = self.request.data.get('size',None)
+            new_image = self.request.data.get('new_image',"")
+            color = self.request.data.get('color',"")
+            size = self.request.data.get('size',"")
 
             product_image_updated,message = ManageProducts.update_product_image(request,product_image_pk,new_image,color,size)
             if product_image_updated:
@@ -1887,21 +2080,21 @@ class FetchProductDiscount(APIView):
     def get(self,request,format=None,*args, **kwargs):
         try:
             
-            product_id = self.request.query_params.get('product_id',None)
-            discount_name = self.request.query_params.get('discount_name',None)
-            is_active = self.request.query_params.get('is_active',None)
-            product_discount_pk = self.request.query_params.get('product_discount_pk',None)
+            product_id = self.request.query_params.get('product_id',"")
+            discount_name = self.request.query_params.get('discount_name',"")
+            is_active = self.request.query_params.get('is_active',"")
+            product_discount_pk = self.request.query_params.get('product_discount_pk',"")
 
-            if product_id:
+            if product_id!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(product_id=product_id)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
-            elif discount_name:
+            elif discount_name!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
-            elif is_active:
+            elif is_active!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(is_active=True)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
-            elif product_discount_pk:
+            elif product_discount_pk!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
             else:
@@ -1950,19 +2143,19 @@ class CreateProductDiscount(APIView):
 
         try:
             product_id = product_id
-            discount_name = self.request.data.get('discount_name',None)
-            discount_amount = self.request.data.get('discount_amount',None)
-            start_date = self.request.get('start_date',None)
-            end_date = self.request.get('end_date',None)
+            discount_name = self.request.data.get('discount_name',"")
+            discount_amount = self.request.data.get('discount_amount',"")
+            start_date = self.request.get('start_date',"")
+            end_date = self.request.get('end_date',"")
 
             missing_fields = []
-            if not discount_name:
+            if discount_name == "":
                 missing_fields.append("Discount Name")
-            if not discount_amount:
+            if discount_amount == "":
                 missing_fields.append("Discount Amount")
-            if not start_date:
+            if start_date == "":
                 missing_fields.append("Start date")
-            if not end_date:
+            if end_date == "":
                 missing_fields.append("End date")
 
             if missing_fields:
@@ -2017,22 +2210,22 @@ class UpdateProductDiscount(APIView):
         try:
             #getting the product discount
             product_discount_pk = product_discount_pk
-            product_id = self.request.data.get('product_id',None)
-            discount_name = self.request.data.get('discount_name',None)
-            discount_amount = self.request.data.get('discount_amount',None)
-            start_date = self.request.data.get('start_date',None)
-            end_data = self.request.data.get('end_date',None)
+            product_id = self.request.data.get('product_id',"")
+            discount_name = self.request.data.get('discount_name',"")
+            discount_amount = self.request.data.get('discount_amount',"")
+            start_date = self.request.data.get('start_date',"")
+            end_data = self.request.data.get('end_date',"")
 
             missing_fields = []
-            if not product_id:
+            if product_id == "":
                 missing_fields.append("Product")
-            if not discount_name:
+            if discount_name == "":
                 missing_fields.append("Discount name")
-            if not discount_amount:
+            if discount_amount == "":
                 missing_fields.append("Discount amount")
-            if not start_date:
+            if start_date == "":
                 missing_fields.append("Start date")
-            if not end_data:
+            if end_data == "":
                 missing_fields.appned("End date")
 
             if missing_fields:

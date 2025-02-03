@@ -78,7 +78,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin position! Please try again later.")
 
-    def create_admin_position(request,name,description=None):
+    def create_admin_position(request,name,description=""):
 
         """
         Create a new admin position with detailed exception handling.
@@ -125,7 +125,7 @@ class AdminManagement:
                 return False, "Admin position with this name already exists!"
             #creating admin position
             admin_position = AdminPositions.objects.create(name=name)
-            if description:
+            if description != "":
                 admin_position.description = description
             admin_position.save()
             updated,message = SystemLogs.updated_by(request,admin_position)
@@ -149,7 +149,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin position! Please try again later.")
         
-    def update_admin_position(request,admin_position_pk,name,description=None):
+    def update_admin_position(request,admin_position_pk,name,description=""):
 
         """
         Update an existing admin position with detailed exception handling.
@@ -201,9 +201,8 @@ class AdminManagement:
                     if p != admin_position and p.name.lower() == name.lower():
                         return False, "Same name already exists!"
                 admin_position.name = name
-            if description:
-                if not admin_position.description or admin_position.description.lower() != description.lower():
-                    admin_position.description = description
+            if description != "":
+                admin_position.description = description
             admin_position.save()
             updated,message = SystemLogs.updated_by(request,admin_position)
             activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
@@ -361,8 +360,8 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin users! Please try again later.")
     
     def create_business_admin_user(admin_full_name,password,admin_position_pk,
-                                   admin_email,admin_contact_no=None,admin_avatar=None,is_superuser=False,is_staff_user=False):
-        
+                                   admin_email,admin_contact_no="",admin_avatar="",is_superuser=False,is_staff_user=False):
+    
         """
         Create a new business admin user with detailed exception handling.
 
@@ -433,11 +432,11 @@ class AdminManagement:
                 new_business_admin_user.is_superuser = True
             new_business_admin_user.save()
 
-            if admin_contact_no:
+            if admin_contact_no != "":
                 business_admin.admin_contact_no = admin_contact_no
-            if admin_email:
+            if admin_email != "":
                 business_admin.admin_email = admin_email
-            if admin_avatar:
+            if admin_avatar != "":
                 business_admin.admin_avatar = admin_avatar
             business_admin.save()
             return True, "Business Admin created successfully"
@@ -460,8 +459,8 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin user! Please try again later.")
 
     def update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,admin_email,
-                                   admin_contact_no=None,admin_avatar=None,old_password=None,
-                                   password=None,is_superuser=False,is_staff_user=False):
+                                   admin_contact_no="",admin_avatar="",old_password="",
+                                   password="",is_superuser=False,is_staff_user=False):
         
         """
         Update an existing business admin user with detailed exception handling.
@@ -550,7 +549,7 @@ class AdminManagement:
                 business_admin_user.admin_email = admin_email
                 user.email = admin_email
                 user.username = admin_email.split('@')[0]
-            if admin_avatar:
+            if admin_avatar != "":
                 if not business_admin_user.admin_avatar or business_admin_user.admin_avatar != admin_avatar:
                     if business_admin_user.admin_avatar:
                         path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
