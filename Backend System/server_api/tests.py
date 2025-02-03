@@ -55,7 +55,7 @@ class ServerAPITestCases(APITestCase):
         
         self.user = Accounts(
             email=self.email,
-            username='testuser',
+            username='user',
             is_superuser = True
         )
         self.user.set_password(self.password)

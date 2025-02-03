@@ -11,6 +11,6 @@ def update_last_login_at(sender, request, user, **kwargs):
             user = Accounts.objects.get(pk=user.pk)
             user.last_login = now()
             user.save()
-    except BusinessAdminUser.DoesNotExist:
+    except Accounts.DoesNotExist:
         # Handle the case where no BusinessAdminUser is associated with the logged-in user
         pass
