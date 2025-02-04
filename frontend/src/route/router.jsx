@@ -73,6 +73,9 @@ import Cookies from 'js-cookie';
 import ProductCategory from "../pages/product-category";
 import ProductCategoryCreate from "@/components/products/ProductCategoryCreate";
 import ProductCategoryUpdate from "@/components/products/ProductCategoryUpdate";
+import AdminManagementPositions from "../pages/admin-management-positions";
+import AdminManagementPositionsCreate from "@/components/admin-management/AdminManagementPositionsCreate";
+
 
 const parseJwt = (token) => {
     try {
@@ -234,8 +237,16 @@ export const router = createBrowserRouter([
                 element: <ProductCategoryCreate />
             },
             {
-                path: "/product-category/:id",
+                path: "/products/category/:id",
                 element: <ProductCategoryUpdate />
+            },
+            {
+                path: "/admin-management/positions",
+                element: <AdminManagementPositions />
+            },
+            {
+                path: "/admin-management/positions/create",
+                element: <AdminManagementPositionsCreate />
             }
 
         ]
