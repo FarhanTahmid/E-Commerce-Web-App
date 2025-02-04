@@ -490,7 +490,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin users! Please try again later.")
     
-    def create_business_admin_user(admin_full_name,password,admin_position_pk,
+    def create_business_admin_user(admin_full_name,password,
                                    admin_email,admin_contact_no="",admin_avatar="",is_superuser=False,is_staff_user=False):
     
         """
@@ -504,7 +504,6 @@ class AdminManagement:
         Args:
             admin_full_name (str): The full name of the admin user to be added.
             password (str): The password for the admin user.
-            admin_position_pk (int): The primary key (ID) of the admin position to be associated with the admin user.
             admin_email (str, optional): The email address of the admin user.
             admin_contact_no (str, optional): The contact number of the admin user. Defaults to None.
             admin_avatar (str, optional): The avatar image of the admin user. Defaults to None.
@@ -520,7 +519,6 @@ class AdminManagement:
             success, message = create_business_admin_user(
                 admin_full_name="John Doe",
                 password="securepassword",
-                admin_position_pk=1,
                 admin_contact_no="1234567890",
                 admin_email="johndoe@example.com",
                 admin_avatar="path/to/avatar.jpg"
@@ -548,9 +546,8 @@ class AdminManagement:
             if any(p.admin_email == admin_email for p in all_admins):
                 return False, "Admin with this email already exists"
             admin_user_name = admin_email.split('@')[0]
-            admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             business_admin = BusinessAdminUser.objects.create(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
-                                                              admin_position = admin_position)
+                                                              )
             business_admin.save()
             #creating admin account
             new_business_admin_user = Accounts(email = admin_email,username = admin_user_name,is_admin=True)
@@ -589,7 +586,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin user! Please try again later.")
 
-    def update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,admin_email,
+    def update_business_admin_user(request,admin_unique_id,admin_full_name,admin_email,
                                    admin_contact_no="",admin_avatar="",old_password="",
                                    password="",is_superuser=False,is_staff_user=False):
         
@@ -604,7 +601,6 @@ class AdminManagement:
             request (Request): The request object containing the user information.
             admin_unique_id (str): The unique ID of the admin user to be updated.
             admin_full_name (str): The new full name for the admin user.
-            admin_position_pk (int): The primary key (ID) of the new admin position to be associated with the admin user.
             admin_contact_no (str, optional): The updated contact number of the admin user. Defaults to None.
             admin_email (str, optional): The updated email address of the admin user. Defaults to None.
             admin_avatar (str, optional): The updated avatar image of the admin user. Defaults to None.
@@ -623,7 +619,6 @@ class AdminManagement:
                 request,
                 admin_unique_id="12345",
                 admin_full_name="John Doe",
-                admin_position_pk=1,
                 admin_contact_no="1234567890",
                 admin_email="johndoe@example.com",
                 admin_avatar="path/to/avatar.jpg",
@@ -651,7 +646,6 @@ class AdminManagement:
             #getting the admin user
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
-            admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             user = Accounts.objects.get(username=business_admin_user.admin_user_name)
             if user.is_staff == False and is_staff_user == True:
                 user.is_staff = True
@@ -667,8 +661,6 @@ class AdminManagement:
                     return False, "Old password is incorrect"
             if business_admin_user.admin_full_name.lower() != admin_full_name.lower():
                 business_admin_user.admin_full_name = admin_full_name
-            if business_admin_user.admin_position != admin_position:
-                business_admin_user.admin_position = admin_position
             if admin_contact_no:
                 if not business_admin_user.admin_contact_no or business_admin_user.admin_contact_no != admin_contact_no:
                     business_admin_user.admin_contact_no = admin_contact_no

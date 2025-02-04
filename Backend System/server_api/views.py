@@ -34,7 +34,6 @@ class SignupBusinessAdminUser(APIView):
             password = self.request.data.get('password',"")
             confirm_password = self.request.data.get('confirm_password',"")
 
-            admin_position_pk = self.request.data.get('admin_position_pk',"")
             admin_contact_no = self.request.data.get('admin_contact_no',"")
             admin_avatar = self.request.data.get('admin_avatar',"")
             is_superuser = self.request.data.get('is_superuser',False)
@@ -50,8 +49,6 @@ class SignupBusinessAdminUser(APIView):
                 missing_fields.append('password')
             if confirm_password == "":
                 missing_fields.append('confirm password')
-            if admin_position_pk == "":
-                missing_fields.append('admin position')
 
             if missing_fields:
                 return Response(
@@ -68,7 +65,7 @@ class SignupBusinessAdminUser(APIView):
                 )
             
             business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,
-                                                                                    password=password,admin_position_pk=admin_position_pk,
+                                                                                    password=password,
                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
                                                                                     admin_avatar=admin_avatar,is_superuser=is_superuser,is_staff_user=is_staff)
             if business_admin_user:
@@ -222,7 +219,6 @@ class UpdateBusinessAdminUser(APIView):
         try:
             admin_user_name = admin_user_name
             admin_full_name = self.request.data.get('admin_full_name',"")
-            admin_position_pk = self.request.data.get('admin_position_pk',"")
             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
             admin_email = self.request.data.get('admin_email',"")
             #can none
@@ -235,8 +231,6 @@ class UpdateBusinessAdminUser(APIView):
             missing_fields = []
             if admin_full_name == "":
                 missing_fields.append("Admin full name")
-            if admin_position_pk == "":
-                missing_fields.append("Admin position")
             if missing_fields:
                 return Response(
                     {
@@ -244,7 +238,7 @@ class UpdateBusinessAdminUser(APIView):
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,
                                                                                 admin_email,admin_contact_no,admin_avatar,old_password,password,is_superuser,is_staff_user)
             if admin_updated:
                 return Response({
@@ -571,7 +565,58 @@ class DeleteBusinessAdminPosition(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )   
+#business admin permission
+class FetchBusinessAdminPermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            permission_pk = self.request.query_params.get('permission_pk',"")
+            permission_name = self.request.query_params.get('permission_name',"")
+
+            if permission_pk != "":
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+            elif permission_name!= "":
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_name=permission_name)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+            else:
+                admin_permission,message = AdminManagement.fetch_admin_permissions()
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
+            
+            if admin_permission:
+                return Response({
+                    'message':message,
+                    'admin_permission':admin_permission_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )    
 
 #product categories
 class FetchProductCategoryView(APIView):

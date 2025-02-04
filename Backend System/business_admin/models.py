@@ -29,7 +29,7 @@ class BusinessAdminUser(models.Model):
     admin_full_name=models.CharField(null=False,blank=False,max_length=100)
     admin_user_name = models.CharField(null=True,blank=True,max_length=100)
     admin_avatar=ResizedImageField(size=[244,244],upload_to=get_admin_avatar_path,blank=True, null=True)
-    admin_position=models.ForeignKey(AdminPositions,null=False,blank=False,on_delete=models.CASCADE)
+    admin_position=models.ForeignKey(AdminPositions,null=True,blank=True,on_delete=models.CASCADE)
     admin_email=models.EmailField(null=False,blank=False)
     admin_contact_no=models.CharField(null=True,blank=True,max_length=20)
     admin_account_created_at=models.DateTimeField(null=False,blank=False,auto_now_add=True)
