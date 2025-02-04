@@ -570,7 +570,58 @@ class DeleteBusinessAdminPosition(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )   
+#business admin permission
+class FetchBusinessAdminPermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            permission_pk = self.request.query_params.get('permission_pk',"")
+            permission_name = self.request.query_params.get('permission_name',"")
+
+            if permission_pk != "":
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+            elif permission_name!= "":
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_name=permission_name)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+            else:
+                admin_permission,message = AdminManagement.fetch_admin_permissions()
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
+            
+            if admin_permission:
+                return Response({
+                    'message':message,
+                    'admin_permission':admin_permission_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )    
 
 #product categories
 class FetchProductCategoryView(APIView):
