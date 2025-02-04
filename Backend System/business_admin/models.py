@@ -2,6 +2,7 @@ from django.db import models
 from django_resized import ResizedImageField
 from django.contrib.auth.models import User
 import hashlib
+from system.models import Accounts
 # Create your models here.
 
 # Admin Positions Model
@@ -72,6 +73,13 @@ class BusinessAdminUser(models.Model):
 
 # Permission Model
 class AdminPermissions(models.Model):
+    
+    #choices
+    CREATE = "create"
+    DELETE = "delete"
+    UPDATE= "update"
+    VIEW = "view"
+
     '''All the permissions for admin users'''
     permission_name = models.CharField(max_length=100, unique=True)
     permission_description = models.TextField(blank=True, null=True)
@@ -97,6 +105,14 @@ class AdminRolePermission(models.Model):
 
     def __str__(self):
         return f"{self.role.name} - {self.permission.name}"
+    
+class AdminUserRole(models.Model):
+
+    user = models.OneToOneField(Accounts, on_delete=models.CASCADE, related_name='admin_role')
+    role = models.ForeignKey(AdminPositions, on_delete=models.CASCADE, related_name='users')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.role.name}"
 
 
 # Audit Log Model
@@ -105,7 +121,8 @@ class ActivityLog(models.Model):
         Actions are stored as strings. Actions are written by devs within functions    
         Details are stored in JSON if the dev decides to store more informations.
     '''
-    activity_done_by_admin = models.ForeignKey(BusinessAdminUser, on_delete=models.CASCADE, related_name='audit_logs')
+    activity_done_by_business_admin = models.ForeignKey(BusinessAdminUser, on_delete=models.CASCADE, related_name='audit_logs',null=True,blank=True)
+    activity_done_by_dev_admin = models.ForeignKey(Accounts,on_delete=models.CASCADE,null=True,blank=True)
     action = models.CharField(max_length=500)
     details = models.JSONField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)

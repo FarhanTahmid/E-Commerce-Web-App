@@ -10,7 +10,7 @@ import os
 class AdminManagement:
 
     #admin position
-    def fetch_admin_position(pk=None,name=None):
+    def fetch_admin_position(pk="",name=""):
 
         """
         Fetch admin positions based on various optional parameters with detailed exception handling.
@@ -54,9 +54,9 @@ class AdminManagement:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
         try:
-            if name:
+            if name!="":
                 return AdminPositions.objects.get(name=name), "Admin position fetched successfully!"
-            elif pk:
+            elif pk!="":
                 return AdminPositions.objects.get(pk=pk),"Admin position fetched successfully!"
             else:
                 admin_postions = AdminPositions.objects.all()
@@ -128,8 +128,8 @@ class AdminManagement:
             if description != "":
                 admin_position.description = description
             admin_position.save()
-            updated,message = SystemLogs.updated_by(request,admin_position)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created admin position {admin_position.name}",message="created")
+            SystemLogs.updated_by(request,admin_position)
+            SystemLogs.admin_activites(request,f"Created admin position {admin_position.name}",message="created")
             return True, "Admin position created successfully"
     
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -204,8 +204,8 @@ class AdminManagement:
             if description != "":
                 admin_position.description = description
             admin_position.save()
-            updated,message = SystemLogs.updated_by(request,admin_position)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
+            SystemLogs.updated_by(request,admin_position)
+            SystemLogs.admin_activites(request,f"Updated admin position {admin_position.name}",message="updated")
             return True, "Admin position successfully updated"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -264,7 +264,7 @@ class AdminManagement:
         try:
             #get the position
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin position {admin_position.name}",message="deleted")
+            SystemLogs.admin_activites(request,f"Deleted admin position {admin_position.name}",message="deleted")
             admin_position.delete()
             return True, "Admin position deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -284,8 +284,139 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
+    #admin permissions
+    def fetch_admin_permissions(permission_pk="",permission_name=""):
+        try:
+            if permission_name!="":
+                permission_name = permission_name.lower()
+                permission =  AdminPermissions.objects.get(permission_name = permission_name)
+                return permission, "Permission fetched successfully"
+            elif permission_pk!="":
+                permission =  AdminPermissions.objects.get(pk=permission_pk)
+                return permission,"Permission fetched successfully"
+            else:
+                permission = AdminPermissions.objects.all()
+                return permission, "All permissions fetched successfully" if len(permission)>0 else "No permissions found"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching admin permissions! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching admin permissions! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching admin permissions! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin permissions! Please try again later.")
+        
+    def create_admin_permissions(request,permission_name,permission_description=""):
+
+        try:
+            #exisitng permissions
+            permission_name = permission_name.lower()
+            all_permissions,message = AdminManagement.fetch_admin_permissions()
+            for p in all_permissions:
+                if p.permission_name.lower() == permission_name:
+                    return False, "Admin permission with this name already exists"
+            
+            if permission_name == AdminPermissions.CREATE:
+                permission = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE)
+            elif permission_name == AdminPermissions.UPDATE:
+                permission = AdminPermissions.objects.create(permission_name=AdminPermissions.UPDATE)
+            elif permission_name == AdminPermissions.VIEW:
+                permission = AdminPermissions.objects.create(permission_name=AdminPermissions.VIEW)
+            elif permission_name == AdminPermissions.DELETE:
+                permission = AdminPermissions.objects.create(permission_name=AdminPermissions.DELETE)
+            
+            permission.save()
+            if permission_description !="":
+                permission.permission_description = permission_description
+            permission.save()
+            SystemLogs.updated_by(request,permission)
+            SystemLogs.admin_activites(request,f"Created admin permissions {permission.permission_name}",message="Created")
+            return True, "Admin permission created successfully"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating admin permissions! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating admin permissions! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating admin permissions! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating admin permissions! Please try again later.")
+        
+    def update_admin_permissions(request,admin_permission_pk,permission_name,permission_description=""):
+        try:
+            #getting permission
+            admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=admin_permission_pk)
+            all_permissions,message = AdminManagement.fetch_admin_permissions()
+            for p in all_permissions:
+                if p!=admin_permission and p.permission_name.lower() == permission_name.lower():
+                    return False, "Permission with this name already exists"
+            if admin_permission.permission_name != permission_name.lower():
+                admin_permission.permission_name = permission_name
+            if permission_description!="" and admin_permission.permission_description.lower() != permission_description.lower():
+                admin_permission.permission_description = permission_description
+            admin_permission.save()
+            SystemLogs.updated_by(request,admin_permission)
+            SystemLogs.admin_activites(request,f"Updated admin permissions {admin_permission.permission_name}",message="Updated")
+            return True, "Admin permissions updated successfully"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating admin permissions! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating admin permissions! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating admin permissions! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating admin permissions! Please try again later.")
+    
+    def delete_admin_permissions(request,admin_permission_pk):
+        try:
+            #getting the perimission
+            admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=admin_permission_pk)
+            admin_permission.delete()
+            SystemLogs.admin_activites(request,f"Deleted admin permissions {admin_permission.permission_name}",message="Deleted")
+            return True, "Admin permission deleted successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting admin permissions! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting admin permissions! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting admin permissions! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin permissions! Please try again later.")
     #business admin users
-    def fetch_business_admin_user(admin_unique_id=None,admin_email=None,admin_user_name=None):
+    def fetch_business_admin_user(admin_unique_id="",admin_email="",admin_user_name=""):
 
         """
         Fetch business admin users based on various optional parameters
@@ -330,13 +461,13 @@ class AdminManagement:
         """
 
         try:
-            if admin_unique_id:
+            if admin_unique_id!="":
                 admin_user = BusinessAdminUser.objects.get(admin_unique_id = admin_unique_id)
                 return admin_user, "Business Admin user fetched successfully"
-            elif admin_email:
+            elif admin_email!="":
                 admin_user = BusinessAdminUser.objects.get(admin_email=admin_email)
                 return admin_user, "Business Admin user fetched successfully"
-            elif admin_user_name:
+            elif admin_user_name!="":
                 admin_user = BusinessAdminUser.objects.get(admin_user_name=admin_user_name)
                 return admin_user,"Business Admin user fetched successfully"
             else:
@@ -559,8 +690,8 @@ class AdminManagement:
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
             user.save()
-            updated,message = SystemLogs.updated_by(request,business_admin_user)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
+            SystemLogs.updated_by(request,business_admin_user)
+            SystemLogs.admin_activites(request,f"Updated admin {business_admin_user.admin_user_name}",message="Updated")
             return True, "Business Admin successfully updated"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -631,8 +762,8 @@ class AdminManagement:
                 user.save()
             else:
                 return False, "Old password is incorrect"
-            updated,message = SystemLogs.updated_by(request,business_admin_user)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated admin password {business_admin_user.admin_user_name}",message="Updated password")
+            SystemLogs.updated_by(request,business_admin_user)
+            SystemLogs.admin_activites(request,f"Updated admin password {business_admin_user.admin_user_name}",message="Updated password")
             return True, "Password updated successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -701,8 +832,8 @@ class AdminManagement:
             user = Accounts.objects.get(username = business_admin_user.admin_user_name)
             user.set_password(new_password)
             user.save()
-            updated,message = SystemLogs.updated_by(request,business_admin_user)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Reset admin password {business_admin_user.admin_user_name}",message="Reset password")
+            SystemLogs.updated_by(request,business_admin_user)
+            SystemLogs.admin_activites(request,f"Reset admin password {business_admin_user.admin_user_name}",message="Reset password")
             return True, "Password reset successfull"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -767,7 +898,7 @@ class AdminManagement:
                 if os.path.exists(path):
                     os.remove(path)
                 business_admin_user.admin_avatar.delete()
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted admin {business_admin_user.admin_user_name}",message="Deleted")
+            SystemLogs.admin_activites(request,f"Deleted admin {business_admin_user.admin_user_name}",message="Deleted")
             business_admin_user.delete()
             user.delete()
             return True, "Admin deleted successfully"

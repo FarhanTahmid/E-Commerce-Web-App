@@ -56,7 +56,7 @@ class ServerAPITestCases(APITestCase):
         self.user = Accounts(
             email=self.email,
             username='user',
-            is_superuser = True
+            is_superuser = False
         )
         self.user.set_password(self.password)
         self.user.save()
@@ -74,6 +74,11 @@ class ServerAPITestCases(APITestCase):
         self.product_sub_category2.category_id.set([self.product_category2])
 
         self.adminposition1 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
+        self.admin_permission = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE,permission_description="hhhh")
+
+        self.admin_role_permission = AdminRolePermission.objects.create(role=self.adminposition1,permission=self.admin_permission)
+        self.admin_user_role = AdminUserRole.objects.create(user=self.user,role=self.adminposition1)
+
         self.product_brand1 = Product_Brands.objects.create(brand_name="Loreal", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 1909,is_own_brand=False,created_at=self.now)
         self.product_brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",

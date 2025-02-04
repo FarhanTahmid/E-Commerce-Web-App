@@ -189,7 +189,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/category/update/')
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.update_product_category(request,self.category_fragrance.pk, "Perfumes Updated", "Perfumes Description")
+        success, message = ManageProducts.update_product_category(request,self.category_fragrance.pk, "Fragrance", "Perfumes Description")
         self.assertTrue(success, "Product category should be updated successfully.")
         self.assertEqual(message, "Product Category updated successfully!", "Success message is incorrect.")
     

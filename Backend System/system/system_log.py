@@ -104,6 +104,7 @@ class SystemLogs:
         #checking type of user
         try:
             user = SystemLogs.get_logged_in_user(request)
+            user_type = {}
             if user.is_superuser and not user.is_admin:
                 user_type = {
                 "user_type": " Developer - Superuser",
@@ -142,8 +143,6 @@ class SystemLogs:
                 current_data = user_type
             model_instance.updated_by = current_data
             model_instance.save()
-
-            return True, "Updated logs successfully"
    
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -204,8 +203,12 @@ class SystemLogs:
         try:
             user = SystemLogs.get_logged_in_user(request)
             try:
-                business_admin = BusinessAdminUser.objects.get(admin_user_name = user)
-                activity = ActivityLog.objects.create(activity_done_by_admin=business_admin,action=action)
+                try:
+                    admin = BusinessAdminUser.objects.get(admin_email = user.email)
+                    activity = ActivityLog.objects.create(activity_done_by_business_admin=admin,action=action)
+                except:
+                    admin = Accounts.objects.get(email=user.email)
+                    activity = ActivityLog.objects.create(activity_done_by_dev_admin=admin,action=action)
                 activity.save()
                 details = {
                     'action':action,
@@ -218,10 +221,9 @@ class SystemLogs:
                     current_data =details
                 activity.details = current_data
                 activity.save()
-                return True, "Activity updated of admin"
 
             except:
-                return False,"Business admin does not exist"
+                print("Error while updating admin acitivities")
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
