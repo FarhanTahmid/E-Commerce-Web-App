@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FiEye, FiHash } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiEye, FiEyeOff, FiHash } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 
 const RegisterForm = ({ path }) => {
@@ -9,12 +9,35 @@ const RegisterForm = ({ path }) => {
         password: '',
         confirm_password: '',
         admin_contact_no: '',
-        admin_position_pk: '', // Assuming this is required
-        admin_avatar: null, // For file upload, if needed
+        admin_position_pk: '', // Now fetched from API
+        admin_avatar: null, // File upload support
     });
+
+    const [positions, setPositions] = useState([]); // Admin positions list
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigate = useNavigate();
+
+    // Fetch admin positions on component mount
+    useEffect(() => {
+        const fetchPositions = async () => {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/business-admin/admin-position/fetch-positions/');
+                const result = await response.json();
+                if (response.ok) {
+                    setPositions(result.positions); // Assuming API returns { positions: [{ id, name }] }
+                } else {
+                    throw new Error(result.error || "Failed to fetch positions.");
+                }
+            } catch (err) {
+                setError(err.message);
+            }
+        };
+
+        fetchPositions();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -108,20 +131,25 @@ const RegisterForm = ({ path }) => {
                     />
                 </div>
                 <div className="mb-4">
-                    <input
-                        type="text"
+                    <select
                         className="form-control"
-                        placeholder="Admin Position (ID)"
                         name="admin_position_pk"
                         value={formData.admin_position_pk}
                         onChange={handleChange}
                         required
-                    />
+                    >
+                        <option value="">Select Admin Position</option>
+                        {positions.map((position) => (
+                            <option key={position.id} value={position.id}>
+                                {position.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <div className="mb-4 generate-pass">
                     <div className="input-group field">
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             className="form-control password"
                             placeholder="Password"
                             name="password"
@@ -129,30 +157,43 @@ const RegisterForm = ({ path }) => {
                             onChange={handleChange}
                             required
                         />
-                        <div className="input-group-text c-pointer gen-pass" data-bs-toggle="tooltip" title="Generate Password">
+                        <div
+                            className="input-group-text c-pointer gen-pass"
+                            data-bs-toggle="tooltip"
+                            title="Generate Password"
+                        >
                             <FiHash size={16} />
                         </div>
-                        <div className="input-group-text border-start bg-gray-2 c-pointer" data-bs-toggle="tooltip" title="Show/Hide Password">
-                            <FiEye size={16} />
+                        <div
+                            className="input-group-text border-start bg-gray-2 c-pointer"
+                            data-bs-toggle="tooltip"
+                            title="Show/Hide Password"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                         </div>
-                    </div>
-                    <div className="progress-bar mt-2">
-                        <div />
-                        <div />
-                        <div />
-                        <div />
                     </div>
                 </div>
                 <div className="mb-4">
-                    <input
-                        type="password"
-                        className="form-control"
-                        placeholder="Confirm Password"
-                        name="confirm_password"
-                        value={formData.confirm_password}
-                        onChange={handleChange}
-                        required
-                    />
+                    <div className="input-group field">
+                        <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            className="form-control"
+                            placeholder="Confirm Password"
+                            name="confirm_password"
+                            value={formData.confirm_password}
+                            onChange={handleChange}
+                            required
+                        />
+                        <div
+                            className="input-group-text border-start bg-gray-2 c-pointer"
+                            data-bs-toggle="tooltip"
+                            title="Show/Hide Password"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                            {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                        </div>
+                    </div>
                 </div>
                 <div className="mb-4">
                     <input

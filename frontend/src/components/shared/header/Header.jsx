@@ -113,7 +113,7 @@ const Header = () => {
     const fullScreenMinimize = () => {
         if (document.exitFullscreen) {
             document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) { 
+        } else if (document.mozCancelFullScreen) {
             document.mozCancelFullScreen();
         } else if (document.webkitExitFullscreen) {
             document.webkitExitFullscreen();
@@ -132,7 +132,7 @@ const Header = () => {
                 {/* <!--! [Start] Header Left !--> */}
                 <div className="header-left d-flex align-items-center gap-4">
                     {/* <!--! [Start] nxl-head-mobile-toggler !--> */}
-                    <a href="#" className="nxl-head-mobile-toggler" onClick={(e) => {e.preventDefault(), setNavigationOpen(true)}} id="mobile-collapse">
+                    <a href="#" className="nxl-head-mobile-toggler" onClick={(e) => { e.preventDefault(), setNavigationOpen(true) }} id="mobile-collapse">
                         <div className={`hamburger hamburger--arrowturn ${navigationOpen ? "is-active" : ""}`}>
                             <div className="hamburger-box">
                                 <div className="hamburger-inner"></div>
@@ -160,7 +160,7 @@ const Header = () => {
                     {/* <!--! [End] nxl-navigation-toggle !-->
                     <!--! [Start] nxl-lavel-mega-menu-toggle !--> */}
                     <div className="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
-                        <a href="#" onClick={(e) => {e.preventDefault(), setOpenMegaMenu(true)}} id="nxl-lavel-mega-menu-open">
+                        <a href="#" onClick={(e) => { e.preventDefault(), setOpenMegaMenu(true) }} id="nxl-lavel-mega-menu-open">
                             <FiAlignLeft size={24} />
                         </a>
                     </div>
@@ -168,16 +168,16 @@ const Header = () => {
                     <!--! [Start] nxl-lavel-mega-menu !--> */}
                     <div className="nxl-drp-link nxl-lavel-mega-menu">
                         <div className="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
-                            <a href="#" onClick={(e) => {e.preventDefault(), setOpenMegaMenu(false)}} id="nxl-lavel-mega-menu-hide">
+                            <a href="#" onClick={(e) => { e.preventDefault(), setOpenMegaMenu(false) }} id="nxl-lavel-mega-menu-hide">
                                 <i className="me-2"><FiArrowLeft /></i>
                                 <span>Back</span>
                             </a>
                         </div>
                         {/* <!--! [Start] nxl-lavel-mega-menu-wrapper !--> */}
-                        <div className="nxl-lavel-mega-menu-wrapper d-flex gap-3">
+                        {/* <div className="nxl-lavel-mega-menu-wrapper d-flex gap-3">
                             <HeaderDropDownModal />
                             <MegaMenu />
-                        </div>
+                        </div> */}
                     </div>
                 </div>
                 {/* <!--! [End] Header Left !-->

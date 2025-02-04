@@ -75,6 +75,7 @@ import ProductCategoryCreate from "@/components/products/ProductCategoryCreate";
 import ProductCategoryUpdate from "@/components/products/ProductCategoryUpdate";
 import AdminManagementPositions from "../pages/admin-management-positions";
 import AdminManagementPositionsCreate from "@/components/admin-management/AdminManagementPositionsCreate";
+import AdminManagementPositionsUpdate from "@/components/admin-management/AdminManagementPositionsUpdate";
 
 
 const parseJwt = (token) => {
@@ -247,6 +248,10 @@ export const router = createBrowserRouter([
             {
                 path: "/admin-management/positions/create",
                 element: <AdminManagementPositionsCreate />
+            },
+            {
+                path: "/admin-management/positions/:id",
+                element: <AdminManagementPositionsUpdate />
             }
 
         ]

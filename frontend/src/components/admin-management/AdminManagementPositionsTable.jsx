@@ -85,11 +85,9 @@ const AdminManagementPositionsTable = () => {
                                             <tbody>
                                                 {filteredPositions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((position, index) => (
                                                     <tr key={position.id} className='single-item chat-single-item'>
-                                                        <td>{index + 1 + page * rowsPerPage}</td> {/* Serial Number */}
+                                                        <td>{index + 1 + page * rowsPerPage}</td>
                                                         <td className="truncate-text">
-                                                            <Link to={`/products/position/${position.id}`} className='fw-bold'>
-                                                                {position.name}
-                                                            </Link>
+                                                            <Link to={`/admin-management/positions/${position.id}`} className='fw-bold'>{position.name}</Link>
                                                         </td>
                                                         <td className="truncate-text">{position.description}</td>
                                                     </tr>
