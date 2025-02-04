@@ -231,6 +231,44 @@ class BusinessAdminTest(TestCase):
         self.assertTrue(success,"Admin permission should be successfully deleted")
         self.assertEqual(message,"Admin permission deleted successfully")
 
+    def test_fetch_position_of_admin(self):
+        """
+        Test for fetching postiion of admin
+        """
+        request = self.factory.post('/admins/fetch-admin-postiion/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.fetch_postion_of_admin(request,self.businessadmin1.admin_user_name)
+        self.assertTrue(success,"Admin position should be successfully fetched")
+        self.assertEqual(message,"Fetched successfully")
+    
+    def test_add_or_update_position_of_admin(self):
+        """
+        test for adding position of admin
+        """
+        request = self.factory.post('/admins/add-admin-postiion/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.add_or_update_admin_position(request,self.businessadmin1.admin_user_name,self.adminposition2.pk)
+        self.assertTrue(success,"Admin position should be successfully added")
+        self.assertEqual(message,"Admin position added")
+
+        #update
+        success,message = AdminManagement.add_or_update_admin_position(request,self.businessadmin1.admin_user_name,self.adminposition1.pk)
+        self.assertTrue(success,"Admin position should be successfully added")
+        self.assertEqual(message,"Admin position added")
+
+    def test_delete_position_of_admin(self):
+        """
+        Test for deleting position of admin
+        """
+        request = self.factory.post('/admins/delete-admin-postiion/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.remove_position_of_admin(request,self.businessadmin1.admin_user_name)
+        self.assertTrue(success,"Admin position should be successfully removed")
+        self.assertEqual(message,"Admin position removed successfully")
+        
+
+
+
 
 
 
