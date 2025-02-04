@@ -224,14 +224,14 @@ class ManageProducts:
         try:
             # Fetch existing product types
             product_categories, message = ManageProducts.fetch_product_categories()
-            if product_categories:
-                # Check for duplicate types (case-insensitive)
-                if any(p.category_name.lower() == new_category_name.lower() for p in product_categories):
-                    return False, "Same type exists in Database!" 
-            
             # Get the product type object
             product_category = Product_Category.objects.get(pk=product_category_pk)
-
+            if product_categories:
+                # Check for duplicate types (case-insensitive)
+                for p in product_categories:
+                    if p != product_category and p.category_name.lower() == new_category_name.lower():
+                        return False, "Same type exists in Database!" 
+        
             # Update the product type if changed
             if product_category.category_name != new_category_name:
                 product_category.category_name = new_category_name  # Ensure this is a string
