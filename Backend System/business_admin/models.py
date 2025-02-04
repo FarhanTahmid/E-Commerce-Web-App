@@ -121,7 +121,8 @@ class ActivityLog(models.Model):
         Actions are stored as strings. Actions are written by devs within functions    
         Details are stored in JSON if the dev decides to store more informations.
     '''
-    activity_done_by_admin = models.ForeignKey(BusinessAdminUser, on_delete=models.CASCADE, related_name='audit_logs')
+    activity_done_by_business_admin = models.ForeignKey(BusinessAdminUser, on_delete=models.CASCADE, related_name='audit_logs',null=True,blank=True)
+    activity_done_by_dev_admin = models.ForeignKey(Accounts,on_delete=models.CASCADE,null=True,blank=True)
     action = models.CharField(max_length=500)
     details = models.JSONField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
