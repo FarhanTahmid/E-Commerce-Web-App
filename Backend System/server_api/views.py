@@ -569,7 +569,7 @@ class FetchBusinessAdminPermission(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             permission_pk = self.request.query_params.get('permission_pk',"")
@@ -2340,6 +2340,154 @@ class DeleteProductDiscount(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+#position for admin
+class FetchPositionForAdmin(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for fetching position"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+            fetch_admin_position,message = AdminManagement.fetch_postion_of_admin(request,admin_user_name)
+            fetch_admin_position_data = serializers.AdminPositionSerializer(fetch_admin_position,many=False)
+            if fetch_admin_position:
+                return Response({
+                    'message':message,
+                    'position':fetch_admin_position_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class AddOrUpdatePositionForAdmin(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            position_pk = self.request.data.get('position_pk',"")
+            if position_pk == "":
+                return Response({
+                    'error':"Postion needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            add_or_update,message = AdminManagement.add_or_update_admin_position(request,admin_user_name,position_pk)
+            if add_or_update:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class RemovePositionForAdmin(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    def delete(self,request,format=None):
+        try:
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            deleted,message = AdminManagement.remove_position_of_admin(request,admin_user_name)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},

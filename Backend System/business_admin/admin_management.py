@@ -948,7 +948,7 @@ class AdminManagement:
             business_admin.save()
             SystemLogs.updated_by(request,business_admin)
             SystemLogs.admin_activites(request,f"Admin position added, {business_admin.admin_user_name}",message="Admin position added")
-            return True, "Admin position added"
+            return True, "Successfull"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error

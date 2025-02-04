@@ -19,6 +19,11 @@ urlpatterns = [                                                                 
     path('business-admin/admin-position/update/<int:admin_position_pk>/',views.UpdateBusinessAdminPosition.as_view(),name='update_business_admin_position'),
     path('business-admin/admin-position/delete/<int:admin_position_pk>/',views.DeleteBusinessAdminPosition.as_view(),name='delete_business_admin_position'),
 
+    #business admin postion for user
+    path('business-admin/admin-position/fetch-position-for-admin/',views.FetchPositionForAdmin.as_view(),name='fetch_position_for_admin'),
+    path('business-admin/admin-position/add-or-update-position-for-admin/',views.AddOrUpdatePositionForAdmin.as_view(),name='add_or_update_position_for_admin'),
+    path('business-admin/admin-position/delete-position-for-admin/',views.RemovePositionForAdmin.as_view(),name='deletE_position_for_admin'),
+
     #business admin permissions
     path('business-admin/admin-permissions/fetch-admin-permissions/',views.FetchBusinessAdminPermission.as_view(),name='fetch_business_admin_permissions'),
 

@@ -74,6 +74,7 @@ class ServerAPITestCases(APITestCase):
         self.product_sub_category2.category_id.set([self.product_category2])
 
         self.adminposition1 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
+        self.adminposition2 = AdminPositions.objects.create(name="Manager",description="GRRR")
         self.admin_permission = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE,permission_description="hhhh")
 
         self.admin_role_permission = AdminRolePermission.objects.create(role=self.adminposition1,permission=self.admin_permission)
@@ -821,6 +822,37 @@ class ServerAPITestCases(APITestCase):
         response = self.client.get(f'/server_api/business-admin/admin-permissions/fetch-admin-permissions/')
         self.assertEqual(len(response.data['admin_permission']),1)
         self.assertEqual(response.status_code,status.HTTP_200_OK)
+
+
+    #business admin position for user
+    def test_fetch_position_for_admin(self):
+        """
+        Test for fetching position for admin
+        """
+        data= {'admin_user_name':self.businessadmin1.admin_user_name}
+        response = self.client.post(f'/server_api/business-admin/admin-position/fetch-position-for-admin/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Fetched successfully")
+
+    def test_update_postion_for_admin(self):
+        """
+        Test for updating position for admin
+        """
+        data= {'admin_user_name':self.businessadmin1.admin_user_name,'position_pk':self.adminposition2.pk}
+        response = self.client.post(f'/server_api/business-admin/admin-position/add-or-update-position-for-admin/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Successfull")
+    
+    def test_delete_position_for_admin(self):
+        """
+        test for deleteing position for admin
+        """
+        data = {'admin_user_name':self.businessadmin1.admin_user_name}
+        response = self.client.delete(f'/server_api/business-admin/admin-position/delete-position-for-admin/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Admin position removed successfully")
+
+
 
     
 
