@@ -34,7 +34,6 @@ class SignupBusinessAdminUser(APIView):
             password = self.request.data.get('password',"")
             confirm_password = self.request.data.get('confirm_password',"")
 
-            admin_position_pk = self.request.data.get('admin_position_pk',"")
             admin_contact_no = self.request.data.get('admin_contact_no',"")
             admin_avatar = self.request.data.get('admin_avatar',"")
             is_superuser = self.request.data.get('is_superuser',False)
@@ -50,8 +49,6 @@ class SignupBusinessAdminUser(APIView):
                 missing_fields.append('password')
             if confirm_password == "":
                 missing_fields.append('confirm password')
-            if admin_position_pk == "":
-                missing_fields.append('admin position')
 
             if missing_fields:
                 return Response(
@@ -68,7 +65,7 @@ class SignupBusinessAdminUser(APIView):
                 )
             
             business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,
-                                                                                    password=password,admin_position_pk=admin_position_pk,
+                                                                                    password=password,
                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
                                                                                     admin_avatar=admin_avatar,is_superuser=is_superuser,is_staff_user=is_staff)
             if business_admin_user:
@@ -221,7 +218,6 @@ class UpdateBusinessAdminUser(APIView):
         try:
             admin_user_name = admin_user_name
             admin_full_name = self.request.data.get('admin_full_name',"")
-            admin_position_pk = self.request.data.get('admin_position_pk',"")
             admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
             admin_email = self.request.data.get('admin_email',"")
             #can none
@@ -234,8 +230,6 @@ class UpdateBusinessAdminUser(APIView):
             missing_fields = []
             if admin_full_name == "":
                 missing_fields.append("Admin full name")
-            if admin_position_pk == "":
-                missing_fields.append("Admin position")
             if missing_fields:
                 return Response(
                     {
@@ -243,7 +237,7 @@ class UpdateBusinessAdminUser(APIView):
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,
                                                                                 admin_email,admin_contact_no,admin_avatar,old_password,password,is_superuser,is_staff_user)
             if admin_updated:
                 return Response({

@@ -120,13 +120,13 @@ class BusinessAdminTest(TestCase):
         """
         
         success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",
-                                                                      password='2186',admin_position_pk=self.adminposition2.pk,admin_email='saki@gmail.com',is_superuser=True)
+                                                                      password='2186',admin_email='saki@gmail.com',is_superuser=True)
         self.assertTrue(success,"Business Admin should be created successfully")
         self.assertEqual(message,"Business Admin created successfully","Success message is incorrect")
 
         #same email
         success, message = AdminManagement.create_business_admin_user(admin_full_name="SAMI",
-                                                                      password='2186',admin_position_pk=self.adminposition2.pk,admin_email='saki@gmail.com')
+                                                                      password='2186',admin_email='saki@gmail.com')
         self.assertFalse(success,"Business Admin should not be created successfully")
         self.assertEqual(message,"Admin with this email already exists","Error message is incorrect")
 
@@ -138,7 +138,7 @@ class BusinessAdminTest(TestCase):
         #request.user = self._create_mock_dev_user()
         request.user = self._create_mock_businessadmin_user()
         success, message = AdminManagement.update_business_admin_user(request,admin_unique_id="SAMI_SAK_1_1C4759",
-                                                                 admin_full_name="rafi",admin_position_pk=self.adminposition2.pk,admin_email='rrr@gmail.com',
+                                                                 admin_full_name="rafi",admin_email='rrr@gmail.com',
                                                                  admin_contact_no="01306413841")
         self.assertTrue(success,"business admin should be successfully updated")
         self.assertEqual(message,"Business Admin successfully updated","Success message is incorrect")

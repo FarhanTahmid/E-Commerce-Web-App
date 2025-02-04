@@ -16,8 +16,8 @@ urlpatterns = [                                                                 
     #business admin postion
     path('business-admin/admin-position/fetch-positions/',views.FetchBusinessAdminPosition.as_view(),name='fetch_business_admin_position'),#pass parameters /?name= OR pk= OR none to retrieve all
     path('business-admin/admin-position/create/',views.CreateBusinessAdminPosition.as_view(),name='create_business_admin_position'),
-    path('business-admin/admin-position/update/<int:admin_position_pk>',views.UpdateBusinessAdminPosition.as_view(),name='update_business_admin_position'),
-    path('business-admin/admin-position/delete/<int:admin_position_pk>',views.DeleteBusinessAdminPosition.as_view(),name='delete_business_admin_position'),
+    path('business-admin/admin-position/update/<int:admin_position_pk>/',views.UpdateBusinessAdminPosition.as_view(),name='update_business_admin_position'),
+    path('business-admin/admin-position/delete/<int:admin_position_pk>/',views.DeleteBusinessAdminPosition.as_view(),name='delete_business_admin_position'),
 
     #business admin permissions
     path('business-admin/admin-permissions/fetch-admin-permissions/',views.FetchBusinessAdminPermission.as_view(),name='fetch_business_admin_permissions'),
