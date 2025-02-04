@@ -841,6 +841,7 @@ class ServerAPITestCases(APITestCase):
         data= {'admin_user_name':self.businessadmin1.admin_user_name,'position_pk':self.adminposition2.pk}
         response = self.client.post(f'/server_api/business-admin/admin-position/add-or-update-position-for-admin/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+
         self.assertEqual(response.data['message'],"Successfull")
     
     def test_delete_position_for_admin(self):

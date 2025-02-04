@@ -249,12 +249,12 @@ class BusinessAdminTest(TestCase):
         request.user = self._create_mock_dev_user()
         success,message = AdminManagement.add_or_update_admin_position(request,self.businessadmin1.admin_user_name,self.adminposition2.pk)
         self.assertTrue(success,"Admin position should be successfully added")
-        self.assertEqual(message,"Admin position added")
+        self.assertEqual(message,"Successfull")
 
         #update
         success,message = AdminManagement.add_or_update_admin_position(request,self.businessadmin1.admin_user_name,self.adminposition1.pk)
         self.assertTrue(success,"Admin position should be successfully added")
-        self.assertEqual(message,"Admin position added")
+        self.assertEqual(message,"Successfull")
 
     def test_delete_position_of_admin(self):
         """
