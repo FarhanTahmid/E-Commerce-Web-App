@@ -1,6 +1,6 @@
 from django.test import TestCase,RequestFactory
 from .admin_management import AdminManagement
-from .models import AdminPositions
+from .models import *
 from system.models import *
 from .models import BusinessAdminUser
 
@@ -16,6 +16,8 @@ class BusinessAdminTest(TestCase):
         self.businessadmin1.save()
         self.user = Accounts(username='sak',password='1234',email="sak@gmail.com")
         self.user.save()
+
+        self.adminpermisison = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE)
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
@@ -167,5 +169,43 @@ class BusinessAdminTest(TestCase):
         # success, message = AdminManagement.delete_business_admin_user(request,"SAMI_SAMI2186_1_a98961")
         # self.assertFalse(success,"business admin should not be found")
         # self.assertEqual(message,"An unexpected error occurred while deleting admin user! Please try again later.","Error message is incorrect")
+
+    #admin permissions
+    def test_fetch_admin_permissions(self):
+        """
+        Test for fetching admin permissions
+        """
+        #all
+        request = self.factory.post('/admins/fetch-position/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.fetch_admin_permissions()
+        self.assertTrue(success,"Admin permission fetched should be successfully")
+        self.assertEqual(message,"All permissions fetched successfully")
+
+        #name
+        success,message = AdminManagement.fetch_admin_permissions(permission_name=self.adminpermisison.permission_name)
+        self.assertTrue(success,"Admin permission fetched should be successfully")
+        self.assertEqual(message,"Permission fetched successfully")
+
+    def test_create_admin_permission(self):
+        """
+        Test for creating admin position
+        """
+
+        #exisiting
+        request = self.factory.post('/admins/fetch-position/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.create_admin_permissions(request,self.adminpermisison.permission_name)
+        self.assertFalse(success,"Admin permission should not be successfully created")
+        self.assertEqual(message,"Admin permission with this name already exists")
+
+        #new
+        success,message = AdminManagement.create_admin_permissions(request,AdminPermissions.UPDATE)
+        self.assertTrue(success,"Admin permission should be successfully created")
+        self.assertEqual(message,"Admin permission created successfully")
+        
+
+
+
 
 

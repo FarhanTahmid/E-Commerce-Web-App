@@ -10,7 +10,7 @@ import os
 class AdminManagement:
 
     #admin position
-    def fetch_admin_position(pk=None,name=None):
+    def fetch_admin_position(pk="",name=""):
 
         """
         Fetch admin positions based on various optional parameters with detailed exception handling.
@@ -54,9 +54,9 @@ class AdminManagement:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
         try:
-            if name:
+            if name!="":
                 return AdminPositions.objects.get(name=name), "Admin position fetched successfully!"
-            elif pk:
+            elif pk!="":
                 return AdminPositions.objects.get(pk=pk),"Admin position fetched successfully!"
             else:
                 admin_postions = AdminPositions.objects.all()
@@ -284,8 +284,77 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
+    #admin permissions
+    def fetch_admin_permissions(permission_name=""):
+        try:
+            if permission_name!="":
+                permission_name = permission_name.lower()
+                permission =  AdminPermissions.objects.get(permission_name = permission_name)
+                return permission, "Permission fetched successfully"
+            else:
+                permission = AdminPermissions.objects.all()
+                return permission, "All permissions fetched successfully" if len(permission)>0 else "No permissions found"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching admin permissions! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching admin permissions! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching admin permissions! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin permissions! Please try again later.")
+        
+    def create_admin_permissions(request,permission_name,permission_description=""):
+
+        try:
+            #exisitng permissions
+            permission_name = permission_name.lower()
+            permission,message = AdminManagement.fetch_admin_permissions(permission_name=permission_name)
+            if not permission:
+                if permission_name == AdminPermissions.CREATE:
+                    permission = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE)
+                elif permission_name == AdminPermissions.UPDATE:
+                    permission = AdminPermissions.objects.create(permission_name=AdminPermissions.UPDATE)
+                elif permission_name == AdminPermissions.VIEW:
+                    permission = AdminPermissions.objects.create(permission_name=AdminPermissions.VIEW)
+                elif permission_name == AdminPermissions.DELETE:
+                    permission = AdminPermissions.objects.create(permission_name=AdminPermissions.DELETE)
+                
+                permission.save()
+                if permission_description !="":
+                    permission.permission_description = permission_description
+                permission.save()
+                return True, "Admin permission created successfully"
+            else:
+                return False,"Admin permission with this name already exists"
+
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating admin permissions! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating admin permissions! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating admin permissions! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating admin permissions! Please try again later.")
+        
     #business admin users
-    def fetch_business_admin_user(admin_unique_id=None,admin_email=None,admin_user_name=None):
+    def fetch_business_admin_user(admin_unique_id="",admin_email="",admin_user_name=""):
 
         """
         Fetch business admin users based on various optional parameters
@@ -330,13 +399,13 @@ class AdminManagement:
         """
 
         try:
-            if admin_unique_id:
+            if admin_unique_id!="":
                 admin_user = BusinessAdminUser.objects.get(admin_unique_id = admin_unique_id)
                 return admin_user, "Business Admin user fetched successfully"
-            elif admin_email:
+            elif admin_email!="":
                 admin_user = BusinessAdminUser.objects.get(admin_email=admin_email)
                 return admin_user, "Business Admin user fetched successfully"
-            elif admin_user_name:
+            elif admin_user_name!="":
                 admin_user = BusinessAdminUser.objects.get(admin_user_name=admin_user_name)
                 return admin_user,"Business Admin user fetched successfully"
             else:

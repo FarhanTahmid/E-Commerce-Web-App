@@ -74,6 +74,7 @@ class BusinessAdminUser(models.Model):
 # Permission Model
 class AdminPermissions(models.Model):
     
+    #choices
     CREATE = "create"
     DELETE = "delete"
     UPDATE= "update"
