@@ -368,7 +368,7 @@ class AdminManagement:
                     return False, "Permission with this name already exists"
             if admin_permission.permission_name != permission_name.lower():
                 admin_permission.permission_name = permission_name
-            if permission_description!="" and admin_permission.permission_description.lower() != permission_description.lower():
+            if permission_description!="":
                 admin_permission.permission_description = permission_description
             admin_permission.save()
             SystemLogs.updated_by(request,admin_permission)

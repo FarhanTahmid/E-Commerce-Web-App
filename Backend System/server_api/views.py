@@ -617,6 +617,146 @@ class FetchBusinessAdminPermission(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )    
 
+class CreateBusinessAdminPermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    def post(self,request,format=None,*args, **kwargs):
+        try:
+
+            permission_name = self.request.data.get('permission_name',"")
+            permission_description = self.request.data.get('permission_description',"")
+
+            if permission_name == "":
+                return Response({
+                    'error':'Permission name required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            permission_created,message = AdminManagement.create_admin_permissions(request,permission_name,permission_description)
+            if permission_created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+        
+class UpdateBusinessAdminPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    def put(self,request,admin_permission_pk,format=None,*args, **kwargs):
+
+        try:
+            admin_permission_pk=admin_permission_pk
+            permission_name = self.request.data.get('permission_name',"")
+            permission_description = self.request.data.get('permission_description',"")
+
+            if permission_name == "":
+                return Response({
+                    'error':'Permission name required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            updated_permission,message = AdminManagement.update_admin_permissions(request,admin_permission_pk,permission_name,permission_description)
+            if updated_permission:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+        
+class DeleteBusinessAdminPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    def delete(self,request,admin_permission_pk,format=None,*args, **kwargs):
+
+        try:
+
+            admin_permission_pk = admin_permission_pk
+            deleted,message = AdminManagement.delete_admin_permissions(request,admin_permission_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+
 #product categories
 class FetchProductCategoryView(APIView):
 

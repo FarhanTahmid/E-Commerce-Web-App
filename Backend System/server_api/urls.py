@@ -20,12 +20,15 @@ urlpatterns = [                                                                 
     path('business-admin/admin-position/delete/<int:admin_position_pk>/',views.DeleteBusinessAdminPosition.as_view(),name='delete_business_admin_position'),
 
     #business admin postion for user
-    path('business-admin/admin-position/fetch-position-for-admin/',views.FetchPositionForAdmin.as_view(),name='fetch_position_for_admin'),
+    path('business-admin/admin-position/fetch-position-for-admin/',views.FetchPositionForAdmin.as_view(),name='fetch_position_for_admin'),#post request, no parameter passing, need to send json
     path('business-admin/admin-position/add-or-update-position-for-admin/',views.AddOrUpdatePositionForAdmin.as_view(),name='add_or_update_position_for_admin'),
     path('business-admin/admin-position/delete-position-for-admin/',views.RemovePositionForAdmin.as_view(),name='deletE_position_for_admin'),
 
     #business admin permissions
-    path('business-admin/admin-permissions/fetch-admin-permissions/',views.FetchBusinessAdminPermission.as_view(),name='fetch_business_admin_permissions'),
+    path('business-admin/admin-permissions/fetch-admin-permissions/',views.FetchBusinessAdminPermission.as_view(),name='fetch_business_admin_permissions'),#pass parameter /?permission_pk= OR permission_name= OR none to retrieve all permissions
+    path('business-admin/admin-permissions/create/',views.CreateBusinessAdminPermission.as_view(),name='create_business_admin_permissions'),
+    path('business-admin/admin-permissions/update/<int:admin_permission_pk>',views.UpdateBusinessAdminPermission.as_view(),name='update_business_admin_permissions'),
+    path('business-admin/admin-permissions/delete/<int:admin_permission_pk>',views.DeleteBusinessAdminPermission.as_view(),name='delete_business_admin_permissions'),
 
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
@@ -33,6 +36,7 @@ urlpatterns = [                                                                 
     path('product/categories/<int:pk>/',views.FetchProductCategoryWithPkView.as_view(),name='fetch_a_product_category'),#works same as fetch_all with pk as parameter, option or additional to use
     path('product/categories/update/<int:pk>/',views.UpdateProductCategoryView.as_view(),name='update_product_categories'),
     path('product/categories/delete/<int:pk>/',views.DeleteProductCategoryView.as_view(),name='delete_product_categories'),
+
 
     #product sub categories CRUD
     path('product/sub-categories/fetch-all-product-sub-categories-for-a-category/<int:pk>/', views.FetchProductSubCategoryView.as_view(), name='fetch_all_product_sub_categories_for_a_category'),
@@ -72,8 +76,8 @@ urlpatterns = [                                                                 
 
     #product discount
     path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),#pass parameters either /?product_id= OR discount_name= OR is_active= OR product_discount_pk OR none to fetch all
-    path('product/product-discounts/create-product-discount/<int:product_id>/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
-    path('product/product-discounts/update-product-discount/<int:product_discount_pk>/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
-    path('product/product-discounts/delete-product-discount/<int:product_discount_pk>/',views.DeleteProductDiscount.as_view(),name='delete_product_discount'),
+    path('product/product-discounts/create/<int:product_id>/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
+    path('product/product-discounts/update/<int:product_discount_pk>/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
+    path('product/product-discounts/delete/<int:product_discount_pk>/',views.DeleteProductDiscount.as_view(),name='delete_product_discount'),
 
 ]
