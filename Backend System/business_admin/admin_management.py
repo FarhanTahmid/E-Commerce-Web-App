@@ -585,6 +585,7 @@ class AdminManagement:
             }
 
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin permissions! Please try again later.")
+    
     #business admin users
     def fetch_business_admin_user(admin_unique_id="",admin_email="",admin_user_name=""):
 
