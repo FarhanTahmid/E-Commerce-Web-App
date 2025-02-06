@@ -6,6 +6,7 @@ app_name='server_api'
 urlpatterns = [                                                                                                       #NOTE: FOR FRONTEND DEV TO CONNECT APIS
 
     #business admin
+    path('business-admin/fetch-all/',views.FetchBusinessAdminUsers.as_view(),name='fetch_all_business_admin_user'),#pass parameters /?admin_user_name= OR admin_unique_id= OR admin_email= OR none to retrieve all
     path('business-admin/signup/',views.SignupBusinessAdminUser.as_view(),name='create_business_admin_user'),
     path('business-admin/update/<str:admin_user_name>/',views.UpdateBusinessAdminUser.as_view(),name='update_business_admin_user'),
     path('business-admin/login/',views.LoginInBusinessAdminUser.as_view(),name='login_business_admin_user'),
@@ -27,11 +28,14 @@ urlpatterns = [                                                                 
     #business admin permissions
     path('business-admin/admin-permissions/fetch-admin-permissions/',views.FetchBusinessAdminPermission.as_view(),name='fetch_business_admin_permissions'),#pass parameter /?permission_pk= OR permission_name= OR none to retrieve all permissions
     path('business-admin/admin-permissions/create/',views.CreateBusinessAdminPermission.as_view(),name='create_business_admin_permissions'),
-    path('business-admin/admin-permissions/update/<int:admin_permission_pk>',views.UpdateBusinessAdminPermission.as_view(),name='update_business_admin_permissions'),
-    path('business-admin/admin-permissions/delete/<int:admin_permission_pk>',views.DeleteBusinessAdminPermission.as_view(),name='delete_business_admin_permissions'),
+    path('business-admin/admin-permissions/update/<int:admin_permission_pk>/',views.UpdateBusinessAdminPermission.as_view(),name='update_business_admin_permissions'),
+    path('business-admin/admin-permissions/delete/<int:admin_permission_pk>/',views.DeleteBusinessAdminPermission.as_view(),name='delete_business_admin_permissions'),
 
     #business admin role permissions
     path('business-admin/admin-role-permission/fetch-role-permissions/',views.FetchBusinessAdminRolePermission.as_view(),name='fetch_business_admin_role_permissions'),#pass parameter /?admin_role_permission_pk = OR admin_position_pk= OR admin_permission_pk= OR none to retrieve all
+    path('business-admin/admin-role-permission/create/',views.CreateBusinessAdminRolePermission.as_view(),name='create_business_admin_role_permissions'),
+    path('business-admin/admin-role-permission/update/<int:admin_position_pk>/',views.UpdateBusinessAdminRolePermission.as_view(),name='update_business_admin_role_permissions'),
+    path('business-admin/admin-role-permission/delete/<int:admin_position_pk>/',views.DeleteBusinessAdminRolePermission.as_view(),name='delete_business_admin_role_permissions'),
 
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),

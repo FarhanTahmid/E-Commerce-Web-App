@@ -13,3 +13,7 @@ class AdminRolePermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdminRolePermission
         fields = '__all__'
+class BusinessAdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusinessAdminUser
+        fields = '__all__'
