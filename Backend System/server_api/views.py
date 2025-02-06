@@ -368,6 +368,62 @@ class DeleteBusinessAdminUser(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+class FetchBusinessAdminUsers(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+            
+            admin_unique_id = self.request.query_params.get('admin_unique_id',"")
+            admin_email = self.request.query_params.get('admin_email',"")
+            admin_user_name = self.request.query_params.get('admin_user_name',"")
+
+            if admin_unique_id != "":
+                fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+            elif admin_email!= "":
+                fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+            elif admin_user_name!= "":
+                fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+            else:
+                fetched_admin,message = AdminManagement.fetch_business_admin_user()
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=True)
+
+            if fetched_admin:
+                return Response({
+                    'message':message,
+                    'admin_users':fetched_admin_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 #business admin position
 
@@ -2720,7 +2776,111 @@ class CreateBusinessAdminRolePermission(APIView):
     def post(self,request,format=None):
 
         try:
-            pass
+            admin_position_pk = self.request.data.get('admin_position_pk',"")
+            admin_permission_pk_list = self.request.data.get('admin_permission_pk_list',[])
+            if admin_position_pk == "":
+                return Response({
+                    'error':"Admin position is needed"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if len(admin_permission_pk_list)==0:
+                return Response({
+                    'error':"Atleast 1 permission is needed"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            created,message = AdminManagement.create_admin_role_permission(request,admin_position_pk,admin_permission_pk_list)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,admin_position_pk,format=None):
+        try:
+
+            admin_position_pk = admin_position_pk
+            admin_permission_pk_list = self.request.data.get('admin_permission_pk_list',[])
+            
+            updated,message = AdminManagement.update_admin_role_permission(request,admin_position_pk,admin_permission_pk_list)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class DeleteBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,admin_position_pk,format=None):
+        try:
+            
+            admin_position_pk = admin_position_pk
+            deleted,message = AdminManagement.delete_admin_role_permission(request,admin_position_pk)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},

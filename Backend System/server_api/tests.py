@@ -76,6 +76,7 @@ class ServerAPITestCases(APITestCase):
         self.adminposition1 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
         self.adminposition2 = AdminPositions.objects.create(name="Manager",description="GRRR")
         self.admin_permission = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE)
+        self.admin_permission2 = AdminPermissions.objects.create(permission_name=AdminPermissions.UPDATE)
 
         self.admin_role_permission = AdminRolePermission.objects.create(role=self.adminposition1,permission=self.admin_permission)
         self.admin_user_role = AdminUserRole.objects.create(user=self.user,role=self.adminposition1)
@@ -820,7 +821,7 @@ class ServerAPITestCases(APITestCase):
         """
 
         response = self.client.get(f'/server_api/business-admin/admin-permissions/fetch-admin-permissions/')
-        self.assertEqual(len(response.data['admin_permission']),1)
+        self.assertEqual(len(response.data['admin_permission']),2)
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         
         #using name
@@ -846,18 +847,18 @@ class ServerAPITestCases(APITestCase):
         """
 
         data = {'permission_name':AdminPermissions.CREATE,'permission_description':'newwewe'}
-        response = self.client.put(f'/server_api/business-admin/admin-permissions/update/{self.admin_permission.pk}',data,format='json')
+        response = self.client.put(f'/server_api/business-admin/admin-permissions/update/{self.admin_permission.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
 
         data = {}
-        response = self.client.put(f'/server_api/business-admin/admin-permissions/update/{self.admin_permission.pk}',data,format='json')
+        response = self.client.put(f'/server_api/business-admin/admin-permissions/update/{self.admin_permission.pk}/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
 
     def test_delete_admin_permissions(self):
         """
         Test for deleting admin permissions
         """
-        response = self.client.delete(f'/server_api/business-admin/admin-permissions/delete/{self.admin_permission.pk}')
+        response = self.client.delete(f'/server_api/business-admin/admin-permissions/delete/{self.admin_permission.pk}/')
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
 
 
@@ -906,6 +907,33 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Fetched successfully")
 
+    def test_create_admin_role_permissions(self):
+        """
+        Test for creating admin role permissions
+        """
+
+        data = {'admin_position_pk':self.adminposition1.pk,'admin_permission_pk_list':[self.admin_permission.pk,self.admin_permission2.pk]}
+        response = self.client.post(f'/server_api/business-admin/admin-role-permission/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Created successfully")
+
+    def test_update_admin_role_permissions(self):
+
+        """
+        Test for updating admin role permissions
+        """
+        data = {'admin_permission_pk_list':[self.admin_permission2.pk]}
+        response = self.client.put(f'/server_api/business-admin/admin-role-permission/update/{self.adminposition1.pk}/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Updated successfully")
+
+    def test_delete_admin_role_permissions(self):
+        """
+        Test for deleting admin role permissions
+        """
+        response = self.client.delete(f'/server_api/business-admin/admin-role-permission/delete/{self.adminposition1.pk}/')
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'],"Deleted successfully")
 
 
     
