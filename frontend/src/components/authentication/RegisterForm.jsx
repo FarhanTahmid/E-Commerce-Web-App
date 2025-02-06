@@ -1,78 +1,156 @@
+import axios from 'axios';
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from "react-hook-form";
+
 
 const RegisterForm = ({ path }) => {
-    const [formData, setFormData] = useState({
-        admin_full_name: '',
-        admin_email: '',
-        password: '',
-        confirm_password: '',
-        admin_contact_no: '',
-        admin_avatar: null,
-    });
-    const [error, setError] = useState(null);
+    const [adminFullName, setAdminFullName] = useState('');
+    const [adminEmail, setAdminEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [adminContactNo, setAdminContactNo] = useState('');
+
+    // const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
     const [success, setSuccess] = useState(null);
+    // const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        const { name, value, files } = e.target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: files ? files[0] : value,
-        }));
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm();
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState(null);
+    const [error, setError] = useState(null);
+    const [avatar, setAvatar] = useState(null);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
 
-        if (formData.password !== formData.confirm_password) {
-            setError('Passwords do not match.');
-            return;
+    const onSubmit = async (data) => {
+        setLoading(true);
+        setSuccess(null);
+        setError(null);
+
+        const formData = new FormData();
+        formData.append('admin_full_name', data.admin_full_name);
+        formData.append('admin_email', data.admin_email);
+        formData.append('password', data.password);
+        formData.append('confirm_password', data.confirm_password);
+        formData.append('admin_contact_no', data.admin_contact_no);
+        if (avatar) {
+            formData.append('admin_avatar', avatar);
         }
 
-        const data = new FormData();
-        for (const key in formData) {
-            if (formData[key] !== null) {
-                data.append(key, formData[key]);
-            }
-        }
-
-        // Log FormData values before sending
-        for (let pair of data.entries()) {
-            console.log(pair[0] + ':', pair[1]);
+        // Log formData values
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ':', pair[1]); // This will log each key-value pair
         }
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/server_api/business-admin/signup/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+            const response = await axios.post('http://127.0.0.1:8000/server_api/business-admin/signup/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
+            alert(response.data.message);
+        } catch (error) {
+            alert(error.response?.data?.error || 'Something went wrong');
+        }
+        setLoading(false);
+    };
 
 
-            const result = await response.json();
-            console.log("Server Response:", result); // Log response
+    const navigate = useNavigate();
 
-            if (!response.ok) {
-                console.error("Full Error Response:", result);
-                throw new Error(result.message || 'An unexpected error occurred while creating admin user! Please try again later.');
-            }
-
-            setSuccess('Registration successful! Redirecting to login...');
-            setTimeout(() => {
-                navigate('/authentication/login/minimal');
-            }, 2000);
-        } catch (err) {
-            setError(err.message);
-            console.error("Error:", err.message);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        switch (name) {
+            case 'admin_full_name':
+                setAdminFullName(value);
+                break;
+            case 'admin_email':
+                setAdminEmail(value);
+                break;
+            case 'password':
+                setPassword(value);
+                break;
+            case 'confirm_password':
+                setConfirmPassword(value);
+                break;
+            case 'admin_contact_no':
+                setAdminContactNo(value);
+                break;
+            default:
+                break;
         }
     };
 
+    const validateFields = () => {
+        let errors = {};
+        if (!adminFullName.trim()) errors.adminFullName = "Admin full name is required";
+        if (!adminEmail.trim()) errors.adminEmail = "Admin email is required";
+        if (!password) errors.password = "Password is required";
+        if (!confirmPassword) errors.confirmPassword = "Confirm password is required";
+        if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match";
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    // const handleSubmit = async (event) => {
+    //     event.preventDefault();
+    //     setError(null);
+    //     setSuccess(null);
+
+    //     if (!validateFields()) return;
+
+    //     setLoading(true);
+
+    //     const requestBody = {
+    //         "admin_full_name": adminFullName,
+    //         "admin_email": adminEmail,
+    //         "password": password,
+    //         "confirm_password": confirmPassword,
+    //         "admin_contact_no": adminContactNo,
+    //     };
+
+    //     console.log('Request Body:', requestBody);
+
+
+    //     try {
+    //         const response = await axios.post(
+    //             "http://127.0.0.1:8000/server_api/business-admin/signup/",
+    //             requestBody,
+    //             {
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                 },
+    //             }
+    //         );
+
+    //         console.log("Success:", response.data);
+    //         setSuccess('Registration successful!');
+    //         // Optionally, redirect after successful registration
+    //         // navigate('/some-path');
+    //     } catch (error) {
+    //         if (error.response) {
+    //             console.error("Server responded with an error:", error.response.data);
+    //             setError(error.response?.data?.error || "An unexpected error occurred.");
+    //         } else if (error.request) {
+    //             console.error("Request was made but no response was received:", error.request);
+    //             setError("No response from the server.");
+    //         } else {
+    //             console.error("Error setting up the request:", error.message);
+    //             setError("An unexpected error occurred.");
+    //         }
+    //     }
+
+    //     finally {
+    //         setLoading(false);
+    //     }
+    // };
 
     return (
         <>
@@ -82,52 +160,59 @@ const RegisterForm = ({ path }) => {
                 Let's get you all setup, so you can verify your personal account and begin setting up your profile.
             </p>
 
-            {error && (
-                <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                    {error}
-                    <button type="button" className="btn-close" onClick={() => setError(null)}></button>
-                </div>
-            )}
-            {success && (
-                <div className="alert alert-success alert-dismissible fade show" role="alert">
-                    {success}
-                    <button type="button" className="btn-close" onClick={() => setSuccess(null)}></button>
-                </div>
-            )}
+            {error && <div className="alert alert-danger">{error}</div>}
+            {success && <div className="alert alert-success">{success}</div>}
 
-            <form onSubmit={handleSubmit} className="w-100 mt-4 pt-2">
-                <input type="text" className="form-control mb-3" placeholder="Full Name" name="admin_full_name" value={formData.admin_full_name} onChange={handleChange} required />
-                <input type="email" className="form-control mb-3" placeholder="Email" name="admin_email" value={formData.admin_email} onChange={handleChange} required />
-                <input type="tel" className="form-control mb-3" placeholder="Contact Number" name="admin_contact_no" value={formData.admin_contact_no} onChange={handleChange} required />
-
-                <div className="mb-3 input-group">
-                    <input type={showPassword ? "text" : "password"} className="form-control" placeholder="Password" name="password" value={formData.password} onChange={handleChange} required />
-                    <button className="input-group-text" type="button" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                    </button>
-                </div>
-                <div className="mb-3 input-group">
-                    <input type={showConfirmPassword ? "text" : "password"} className="form-control" placeholder="Confirm Password" name="confirm_password" value={formData.confirm_password} onChange={handleChange} required />
-                    <button className="input-group-text" type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                        {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                    </button>
-                </div>
-                <input type="file" className="form-control mb-3" name="admin_avatar" onChange={handleChange} />
-
-                <div className="form-check mb-2">
-                    <input type="checkbox" className="form-check-input" id="receiveMail" required />
-                    <label className="form-check-label" htmlFor="receiveMail">
-                        Yes, I want to receive Duralux community emails
-                    </label>
-                </div>
-                <div className="form-check mb-4">
-                    <input type="checkbox" className="form-check-input" id="termsCondition" required />
-                    <label className="form-check-label" htmlFor="termsCondition">
-                        I agree to all the <a href="#">Terms & Conditions</a> and <a href="#">Fees</a>.
-                    </label>
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="form-group">
+                    <label>Full Name</label>
+                    <input  {...register("admin_full_name", { required: "Full name is required" })} className="form-control" />
+                    {errors.admin_full_name && <small className="text-danger">{errors.admin_full_name.message}</small>}
                 </div>
 
-                <button type="submit" className="btn btn-lg btn-primary w-100">Create Account</button>
+                <div className="form-group">
+                    <label>Email</label>
+                    <input type="email" {...register("admin_email", { required: "Email is required" })} className="form-control" />
+                    {errors.admin_email && <small className="text-danger">{errors.admin_email.message}</small>}
+                </div>
+
+                <div className="form-group">
+                    <label>Contact Number</label>
+                    <input {...register("admin_contact_no")} className="form-control" />
+                </div>
+
+                <div className="form-group">
+                    <label>Password</label>
+                    <div className="input-group">
+                        <input type={showPassword ? "text" : "password"} {...register("password", { required: "Password is required" })} className="form-control" />
+                        <span className="input-group-text" onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                        </span>
+                    </div>
+                    {errors.password && <small className="text-danger">{errors.password.message}</small>}
+                </div>
+
+                <div className="form-group">
+                    <label>Confirm Password</label>
+                    <div className="input-group">
+                        <input type={showConfirmPassword ? "text" : "password"} {...register("confirm_password", { required: "Confirm password is required" })} className="form-control" />
+                        <span className="input-group-text" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                            {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                        </span>
+                    </div>
+                    {errors.confirm_password && <small className="text-danger">{errors.confirm_password.message}</small>}
+                </div>
+
+                <div className="form-group">
+                    <label>Profile Picture</label>
+                    <div className="input-group">
+                        <input type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files[0])} className="form-control" required />
+                    </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary mt-3" disabled={loading}>
+                    {loading ? "Registering..." : "Register"}
+                </button>
             </form>
 
             <div className="mt-4 text-muted">
