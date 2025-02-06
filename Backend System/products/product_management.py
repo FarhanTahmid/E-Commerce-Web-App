@@ -2113,11 +2113,11 @@ class ManageProducts:
                     product_image.product_image.delete()
                 product_image.product_image = new_image
             if color!= "":
-                if not product_image.color or product_image.color.lower() != color.lower():
+                if not product_image.color or product_image.color != color:
                     product_image.color = color
             if size!= "":
                 size = str(size)
-                if not product_image.size or product_image.size.lower() != size.lower():
+                if not product_image.size or product_image.size != size:
                     product_image.size = size
             
             product_image.save()

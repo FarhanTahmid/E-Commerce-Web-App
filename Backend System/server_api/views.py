@@ -20,13 +20,15 @@ from business_admin import serializers
 from system.permissions import IsAdminWithPermission
 from business_admin.models import *
 
+REFRESH_RATE = '50/m'
+
 # Create your views here.
 
 #business admin
 class SignupBusinessAdminUser(APIView):
     
     permission_classes = [AllowAny]
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
             admin_full_name = self.request.data.get('admin_full_name',"")
@@ -102,7 +104,7 @@ class SignupBusinessAdminUser(APIView):
 class LoginInBusinessAdminUser(APIView):
 
     permission_classes = [AllowAny]
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
             email = self.request.data.get('email',"")
@@ -163,7 +165,7 @@ class LogOutBusinessAdminUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -213,7 +215,7 @@ class UpdateBusinessAdminUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,admin_user_name,format=None):
 
         try:
@@ -275,7 +277,7 @@ class UpdateBusinessAdminUserPassword(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,admin_user_name,format=None):
         try:
 
@@ -332,7 +334,7 @@ class DeleteBusinessAdminUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,admin_user_name,format=None):
         try:
             admin_user_name=admin_user_name
@@ -374,7 +376,7 @@ class FetchBusinessAdminPosition(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
@@ -428,12 +430,13 @@ class CreateBusinessAdminPosition(APIView):
     """Permissions"""
     authentication_classes = [JWTAuthentication]
     required_permissions = [
-        AdminPermissions.CREATE
+        AdminPermissions.CREATE,
+        AdminPermissions.VIEW
     ] 
     def get_permissions(self):
         return [IsAdminWithPermission(self.required_permissions)]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
         try:
             name = self.request.data.get('name',"")
@@ -481,7 +484,7 @@ class UpdateBusinessAdminPosition(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,admin_position_pk,format=None,*args, **kwargs):
         try:
 
@@ -530,7 +533,7 @@ class DeleteBusinessAdminPosition(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def delete(self,request,admin_position_pk,format=None,*args, **kwargs):
 
         try:
@@ -570,7 +573,7 @@ class FetchBusinessAdminPermission(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             permission_pk = self.request.query_params.get('permission_pk',"")
@@ -618,13 +621,153 @@ class FetchBusinessAdminPermission(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )    
 
+class CreateBusinessAdminPermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None,*args, **kwargs):
+        try:
+
+            permission_name = self.request.data.get('permission_name',"")
+            permission_description = self.request.data.get('permission_description',"")
+
+            if permission_name == "":
+                return Response({
+                    'error':'Permission name required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            permission_created,message = AdminManagement.create_admin_permissions(request,permission_name,permission_description)
+            if permission_created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+        
+class UpdateBusinessAdminPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,admin_permission_pk,format=None,*args, **kwargs):
+
+        try:
+            admin_permission_pk=admin_permission_pk
+            permission_name = self.request.data.get('permission_name',"")
+            permission_description = self.request.data.get('permission_description',"")
+
+            if permission_name == "":
+                return Response({
+                    'error':'Permission name required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            updated_permission,message = AdminManagement.update_admin_permissions(request,admin_permission_pk,permission_name,permission_description)
+            if updated_permission:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+        
+class DeleteBusinessAdminPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,admin_permission_pk,format=None,*args, **kwargs):
+
+        try:
+
+            admin_permission_pk = admin_permission_pk
+            deleted,message = AdminManagement.delete_admin_permissions(request,admin_permission_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+
 #product categories
 class FetchProductCategoryView(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             pk = request.query_params.get('pk',"")
@@ -668,7 +811,7 @@ class FetchProductCategoryWithPkView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,pk,format=None):
         try:
 
@@ -710,7 +853,7 @@ class CreateProductCategoryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self, request, format=None):
         
         try:
@@ -769,7 +912,7 @@ class UpdateProductCategoryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self, request,pk, format=None):
         try:
 
@@ -823,7 +966,7 @@ class DeleteProductCategoryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,pk,format=None):
         
         try:
@@ -865,7 +1008,7 @@ class FetchProductSubCategoryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,pk,format=None):
         try:
 
@@ -906,7 +1049,7 @@ class CreateProductSubCategoryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,product_category_pk,format=None):
         try:
 
@@ -960,7 +1103,7 @@ class UpdateProductSubCategoryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_sub_category_pk,format=None):
         try:
 
@@ -1019,7 +1162,7 @@ class DeleteProductSubCategoryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_sub_category_pk,format=None):
         try:
 
@@ -1061,7 +1204,7 @@ class FetchProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
 
         try:
@@ -1111,7 +1254,7 @@ class CreateProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
             
@@ -1174,7 +1317,7 @@ class UpdateProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_brand_pk,format=None):
         try:
             product_brand_pk = product_brand_pk
@@ -1238,7 +1381,7 @@ class DeleteProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_brand_pk,format=None):
         try:
 
@@ -1280,7 +1423,7 @@ class FetchProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             pk = request.query_params.get('pk',"")
@@ -1330,7 +1473,7 @@ class CreateProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -1379,7 +1522,7 @@ class UpdateProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_flavour_pk,format=None):
         try:
             product_flavour_pk=product_flavour_pk
@@ -1424,7 +1567,7 @@ class DeleteProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_flavour_pk,format=None):
         try:
             product_flavour_pk = product_flavour_pk
@@ -1464,7 +1607,7 @@ class FetchProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
@@ -1528,7 +1671,7 @@ class CreateProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
 
@@ -1600,7 +1743,7 @@ class UpdateProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_pk,format=None):
     
         try:
@@ -1671,7 +1814,7 @@ class DeleteProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_pk,format=None):
 
         try:
@@ -1712,7 +1855,7 @@ class FetchProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
@@ -1773,7 +1916,7 @@ class CreateProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -1836,7 +1979,7 @@ class UpdateProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_sku_pk,format=None):
         try:
 
@@ -1901,7 +2044,7 @@ class DeleteProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_sku_pk,format=None):
         try:
             product_sku_pk = product_sku_pk
@@ -1941,7 +2084,7 @@ class FetchProductImages(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             product_pk = self.request.query_params.get('product_pk',"")
@@ -1991,7 +2134,7 @@ class CreateProductImages(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,product_id,format=None):
         try:
             product_id=product_id
@@ -2041,7 +2184,7 @@ class UpdateProductImage(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_image_pk,format=None):
         try:
             product_image_pk=product_image_pk
@@ -2087,7 +2230,7 @@ class DeleteProductImage(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_image_pk,format=None):
         try:
             product_image_pk = product_image_pk
@@ -2127,7 +2270,7 @@ class FetchProductDiscount(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             
@@ -2189,7 +2332,7 @@ class CreateProductDiscount(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,product_id):
 
         try:
@@ -2255,7 +2398,7 @@ class UpdateProductDiscount(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_discount_pk,format=None):
 
         try:
@@ -2327,7 +2470,7 @@ class DeleteProductDiscount(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_discount_pk,format=None):
         
         try:
@@ -2341,6 +2484,244 @@ class DeleteProductDiscount(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+#position for admin
+class FetchPositionForAdmin(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for fetching position"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+            fetch_admin_position,message = AdminManagement.fetch_postion_of_admin(request,admin_user_name)
+            fetch_admin_position_data = serializers.AdminPositionSerializer(fetch_admin_position,many=False)
+            if fetch_admin_position:
+                return Response({
+                    'message':message,
+                    'position':fetch_admin_position_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class AddOrUpdatePositionForAdmin(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            position_pk = self.request.data.get('position_pk',"")
+            if position_pk == "":
+                return Response({
+                    'error':"Postion needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            add_or_update,message = AdminManagement.add_or_update_admin_position(request,admin_user_name,position_pk)
+            if add_or_update:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class RemovePositionForAdmin(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,format=None):
+        try:
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            deleted,message = AdminManagement.remove_position_of_admin(request,admin_user_name)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+#admin role permission
+class FetchBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+
+            admin_role_permission_pk = self.request.query_params.get('admin_role_permission_pk',"")
+            admin_position_pk = self.request.query_params.get('admin_position_pk',"")
+            admin_permission_pk = self.request.query_params.get('admin_permission_pk',"")
+
+            if admin_role_permission_pk!= "":
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_role_permission_pk=admin_role_permission_pk)
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=False)
+            elif admin_position_pk!= "":
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_position_pk=admin_position_pk)
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+            elif admin_permission_pk!= "":
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_permission_pk=admin_permission_pk)
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+            else:
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission()
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+            
+            if admin_role_permission:
+                return Response({
+                    'message':message,
+                    'admin_role_permission':admin_role_permission_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+   
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CreateBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+            pass
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},

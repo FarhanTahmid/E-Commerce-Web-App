@@ -12,13 +12,27 @@ class BusinessAdminTest(TestCase):
         self.factory = RequestFactory()
         self.adminposition1 = AdminPositions.objects.create(name="Manager",description="Manage of company")
         self.adminposition2 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
+
         self.businessadmin1 = BusinessAdminUser.objects.create(admin_full_name="SAMI",admin_position=self.adminposition2,admin_email="sak@gmail.com",admin_user_name='sak')
         self.businessadmin1.save()
-        self.user = Accounts(username='sak',password='1234',email="sak@gmail.com")
+        self.user = Accounts(username='sak',password='1234',email="sak@gmail.com",is_admin=True,is_superuser=True)
         self.user.save()
+
+        self.businessadmin2 = BusinessAdminUser.objects.create(admin_full_name="RAFI",admin_position=self.adminposition1,admin_email="rafi@gmail.com",admin_user_name='rafi')
+        self.businessadmin2.save()
+        self.user2 = Accounts(username='rafi',password='1234',email="rafi@gmail.com",is_admin=True)
+        self.user2.save()
 
         self.adminpermisison1 = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE)
         self.adminpermisison2 = AdminPermissions.objects.create(permission_name=AdminPermissions.UPDATE)
+
+        self.adminrolepermission1 = AdminRolePermission.objects.create(role=self.adminposition1,permission=self.adminpermisison1)#create - manager
+        self.adminrolepermission2 = AdminRolePermission.objects.create(role=self.adminposition2,permission=self.adminpermisison2)#update - owner
+        self.adminrolepermission3 = AdminRolePermission.objects.create(role=self.adminposition2,permission=self.adminpermisison1)#create - owner
+
+        self.adminuserrole1 = AdminUserRole.objects.create(user=self.user,role=self.adminposition2)#owner
+        self.adminuserrole2 = AdminUserRole.objects.create(user=self.user2,role=self.adminposition1)#manager
+
 
     def _create_mock_dev_user(self):
         """ Helper method to create a mock user """
@@ -230,6 +244,122 @@ class BusinessAdminTest(TestCase):
         success,message = AdminManagement.delete_admin_permissions(request,self.adminpermisison2.pk)
         self.assertTrue(success,"Admin permission should be successfully deleted")
         self.assertEqual(message,"Admin permission deleted successfully")
+
+    def test_fetch_position_of_admin(self):
+        """
+        Test for fetching postiion of admin
+        """
+        request = self.factory.post('/admins/fetch-admin-postiion/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.fetch_postion_of_admin(request,self.businessadmin1.admin_user_name)
+        self.assertTrue(success,"Admin position should be successfully fetched")
+        self.assertEqual(message,"Fetched successfully")
+    
+    def test_add_or_update_position_of_admin(self):
+        """
+        test for adding position of admin
+        """
+        request = self.factory.post('/admins/add-admin-postiion/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.add_or_update_admin_position(request,self.businessadmin1.admin_user_name,self.adminposition2.pk)
+        self.assertTrue(success,"Admin position should be successfully added")
+        self.assertEqual(message,"Successfull")
+
+        #update
+        success,message = AdminManagement.add_or_update_admin_position(request,self.businessadmin1.admin_user_name,self.adminposition1.pk)
+        self.assertTrue(success,"Admin position should be successfully added")
+        self.assertEqual(message,"Successfull")
+
+    def test_delete_position_of_admin(self):
+        """
+        Test for deleting position of admin
+        """
+        request = self.factory.post('/admins/delete-admin-postiion/')
+        request.user = self._create_mock_dev_user()
+        success,message = AdminManagement.remove_position_of_admin(request,self.businessadmin1.admin_user_name)
+        self.assertTrue(success,"Admin position should be successfully removed")
+        self.assertEqual(message,"Admin position removed successfully")
+        
+    #test admin role permissions
+    def test_fetch_admin_role_permissions(self):
+        """
+        Test for fetching admin role permissions
+        """
+        request = self.factory.post('/admins/fetch-role-permissions/')
+        request.user = self._create_mock_dev_user()
+
+        #all
+        success,message = AdminManagement.fetch_admin_role_permission()
+        self.assertTrue(success,"Admin role permissions should be successfully fetched")
+        self.assertEqual(message,"All fetched successfully")
+        
+        #using pk
+        success,message = AdminManagement.fetch_admin_role_permission(admin_role_permission_pk=self.adminrolepermission1.pk)
+        self.assertTrue(success,"Admin role permissions should be successfully fetched")
+        self.assertEqual(message,"Fetched successfully")
+
+        #using permission pk
+        success,message = AdminManagement.fetch_admin_role_permission(admin_permission_pk=self.adminpermisison1.pk)
+        self.assertTrue(success,"Admin role permissions should be successfully fetched")    
+        self.assertEqual(message,"Fetched successfully")
+
+        #using role pk
+        success,message = AdminManagement.fetch_admin_role_permission(admin_position_pk=self.adminposition2.pk)
+        self.assertTrue(success,"Admin role permissions should be successfully fetched")    
+        self.assertEqual(message,"Fetched successfully")
+
+    def test_create_admin_role_position(self):
+        """
+        Test for creating admin role permissions
+        """
+        request = self.factory.post('/admins/create-role-permissions/')
+        request.user = self._create_mock_dev_user()
+
+        #existing
+        success,message = AdminManagement.create_admin_role_permission(request,self.adminposition2.pk,[self.adminpermisison2.pk,self.adminpermisison1.pk])
+        self.assertTrue(success,"Admin role permissions should be successfully created")
+        self.assertEqual(message,"Already exists")
+
+        #new
+        success,message = AdminManagement.create_admin_role_permission(request,self.adminposition1.pk,[self.adminpermisison2.pk,self.adminpermisison1.pk])
+        self.assertTrue(success,"Admin role permissions should be successfully created")
+        self.assertEqual(message,"Created successfully")
+
+    def test_update_admin_role_position(self):
+        """
+        Test for updating admin role permissions
+        """
+        request = self.factory.post('/admins/update-role-permissions/')
+        request.user = self._create_mock_dev_user()
+
+        #existing
+        success,message = AdminManagement.update_admin_role_permission(request,self.adminposition2.pk,[self.adminpermisison2.pk,self.adminpermisison1.pk])
+        self.assertTrue(success,"Admin role permissions should be successfully updated")
+        self.assertEqual(message,"Updated successfully")
+
+        #new
+        success,message = AdminManagement.update_admin_role_permission(request,self.adminposition1.pk,[self.adminpermisison1.pk])
+        self.assertTrue(success,"Admin role permissions should be successfully updated")
+        self.assertEqual(message,"Updated successfully")
+
+    def test_delete_admin_role_position(self):
+
+        """
+        Test for deleting admin role permissions
+        """
+        request = self.factory.post('/admins/delete-role-permissions/')
+        request.user = self._create_mock_dev_user()
+
+        #existing
+        success,message = AdminManagement.delete_admin_role_permission(request,self.adminposition1.pk)#manager
+        self.assertTrue(success,"Admin role permissions should be successfully deleted")
+        self.assertEqual(message,"Deleted successfully")
+
+        #new
+        success,message = AdminManagement.delete_admin_role_permission(request,self.adminposition1.pk)
+        self.assertTrue(success,"Admin role permissions should be successfully deleted")
+        self.assertEqual(message,"Deleted successfully")
+
 
 
 
