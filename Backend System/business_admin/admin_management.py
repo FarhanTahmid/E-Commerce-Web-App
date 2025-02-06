@@ -1281,6 +1281,26 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while removing admin position! Please try again later.")
         
+    def fetch_business_admin_profile_picture(request,admin_unique_id="",admin_email="",admin_user_name=""):
+        try:
+            pass
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while removing admin position! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while removing admin position! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while removing admin position! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while removing admin position! Please try again later.")
+        
     #admin role permissions
     def fetch_admin_role_permission(admin_role_permission_pk="",admin_position_pk="",admin_permission_pk=""):
 

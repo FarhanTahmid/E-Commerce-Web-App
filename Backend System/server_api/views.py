@@ -426,6 +426,9 @@ class FetchBusinessAdminUsers(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+class FetchBusinessAdminAvatar(APIView):
+    pass
+
 #business admin position
 
 class FetchBusinessAdminPosition(APIView):
@@ -624,6 +627,7 @@ class DeleteBusinessAdminPosition(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )   
+
 #business admin permission
 class FetchBusinessAdminPermission(APIView):
     authentication_classes = [JWTAuthentication]
