@@ -260,7 +260,7 @@ export const router = createBrowserRouter([
                 element: <AdminManagementAdmins />
             },
             {
-                path: "/admin-management/admins/:id",
+                path: "/admin-management/admins/:admin_user_name",
                 element: <AdminManagementAdminsOperation />
             }
 
