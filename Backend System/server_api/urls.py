@@ -30,6 +30,9 @@ urlpatterns = [                                                                 
     path('business-admin/admin-permissions/update/<int:admin_permission_pk>',views.UpdateBusinessAdminPermission.as_view(),name='update_business_admin_permissions'),
     path('business-admin/admin-permissions/delete/<int:admin_permission_pk>',views.DeleteBusinessAdminPermission.as_view(),name='delete_business_admin_permissions'),
 
+    #business admin role permissions
+    path('business-admin/admin-role-permission/fetch-role-permissions/',views.FetchBusinessAdminRolePermission.as_view(),name='fetch_business_admin_role_permissions'),#pass parameter /?admin_role_permission_pk = OR admin_position_pk= OR admin_permission_pk= OR none to retrieve all
+
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
     path('product/categories/fetch-all/',views.FetchProductCategoryView.as_view(),name='fetch_all_product_categories'),#pass parameters /?pk = OR no paramter to fetch all

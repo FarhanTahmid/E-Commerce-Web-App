@@ -890,6 +890,22 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         self.assertEqual(response.data['message'],"Admin position removed successfully")
 
+    #admin role permission test
+    def test_fetch_admin_role_permissions(self):
+        """
+        Test for fetching admin role permissions
+        """
+        #all
+        response = self.client.get(f'/server_api/business-admin/admin-role-permission/fetch-role-permissions/')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"All fetched successfully")
+        self.assertEqual(len(response.data['admin_role_permission']),1)
+
+        #using pk
+        response = self.client.get(f'/server_api/business-admin/admin-role-permission/fetch-role-permissions/?admin_role_permission_pk={self.admin_role_permission.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Fetched successfully")
+
 
 
     
