@@ -25,9 +25,9 @@ class BusinessAdminUser(models.Model):
         admin will login with the unique id. The unique id will be taken input from the user.
     '''
     # user = models.ForeignKey(User,on_delete=models.CASCADE)
-    admin_unique_id=models.CharField(null=False,blank=False,max_length=50,primary_key=True)
-    admin_full_name=models.CharField(null=False,blank=False,max_length=500)
-    admin_user_name = models.CharField(null=True,blank=True,max_length=100)
+    admin_unique_id=models.CharField(null=False,blank=False,max_length=1000,primary_key=True)
+    admin_full_name=models.CharField(null=False,blank=False,max_length=1000)
+    admin_user_name = models.CharField(null=True,blank=True,max_length=1000)
     admin_avatar=ResizedImageField(size=[244,244],upload_to=get_admin_avatar_path,blank=True, null=True)
     admin_position=models.ForeignKey(AdminPositions,null=True,blank=True,on_delete=models.CASCADE)
     admin_email=models.EmailField(null=False,blank=False)

@@ -120,9 +120,9 @@ class Product(models.Model):
 class Product_SKU(models.Model):
 
     product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE)
-    product_sku = models.CharField(null=False, blank=False, max_length=100,unique=True)
-    product_color = models.CharField(null=True, blank=True, max_length=100)
-    product_size = models.CharField(null=True, blank=True, max_length=100)
+    product_sku = models.CharField(null=False, blank=False, max_length=1000,unique=True)
+    product_color = models.CharField(null=True, blank=True, max_length=1000)
+    product_size = models.CharField(null=True, blank=True, max_length=1000)
     product_price=models.DecimalField(null=False,blank=False,default=0,max_digits=50,decimal_places=2)
     product_stock = models.IntegerField(null=False, blank=False, default=0)
     product_flavours=models.ManyToManyField(Product_Flavours,related_name='product_flavour')
