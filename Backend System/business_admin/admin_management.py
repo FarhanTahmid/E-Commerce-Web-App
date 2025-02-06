@@ -1283,6 +1283,7 @@ class AdminManagement:
         
     def fetch_business_admin_profile_picture(request,admin_unique_id="",admin_email="",admin_user_name=""):
         try:
+            pass
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
