@@ -1282,17 +1282,20 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while removing admin position! Please try again later.")
         
     #admin role permissions
-    def fetch_admin_role_permission(admin_position_pk="",permission_pk=""):
+    def fetch_admin_role_permission(admin_role_permission_pk="",admin_position_pk="",admin_permission_pk=""):
 
         try:
-            if admin_position_pk!="":
+            if admin_role_permission_pk!="":
+                admin_role_permission = AdminRolePermission.objects.get(pk=admin_role_permission_pk)
+                return admin_role_permission, "Fetched successfully"
+            elif admin_position_pk!="":
                 admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-                admin_role_permission = AdminRolePermission.objects.get(role=admin_position)
-                return admin_role_permission, "Fetched successfully"
-            elif permission_pk!="":
-                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
-                admin_role_permission = AdminRolePermission.objects.get(permission=admin_permission)
-                return admin_role_permission, "Fetched successfully"
+                admin_role_permission = AdminRolePermission.objects.filter(role=admin_position)
+                return admin_role_permission, "Fetched successfully" if len(admin_role_permission)>0 else "No role and permissions found"
+            elif admin_permission_pk!="":
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=admin_permission_pk)
+                admin_role_permission = AdminRolePermission.objects.filter(permission=admin_permission)
+                return admin_role_permission, "Fetched successfully" if len(admin_role_permission)>0 else "No role and permissions found"
             else:
                 admin_role_permission = AdminRolePermission.objects.all()
                 return admin_role_permission, "All fetched successfully" if len(admin_role_permission)>0 else "No role and permissions found"
@@ -1313,22 +1316,27 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin role permission! Please try again later.")
         
-    def create_admin_role_permission(request,admin_position_pk,permission_pk):
+    def create_admin_role_permission(request,admin_position_pk,admin_permission_pk_list):
 
         try:
+        
             #getting admin_position
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-            admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
-
             all_existing_admin_role_permissions,message = AdminManagement.fetch_admin_role_permission()
-            if any(p.role == admin_position and p.permission == admin_permission for p in all_existing_admin_role_permissions):
-                return False, "Same type exists already"
-            
-            admin_role_permissions = AdminPermissions.objects.create(role=admin_position,permission=admin_permission)
-            admin_role_permissions.save()
-            SystemLogs.updated_by(request,admin_role_permissions)
-            SystemLogs.admin_activites(request,f"Created admin role permission {admin_role_permissions.role.name}",message="Created")
-
+            admin_permission_pk_list_copy = admin_permission_pk_list.copy()
+            for admin_permission_pk in admin_permission_pk_list_copy:
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=admin_permission_pk)
+                #checking if exisitng permission for this admin position exists. If do removing it
+                if any(p.role == admin_position and p.permission == admin_permission for p in all_existing_admin_role_permissions):
+                    admin_permission_pk_list.remove(admin_permission_pk)
+            for admin_permission_pk in admin_permission_pk_list:
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=admin_permission_pk)
+                admin_role_permissions = AdminRolePermission.objects.create(role=admin_position,permission=admin_permission)
+                admin_role_permissions.save()
+                SystemLogs.updated_by(request,admin_role_permissions)
+                SystemLogs.admin_activites(request,f"Created admin role permission {admin_role_permissions.role.name}",message="Created")
+            return True, "Created successfully" if len(admin_permission_pk_list)>0 else "Already exists"
+        
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -1346,5 +1354,66 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin role permission! Please try again later.")
         
-    def update_admin_role_permission():
-        pass
+    def update_admin_role_permission(request,admin_position_pk="",admin_permission_pk_list=[]):
+
+        try:
+           
+            admin_role_permissions,message = AdminManagement.fetch_admin_role_permission(admin_position_pk=admin_position_pk)
+            existing_admin_permission_pk_list = [p.permission for p in admin_role_permissions]
+            newly_added_permissions = [AdminPermissions.objects.get(pk=admin_permission_pk) for admin_permission_pk in admin_permission_pk_list]
+            admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
+
+            if sorted(existing_admin_permission_pk_list) != sorted(newly_added_permissions):
+                for p in admin_role_permissions:
+                    p.delete()
+
+                for admin_permission_pk in admin_permission_pk_list:
+                    admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=admin_permission_pk)
+                    admin_role_permissions = AdminRolePermission.objects.create(role=admin_position,permission=admin_permission)
+                    admin_role_permissions.save()
+                    SystemLogs.updated_by(request,admin_role_permissions)
+                    SystemLogs.admin_activites(request,f"Updated admin role permission {admin_role_permissions.role.name}",message="Updated")
+            return True,"Updated successfully"
+            
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating admin role permission! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating admin role permission! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating admin role permission! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating admin role permission! Please try again later.")
+        
+    def delete_admin_role_permission(request,admin_position_pk):
+        
+        try:
+            #getting the admin role permission
+            admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
+            SystemLogs.admin_activites(request,f"Deleted admin role permission {admin_position.name}",message="Deleted")
+            AdminRolePermission.objects.filter(role=admin_position).delete()
+            return True, "Deleted successfully"
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting admin role permission! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting admin role permission! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting admin role permission! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin role permission! Please try again later.")

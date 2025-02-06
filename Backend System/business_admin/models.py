@@ -90,6 +90,9 @@ class AdminPermissions(models.Model):
     def __str__(self):
         return self.permission_name
 
+    def __lt__(self, other):
+        return self.permission_name < other.permission_name
+
 
 # AdminRolePermissions (Associative Entity for Role and Permission)
 class AdminRolePermission(models.Model):
@@ -104,7 +107,7 @@ class AdminRolePermission(models.Model):
         unique_together = ('role', 'permission')
 
     def __str__(self):
-        return f"{self.role.name} - {self.permission.name}"
+        return f"{self.role.name} - {self.permission.permission_name}"
     
 class AdminUserRole(models.Model):
 

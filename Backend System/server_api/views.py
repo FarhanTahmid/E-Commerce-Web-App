@@ -427,7 +427,8 @@ class CreateBusinessAdminPosition(APIView):
     """Permissions"""
     authentication_classes = [JWTAuthentication]
     required_permissions = [
-        AdminPermissions.CREATE
+        AdminPermissions.CREATE,
+        AdminPermissions.VIEW
     ] 
     def get_permissions(self):
         return [IsAdminWithPermission(self.required_permissions)]
