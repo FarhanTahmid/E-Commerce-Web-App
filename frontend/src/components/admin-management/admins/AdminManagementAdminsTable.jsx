@@ -6,12 +6,12 @@ import {
     TablePagination
 } from '@mui/material';
 
-const ProductCategoryTable = () => {
-    const [categories, setCategories] = useState([]);
+const AdminManagementAdminsTable = () => {
+    const [positions, setPositions] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/admin-position';
 
     useEffect(() => {
         fetchCategories();
@@ -19,15 +19,15 @@ const ProductCategoryTable = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/categories/fetch-all/`, {
+            const response = await axios.get(`${API_BASE_URL}/fetch-positions/`, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"
                 }
             });
-            setCategories(response.data.product_category);
+            setPositions(response.data.admin_positions);
         } catch (error) {
-            console.error("Error fetching categories:", error.response ? error.response.data : error);
+            console.error("Error fetching positions:", error.response ? error.response.data : error);
         }
     };
 
@@ -44,16 +44,9 @@ const ProductCategoryTable = () => {
         setPage(0);
     };
 
-    const filteredCategories = categories.filter(category =>
-        category.category_name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredPositions = positions.filter(position =>
+        position.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    // Define actions for the dropdown
-    const actions = [
-        { label: 'Edit', onClick: () => { /* handle edit */ } },
-        { label: 'Delete', onClick: () => { /* handle delete */ } },
-        // Add more actions as needed
-    ];
 
     return (
         <>
@@ -85,28 +78,28 @@ const ProductCategoryTable = () => {
                                             <thead>
                                                 <tr>
                                                     <th>Serial No</th>
-                                                    <th>Category Name</th>
-                                                    <th>Category Description</th>
+                                                    <th>Admin Name</th>
+                                                    <th>Admin Description</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredCategories.length === 0 ? (
+                                                {filteredPositions.length === 0 ? (
                                                     <tr>
                                                         <td colSpan="3" className="text-center">
                                                             No records available
                                                         </td>
                                                     </tr>
-                                                ) : (filteredCategories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((category, index) => (
-                                                    <tr key={category.id} className='single-item chat-single-item'>
-                                                        <td>{index + 1 + page * rowsPerPage}</td> {/* Serial Number */}
-                                                        <td className="truncate-text">
-                                                            <Link to={`/products/category/${category.id}`} className='fw-bold'>
-                                                                {category.category_name}
-                                                            </Link>
-                                                        </td>
-                                                        <td className="truncate-text">{category.description}</td>
-                                                    </tr>
-                                                )))}
+                                                ) : (
+                                                    filteredPositions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((position, index) => (
+                                                        <tr key={position.id} className='single-item chat-single-item'>
+                                                            <td>{index + 1 + page * rowsPerPage}</td>
+                                                            <td className="truncate-text">
+                                                                <Link to={`/admin-management/positions/${position.id}`} className='fw-bold'>{position.name}</Link>
+                                                            </td>
+                                                            <td className="truncate-text">{position.description}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>
@@ -119,7 +112,7 @@ const ProductCategoryTable = () => {
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
                 component="div"
-                count={filteredCategories.length}
+                count={filteredPositions.length}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}
@@ -129,4 +122,4 @@ const ProductCategoryTable = () => {
     );
 };
 
-export default ProductCategoryTable;
+export default AdminManagementAdminsTable;

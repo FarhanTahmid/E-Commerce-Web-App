@@ -3,7 +3,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import ConfirmationModal from '../ConfirmationModal'; // Import the modal component
+import ConfirmationModal from '../../ConfirmationModal'; // Import the modal component
 
 const AdminManagementPositionsUpdate = () => {
     const { id } = useParams(); // Get the ID from the URL
@@ -58,22 +58,22 @@ const AdminManagementPositionsUpdate = () => {
 
 
     useEffect(() => {
-
         axios.get(`${API_BASE_URL}/fetch-positions/`, {
             headers: {
                 Authorization: `Bearer ${Cookies.get("accessToken")}`,
                 "Content-Type": "application/json"
             },
-            params: { pk: id } // Move pk inside params
+            params: { pk: id }
         })
             .then(response => {
-                setPositionName(response.data.admin_positions.name);
-                setPositionDescription(response.data.admin_positions.description);
+                setPositionName(response.data.admin_positions.name || '');
+                setPositionDescription(response.data.admin_positions.description || '');
             })
             .catch(error => {
                 console.error("Error fetching categories:", error.response ? error.response.data : error);
             });
     }, []);
+
 
     const handleSubmitCategory = (e) => {
         e.preventDefault();

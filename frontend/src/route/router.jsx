@@ -74,8 +74,10 @@ import ProductCategory from "../pages/product-category";
 import ProductCategoryCreate from "@/components/products/ProductCategoryCreate";
 import ProductCategoryUpdate from "@/components/products/ProductCategoryUpdate";
 import AdminManagementPositions from "../pages/admin-management-positions";
-import AdminManagementPositionsCreate from "@/components/admin-management/AdminManagementPositionsCreate";
-import AdminManagementPositionsUpdate from "@/components/admin-management/AdminManagementPositionsUpdate";
+import AdminManagementPositionsCreate from "@/components/admin-management/positions/AdminManagementPositionsCreate";
+import AdminManagementPositionsUpdate from "@/components/admin-management/positions/AdminManagementPositionsUpdate";
+import AdminManagementAdmins from "../pages/admin-management-admins";
+import AdminManagementAdminsOperation from "@/components/admin-management/admins/AdminManagementAdminsOperation";
 
 
 const parseJwt = (token) => {
@@ -252,6 +254,14 @@ export const router = createBrowserRouter([
             {
                 path: "/admin-management/positions/:id",
                 element: <AdminManagementPositionsUpdate />
+            },
+            {
+                path: "/admin-management/admins",
+                element: <AdminManagementAdmins />
+            },
+            {
+                path: "/admin-management/admins/:id",
+                element: <AdminManagementAdminsOperation />
             }
 
         ]

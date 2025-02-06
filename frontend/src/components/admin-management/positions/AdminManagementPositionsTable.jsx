@@ -83,15 +83,23 @@ const AdminManagementPositionsTable = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredPositions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((position, index) => (
-                                                    <tr key={position.id} className='single-item chat-single-item'>
-                                                        <td>{index + 1 + page * rowsPerPage}</td>
-                                                        <td className="truncate-text">
-                                                            <Link to={`/admin-management/positions/${position.id}`} className='fw-bold'>{position.name}</Link>
+                                                {filteredPositions.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan="3" className="text-center">
+                                                            No records available
                                                         </td>
-                                                        <td className="truncate-text">{position.description}</td>
                                                     </tr>
-                                                ))}
+                                                ) : (
+                                                    filteredPositions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((position, index) => (
+                                                        <tr key={position.id} className='single-item chat-single-item'>
+                                                            <td>{index + 1 + page * rowsPerPage}</td>
+                                                            <td className="truncate-text">
+                                                                <Link to={`/admin-management/positions/${position.id}`} className='fw-bold'>{position.name}</Link>
+                                                            </td>
+                                                            <td className="truncate-text">{position.description}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>
