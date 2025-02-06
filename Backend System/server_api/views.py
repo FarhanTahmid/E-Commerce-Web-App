@@ -427,7 +427,63 @@ class FetchBusinessAdminUsers(APIView):
             )
 
 class FetchBusinessAdminAvatar(APIView):
-    pass
+    
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+
+            admin_unique_id = self.request.query_params.get('admin_unique_id',"")
+            admin_email = self.request.query_params.get('admin_email',"")
+            admin_user_name = self.request.query_params.get('admin_user_name',"")
+
+            if admin_unique_id != "":
+                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+            elif admin_email!= "":
+                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+            elif admin_user_name!= "":
+                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+            else:
+                return Response({
+                    'error':"Please provide admin unique id or email or admin user name"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            if fetched_admin_avatar:
+                return Response({
+                    'message':message,
+                    'admin_avatar':fetched_admin_data_avatar.data['admin_avatar']
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 #business admin position
 

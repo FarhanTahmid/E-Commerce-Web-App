@@ -6,6 +6,7 @@ from e_commerce_app import settings
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 import os
+from e_commerce_app.settings import MEDIA_URL
 
 class AdminManagement:
 
@@ -1282,8 +1283,20 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while removing admin position! Please try again later.")
         
     def fetch_business_admin_profile_picture(request,admin_unique_id="",admin_email="",admin_user_name=""):
+        
         try:
-            pass
+            if admin_unique_id!="":
+                business_admin,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+            elif admin_email!="":
+                business_admin,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
+            elif admin_user_name!="":
+                business_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
+            
+            if business_admin.admin_avatar:
+                avatar_url = MEDIA_URL + str(business_admin.admin_avatar)
+                return avatar_url, "Avatar fetched successfully"
+            else:
+                return False, "No avatar found"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -1293,9 +1306,9 @@ class AdminManagement:
 
             # Return appropriate messages based on the error type
             error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while removing admin position! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while removing admin position! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while removing admin position! Please try again later.",
+                "DatabaseError": "An unexpected error in Database occurred while fetching admin avatar! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching admin avatar! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching admin avatar! Please try again later.",
                 "IntegrityError": "Same type exists in Database!",
             }
 

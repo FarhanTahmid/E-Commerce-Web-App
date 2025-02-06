@@ -13,6 +13,7 @@ urlpatterns = [                                                                 
     path('business-admin/logout/',views.LogOutBusinessAdminUser.as_view(),name='logout_business_admin_user'),
     path('business-admin/update-password/<str:admin_user_name>/',views.UpdateBusinessAdminUserPassword.as_view(),name='update_business_admin_user_password'),
     path('business-admin/delete/<str:admin_user_name>/',views.DeleteBusinessAdminUser.as_view(),name='delete_business_admin_user'),
+    path('business-admin/avatar/<str:admin_user_name>/',views.FetchBusinessAdminAvatar.as_view(),name='fetch_business_admin_user_avatar'),#pass parameter /?admin_user_name= to fetch avatar
 
     #business admin postion
     path('business-admin/admin-position/fetch-positions/',views.FetchBusinessAdminPosition.as_view(),name='fetch_business_admin_position'),#pass parameters /?name= OR pk= OR none to retrieve all
