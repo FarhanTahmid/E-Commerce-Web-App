@@ -11,16 +11,15 @@ const ProductBrandCreate = () => {
     const [brandCountry, setBrandCountry] = useState('');
     const [brandDescription, setBrandDescription] = useState('');
     const [brandLogo, setBrandLogo] = useState(null);
+    const [previewLogo, setPreviewLogo] = useState(null);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState(''); // 'success' or 'danger'
     const [countries, setCountries] = useState([]);
 
     useEffect(() => {
-        // Fetch list of countries
         fetch("https://restcountries.com/v3.1/all")
             .then(response => response.json())
             .then(data => {
-                // Sort countries alphabetically by their common name
                 const sortedCountries = data
                     .map(country => ({
                         value: country.name.common,
@@ -35,10 +34,23 @@ const ProductBrandCreate = () => {
 
     const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
 
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setBrandLogo(file);
+            setPreviewLogo(URL.createObjectURL(file)); // Generate a preview URL
+        }
+    };
+
+    const handleRemoveLogo = () => {
+        setBrandLogo(null);
+        setPreviewLogo(null);
+        document.getElementById("brandLogo").value = ""; // Reset file input
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validate required fields
         if (!brandName.trim()) {
             setMessage('Brand name is required!');
             setMessageType('danger');
@@ -50,18 +62,16 @@ const ProductBrandCreate = () => {
             return;
         }
 
-        // Prepare form data
         const formData = new FormData();
         formData.append('brand_name', brandName);
         formData.append('brand_established_year', brandEstablishedYear);
-        formData.append('is_own_brand', isOwnBrand ? 'True' : 'False'); // Send 'True' or 'False' as strings
+        formData.append('is_own_brand', isOwnBrand ? 'True' : 'False');
         formData.append('brand_country', brandCountry);
         formData.append('brand_description', brandDescription);
         if (brandLogo) {
             formData.append('brand_logo', brandLogo);
         }
 
-        // Make API request
         axios.post(`${API_BASE_URL}/product-brand/create/`, formData, {
             headers: {
                 Authorization: `Bearer ${Cookies.get("accessToken")}`,
@@ -71,13 +81,14 @@ const ProductBrandCreate = () => {
             .then(response => {
                 setMessage(response.data.message);
                 setMessageType('success');
-                // Reset form fields
                 setBrandName('');
                 setBrandEstablishedYear('');
                 setIsOwnBrand(false);
                 setBrandCountry('');
                 setBrandDescription('');
-                setBrandLogo('');
+                setBrandLogo(null);
+                setPreviewLogo(null);
+                document.getElementById("brandLogo").value = ""; // Reset file input
             })
             .catch(error => {
                 setMessage(error.response ? error.response.data.message : error.message);
@@ -85,25 +96,12 @@ const ProductBrandCreate = () => {
             });
     };
 
-
-
     return (
         <div className="col-xl-12 p-2">
-            {/* Message Container */}
             {message && (
-                <div
-                    className={`alert alert-${messageType} alert-dismissible fade show`}
-                    role="alert"
-                    style={{ marginBottom: '20px' }}
-                >
+                <div className={`alert alert-${messageType} alert-dismissible fade show`} role="alert">
                     <strong>{messageType === 'danger' ? 'Error: ' : 'Success: '}</strong> {message}
-                    <button
-                        type="button"
-                        className="btn-close"
-                        data-bs-dismiss="alert"
-                        aria-label="Close"
-                        onClick={() => setMessage('')} // Close message on button click
-                    ></button>
+                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close" onClick={() => setMessage('')}></button>
                 </div>
             )}
             <div className="card invoice-container">
@@ -140,24 +138,24 @@ const ProductBrandCreate = () => {
                                     <div className="form-check form-check-inline">
                                         <input
                                             type="radio"
-                                            className="form-check-input form-control mb-2"
+                                            className="form-check-input"
                                             id="yesOption"
                                             name="isOwnBrand"
                                             value="yes"
                                             checked={isOwnBrand === true}
-                                            onChange={() => setIsOwnBrand(true)}  // Ensure boolean value here
+                                            onChange={() => setIsOwnBrand(true)}
                                         />
                                         <label htmlFor="yesOption" className="form-check-label">Yes</label>
                                     </div>
                                     <div className="form-check form-check-inline mb-2">
                                         <input
                                             type="radio"
-                                            className="form-check-input form-control mb-2"
+                                            className="form-check-input"
                                             id="noOption"
                                             name="isOwnBrand"
                                             value="no"
                                             checked={isOwnBrand === false}
-                                            onChange={() => setIsOwnBrand(false)}  // Ensure boolean value here
+                                            onChange={() => setIsOwnBrand(false)}
                                         />
                                         <label htmlFor="noOption" className="form-check-label">No</label>
                                     </div>
@@ -181,14 +179,27 @@ const ProductBrandCreate = () => {
                                         value={brandDescription}
                                         onChange={(e) => setBrandDescription(e.target.value)}
                                     />
+
                                     <label htmlFor="brandLogo" className="form-label">Brand Logo</label>
                                     <input
                                         type="file"
                                         className="form-control mb-2"
                                         id="brandLogo"
-                                        accept="image/*"  // This restricts the input to image files only
-                                        onChange={(e) => setBrandLogo(e.target.files[0])}
+                                        accept="image/*"
+                                        onChange={handleLogoChange}
                                     />
+
+                                    {previewLogo && (
+                                        <div className="mt-2 text-center">
+                                            <img
+                                                src={previewLogo}
+                                                alt="Brand Logo Preview"
+                                                style={{ maxWidth: '200px', maxHeight: '150px', display: 'block', cursor: 'pointer' }}
+                                                onClick={() => window.open(previewLogo, "_blank")} // Open image in new tab on click
+                                            />
+                                            <button type="button" className="btn btn-danger mt-2" onClick={handleRemoveLogo}>Remove Logo</button>
+                                        </div>
+                                    )}
                                 </div>
                                 <button type="submit" className="btn btn-success">Create Brand</button>
                             </div>
