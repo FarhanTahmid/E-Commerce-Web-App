@@ -22,13 +22,10 @@ const ProfileModal = () => {
             },
         })
             .then(response => {
-                console.log('Avatar response:', response);
-                if (response.ok && response.data.admin_avatar) {
-                    console.log('Avatar fetched successfully:', response.data.admin_avatar);
-                    const avatarURL = URL.createObjectURL(new Blob([response.data.admin_avatar]));
-                    setAvatar(avatarURL);
+                if (response.status === 200) {
+                    setAvatar("http://" + response.data.admin_avatar);
                 } else {
-                    throw new Error("Avatar not found or server error");
+                    setAvatar('/images/avatar/default.jpg'); // Fallback to default avatar
                 }
             })
             .catch(error => {
@@ -71,21 +68,25 @@ const ProfileModal = () => {
     return (
         <div className="dropdown nxl-h-item">
             <a href="#" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside">
-                <img src={avatar} alt="user-image" className="img-fluid user-avtar me-0 border" />
+                <div style={{ width: '40px', height: '40px' }} className="w-8 h-8 d-flex align-items-center justify-content-center rounded-circle bg-light me-3 overflow-hidden">
+                    <img src={avatar} alt="user-image" className="rounded-circle border" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
             </a>
             <div className="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                 <div className="dropdown-header">
                     <div className="d-flex align-items-center">
-                        <img src={avatar} alt="user-image" className="img-fluid user-avtar border" />
+                        <div style={{ width: '40px', height: '40px' }} className="w-8 h-8 d-flex align-items-center justify-content-center rounded-circle bg-light me-3 overflow-hidden">
+                            <img src={avatar} alt="user-image" className="rounded-circle border" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
                         <div>
                             <h6 className="text-dark mb-0">
-                                Alexandra Della <span className="badge bg-soft-success text-success ms-1">PRO</span>
+                                Alexandra Della {/* <span className="badge bg-soft-success text-success ms-1">PRO</span> */}
                             </h6>
                             <span className="fs-12 fw-medium text-muted">alex.della@outlook.com</span>
                         </div>
                     </div>
                 </div>
-                <div className="dropdown">
+                {/* <div className="dropdown">
                     <a href="#" className="dropdown-item" data-bs-toggle="dropdown">
                         <span className="hstack">
                             <i className="wd-10 ht-10 border border-2 border-gray-1 bg-success rounded-circle me-2"></i>
@@ -106,9 +107,8 @@ const ProfileModal = () => {
                             </Fragment>
                         ))}
                     </div>
-                </div>
-                <div className="dropdown-divider"></div>
-                <div className="dropdown">
+                </div> */}
+                {/* <div className="dropdown">
                     <a href="#" className="dropdown-item" data-bs-toggle="dropdown">
                         <span className="hstack">
                             <i className="me-2"><FiDollarSign /></i>
@@ -130,12 +130,12 @@ const ProfileModal = () => {
                         ))}
                     </div>
                 </div>
-                <div className="dropdown-divider"></div>
+                <div className="dropdown-divider"></div> */}
                 <a href="#" className="dropdown-item">
                     <i><FiUser /></i>
                     <span>Profile Details</span>
                 </a>
-                <a href="#" className="dropdown-item">
+                {/* <a href="#" className="dropdown-item">
                     <i><FiActivity /></i>
                     <span>Activity Feed</span>
                 </a>
@@ -146,7 +146,7 @@ const ProfileModal = () => {
                 <a href="#" className="dropdown-item">
                     <i><FiBell /></i>
                     <span>Notifications</span>
-                </a>
+                </a> */}
                 <a href="#" className="dropdown-item">
                     <i><FiSettings /></i>
                     <span>Account Settings</span>
