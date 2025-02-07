@@ -721,11 +721,10 @@ class AdminManagement:
             for p in all_admins:
                 if p.admin_user_name.lower() == admin_user_name.lower():
                     count_admin_user_name += 1
-            if any(p.admin_user_name.lower() == admin_user_name.lower() for p in all_admins):
-                if count_admin_user_name == 0:
-                    admin_user_name = admin_user_name
-                else:
-                    admin_user_name = admin_user_name + str(count_admin_user_name)
+            if count_admin_user_name == 0:
+                admin_user_name = admin_user_name
+            else:
+                admin_user_name = admin_user_name + str(count_admin_user_name)
 
             business_admin = BusinessAdminUser.objects.create(admin_full_name=admin_full_name,admin_user_name=admin_user_name,
                                                               )
