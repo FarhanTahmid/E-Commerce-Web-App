@@ -91,7 +91,7 @@ const AdminManagementAdminsTable = () => {
                                                     </tr>
                                                 ) : (
                                                     filteredAdmins.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((admin, index) => (
-                                                        <tr key={admin.id} className='single-item chat-single-item'>
+                                                        <tr key={admin.id || admin.admin_email} className='single-item chat-single-item'>
                                                             <td>{index + 1 + page * rowsPerPage}</td>
                                                             <td className="truncate-text">
                                                                 <Link to={`/admin-management/admins/${admin.admin_user_name}`} className='fw-bold'>{admin.admin_full_name}</Link>
