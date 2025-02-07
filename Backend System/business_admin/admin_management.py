@@ -6,7 +6,6 @@ from e_commerce_app import settings
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 import os
-from e_commerce_app.settings import MEDIA_URL
 
 class AdminManagement:
 
@@ -1293,7 +1292,7 @@ class AdminManagement:
                 business_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
             
             if business_admin.admin_avatar:
-                avatar_url = MEDIA_URL + str(business_admin.admin_avatar)
+                avatar_url = business_admin.admin_avatar
                 return avatar_url, "Avatar fetched successfully"
             else:
                 return False, "No avatar found"

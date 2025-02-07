@@ -19,6 +19,7 @@ from system.models import *
 from business_admin import serializers
 from system.permissions import IsAdminWithPermission
 from business_admin.models import *
+from e_commerce_app.settings import MEDIA_URL
 
 REFRESH_RATE = '50/m'
 
@@ -439,7 +440,7 @@ class FetchBusinessAdminAvatar(APIView):
 
             if admin_user_name!= "":
                 fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_user_name=admin_user_name)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
             else:
                 return Response({
                     'error':"Please provide admin unique id or email or admin user name"
@@ -448,7 +449,7 @@ class FetchBusinessAdminAvatar(APIView):
             if fetched_admin_avatar:
                 return Response({
                     'message':message,
-                    'admin_avatar':fetched_admin_data_avatar.data
+                    'admin_avatar': MEDIA_URL + str(fetched_admin_data_avatar.data)
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
