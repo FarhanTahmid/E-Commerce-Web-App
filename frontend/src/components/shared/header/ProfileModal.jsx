@@ -16,15 +16,16 @@ const ProfileModal = () => {
         const accessToken = Cookies.get('accessToken'); // Ensure accessToken is available
         if (!accessToken || !admin_user_name) return; // Exit if no token or admin_user_name
 
-        axios.get(`http://127.0.0.1:8000/server_api/business-admin/avatar/`, {
+        axios.get(`http://127.0.0.1:8000/server_api/business-admin/avatar/${admin_user_name}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
-            params: { admin_user_name: admin_user_name },
         })
             .then(response => {
-                if (response.status === 200 && response.data.avatar) {
-                    const avatarURL = URL.createObjectURL(new Blob([response.data.avatar]));
+                console.log('Avatar response:', response);
+                if (response.ok && response.data.admin_avatar) {
+                    console.log('Avatar fetched successfully:', response.data.admin_avatar);
+                    const avatarURL = URL.createObjectURL(new Blob([response.data.admin_avatar]));
                     setAvatar(avatarURL);
                 } else {
                     throw new Error("Avatar not found or server error");
