@@ -440,14 +440,14 @@ class FetchBusinessAdminAvatar(APIView):
             admin_user_name = self.request.query_params.get('admin_user_name',"")
 
             if admin_unique_id != "":
-                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_unique_id=admin_unique_id)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
             elif admin_email!= "":
-                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_email=admin_email)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
             elif admin_user_name!= "":
-                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_user_name=admin_user_name)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
             else:
                 return Response({
                     'error':"Please provide admin unique id or email or admin user name"
@@ -456,7 +456,7 @@ class FetchBusinessAdminAvatar(APIView):
             if fetched_admin_avatar:
                 return Response({
                     'message':message,
-                    'admin_avatar':fetched_admin_data_avatar.data['admin_avatar']
+                    'admin_avatar':fetched_admin_data_avatar.data
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
