@@ -19,6 +19,7 @@ from system.models import *
 from business_admin import serializers
 from system.permissions import IsAdminWithPermission
 from business_admin.models import *
+from e_commerce_app.settings import MEDIA_URL
 
 REFRESH_RATE = '50/m'
 
@@ -447,7 +448,7 @@ class FetchBusinessAdminAvatar(APIView):
             if fetched_admin_avatar:
                 return Response({
                     'message':message,
-                    'admin_avatar':fetched_admin_data_avatar.data
+                    'admin_avatar': MEDIA_URL + str(fetched_admin_data_avatar.data)
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
