@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import ConfirmationModal from '../../ConfirmationModal'; // Import the modal component
 
 const AdminManagementAdminsOperation = () => {
     const { admin_user_name } = useParams();
@@ -11,31 +12,38 @@ const AdminManagementAdminsOperation = () => {
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState(''); // 'success' or 'danger'
 
+    const [showDeleteModal, setShowDeleteModal] = useState(false); // Modal visibility state
+    const [deleteAction, setDeleteAction] = useState(null); // Action type to confirm
+
     const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/admin-position';
 
-    const fetchAdminPosition = () => {
-        axios.post(`${API_BASE_URL}/fetch-position-for-admin/`, {
-            admin_user_name: admin_user_name
-        }, {
-            headers: {
-                Authorization: `Bearer ${Cookies.get("accessToken")}`,
-                "Content-Type": "application/json",
-            }
-        })
-            .then(response => {
-                console.log("Admin Position Data:", response.data.position); // Debugging
-                setAdminPosition(response.data.position); // Ensure only a string is stored
-            })
-            .catch(error => {
-                console.error("API Error:", error.response);
-                setMessage(error.response ? error.response.data.message : error.message);
-                setMessageType('danger');
+    const fetchAdminPosition = async () => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/fetch-position-for-admin/`, {
+                admin_user_name: admin_user_name
+            }, {
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                    "Content-Type": "application/json",
+                }
             });
+
+            console.log("Admin Position Data:", response.data.position);
+
+            // Ensure we store only the position name as a string
+            setAdminPosition(response.data.position?.name || "");
+
+            fetchPositions(response.data.position?.name || ""); // Pass correct data
+        } catch (error) {
+            console.error("API Error:", error.response);
+            setMessage(error.response ? error.response.data.message : error.message);
+            setMessageType('danger');
+            fetchPositions(""); // Pass correct data
+
+        }
     };
 
-
-
-    const fetchPositions = async () => {
+    const fetchPositions = async (adminPositionName) => {
         try {
             const response = await axios.get(`${API_BASE_URL}/fetch-positions/`, {
                 headers: {
@@ -43,10 +51,10 @@ const AdminManagementAdminsOperation = () => {
                 }
             });
 
-            console.log("API Response:", response.data); // Debugging Step
+            console.log("API Response:", response.data);
 
             if (Array.isArray(response.data.admin_positions)) {
-                const filteredPositions = response.data.admin_positions.filter(pos => pos.name !== adminPosition);
+                const filteredPositions = response.data.admin_positions.filter(pos => pos.name !== adminPositionName);
                 setPositions(filteredPositions);
             } else {
                 console.error("Expected an array, but received:", response.data);
@@ -59,12 +67,9 @@ const AdminManagementAdminsOperation = () => {
         }
     };
 
-
-
     useEffect(() => {
         fetchAdminPosition();
-        fetchPositions();
-    }, [adminPosition]);
+    }, []);
 
     // Handle Position Update
     const handleUpdatePosition = async (e) => {
@@ -89,8 +94,8 @@ const AdminManagementAdminsOperation = () => {
 
             setMessage(response.data.message);
             setMessageType('success');
+            setSelectedPositionId(''); // Reset the selected position
             fetchAdminPosition();
-            fetchPositions();
         } catch (error) {
             setMessage(error.response?.data.message || error.message);
             setMessageType('danger');
@@ -98,20 +103,36 @@ const AdminManagementAdminsOperation = () => {
     };
 
     // Handle Position Removal
-    const handleRemovePosition = async () => {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/remove-admin-position/`, {
-                admin_user_name
-            });
+    const handleRemovePosition = () => {
+        setDeleteAction({ type: 'position' });
+        setShowDeleteModal(true); // Show confirmation modal
+    };
 
-            setMessage(response.data.message);
-            setMessageType('success');
-            setAdminPosition('');
-            fetchPositions();
+    const confirmRemovePosition = async () => {
+        try {
+            await axios.delete(`${API_BASE_URL}/delete-position-for-admin/`, {
+                data: { admin_user_name: admin_user_name },
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                    "Content-Type": "application/json",
+                }
+            }).then(response => {
+                setMessage(response.data.message);
+                setMessageType('success');
+                setAdminPosition('');
+                fetchPositions();
+            });
         } catch (error) {
             setMessage(error.response?.data.message || error.message);
             setMessageType('danger');
         }
+
+        setShowDeleteModal(false); // Close the modal after confirming
+    };
+
+
+    const cancelRemovePosition = () => {
+        setShowDeleteModal(false); // Close the modal without doing anything
     };
 
     return (
@@ -134,9 +155,15 @@ const AdminManagementAdminsOperation = () => {
                         <div className="px-4 py-4 row justify-content-between">
                             <h5 className="mt-3">Admin Username: {admin_user_name}</h5>
                             <span className="mt-3">
-                                Admin Position: {adminPosition?.name || "Not Assigned"}
+                                Admin Position: {adminPosition || "Not Assigned"}
                             </span>
+
                             <div className="col-xl-6">
+                                {adminPosition && (
+                                    <button type="button" className="btn btn-danger mt-3 mb-4" onClick={handleRemovePosition}>
+                                        Remove Admin Position
+                                    </button>
+                                )}
                                 <div className="form-group mb-3 mt-3">
                                     <label htmlFor="Position" className="form-label">Select Position:</label>
                                     <select
@@ -150,17 +177,23 @@ const AdminManagementAdminsOperation = () => {
                                         ))}
                                     </select>
                                 </div>
-                                <button type="submit" className="btn btn-success">Update Admin Position</button>
-                                {adminPosition && (
-                                    <button type="button" className="btn btn-danger ms-2" onClick={handleRemovePosition}>
-                                        Remove Admin Position
-                                    </button>
+                                {/* Show Update Button only when a position is selected */}
+                                {selectedPositionId && (
+                                    <button type="submit" className="btn btn-success">Update Admin Position</button>
                                 )}
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                show={showDeleteModal}
+                onClose={cancelRemovePosition}
+                onConfirm={confirmRemovePosition}
+                message={`Are you sure you want to remove the position?`}
+            />
         </div>
     );
 };
