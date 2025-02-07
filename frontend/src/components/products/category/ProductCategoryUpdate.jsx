@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import ConfirmationModal from '../ConfirmationModal'; // Import the modal component
+import ConfirmationModal from '../../ConfirmationModal'; // Import the modal component
 
 
 
@@ -354,6 +354,7 @@ const ProductCategoryUpdate = () => {
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Category & Subcategory Update</h5>
+                    <Link to="/products/category" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleSubmitCategory}>

@@ -1381,6 +1381,8 @@ class CreateProductBrands(APIView):
             brand_description = self.request.data.get('brand_description',"")
             brand_logo = self.request.data.get('brand_logo',"")
 
+            print(brand_name,brand_established_year,is_own_brand,brand_country,brand_description,brand_logo)
+
             missing_fields = []
             if brand_name == "":
                 missing_fields.append("Brand name")

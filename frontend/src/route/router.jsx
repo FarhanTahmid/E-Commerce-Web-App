@@ -71,13 +71,17 @@ import WidgetsMiscellaneous from "../pages/widgets-miscellaneous";
 import RequireAuth from '../components/RequireAuth';
 import Cookies from 'js-cookie';
 import ProductCategory from "../pages/product-category";
-import ProductCategoryCreate from "@/components/products/ProductCategoryCreate";
-import ProductCategoryUpdate from "@/components/products/ProductCategoryUpdate";
+import ProductCategoryCreate from "@/components/products/category/ProductCategoryCreate";
+import ProductCategoryUpdate from "@/components/products/category/ProductCategoryUpdate";
 import AdminManagementPositions from "../pages/admin-management-positions";
 import AdminManagementPositionsCreate from "@/components/admin-management/positions/AdminManagementPositionsCreate";
 import AdminManagementPositionsUpdate from "@/components/admin-management/positions/AdminManagementPositionsUpdate";
 import AdminManagementAdmins from "../pages/admin-management-admins";
 import AdminManagementAdminsOperation from "@/components/admin-management/admins/AdminManagementAdminsOperation";
+import AccessError from "../pages/access-error";
+import ProductBrandCreate from "@/components/products/brand/ProductBrandCreate";
+import ProductBrandUpdate from "@/components/products/brand/ProductBrandUpdate";
+import ProductBrand from "../pages/product-brand";
 
 
 const parseJwt = (token) => {
@@ -113,6 +117,13 @@ const PublicRoute = ({ children }) => {
     return children;
 };
 
+// Error boundary component to catch 403 errors
+const ErrorBoundary = ({ error }) => {
+    if (error.status === 403) {
+        return <Navigate to="/403" replace />;
+    }
+    return null;
+};
 
 export const router = createBrowserRouter([
     {
@@ -244,6 +255,18 @@ export const router = createBrowserRouter([
                 element: <ProductCategoryUpdate />
             },
             {
+                path: "/products/brand",
+                element: <ProductBrand />
+            },
+            {
+                path: "/products/brand/create",
+                element: <ProductBrandCreate />
+            },
+            {
+                path: "/products/brand/:id",
+                element: <ProductBrandUpdate />
+            },
+            {
                 path: "/admin-management/positions",
                 element: <AdminManagementPositions />
             },
@@ -262,9 +285,14 @@ export const router = createBrowserRouter([
             {
                 path: "/admin-management/admins/:admin_user_name",
                 element: <AdminManagementAdminsOperation />
+            },
+            {
+                path: "/403",
+                element: <AccessError />
             }
 
-        ]
+        ],
+        errorElement: <ErrorBoundary /> // Use error boundary for 403 handling
     },
     {
         path: "/",

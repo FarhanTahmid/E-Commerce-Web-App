@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { Link } from 'react-router-dom';
 
 const ProductCategoryCreate = () => {
     const [categoryName, setCategoryName] = useState('');
@@ -177,6 +178,8 @@ const ProductCategoryCreate = () => {
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Category & Subcategory Creation</h5>
+                    <Link to="/products/category" className="btn btn-primary">← Back</Link>
+
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleSubmitCategory}>

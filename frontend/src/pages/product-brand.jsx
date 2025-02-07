@@ -1,18 +1,18 @@
 import React from 'react'
 import PageHeader from '@/components/shared/pageHeader/PageHeader'
-import ProductCategoryHeader from '@/components/products/category/ProductCategoryHeader'
 import Footer from '@/components/shared/Footer'
-import ProductCategoryTable from '@/components/products/category/ProductCategoryTable'
+import ProductBrandTable from '@/components/products/brand/ProductBrandTable'
+import ProductBrandHeader from '@/components/products/brand/ProductBrandHeader'
 
-const ProductCategory = () => {
+const ProductBrand = () => {
     return (
         <>
             <PageHeader>
-                <ProductCategoryHeader />
+                <ProductBrandHeader />
             </PageHeader>
             <div className='main-content'>
                 <div className='row'>
-                    <ProductCategoryTable />
+                    <ProductBrandTable />
                 </div>
             </div>
             <Footer />
@@ -20,4 +20,4 @@ const ProductCategory = () => {
     )
 }
 
-export default ProductCategory
+export default ProductBrand
