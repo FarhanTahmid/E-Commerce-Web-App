@@ -434,13 +434,14 @@ class FetchBusinessAdminAvatar(APIView):
     
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,admin_user_name,format=None):
-        # try:
+        try:
 
             admin_user_name = admin_user_name
 
             if admin_user_name!= "":
                 fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_user_name=admin_user_name)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
+                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
+                print(fetched_admin_data_avatar)
             else:
                 return Response({
                     'error':"Please provide admin unique id or email or admin user name"
@@ -456,27 +457,27 @@ class FetchBusinessAdminAvatar(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
             
-        # except JSONDecodeError as e:
-        #     return Response(
-        #         {'error': 'Invalid JSON format'},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
-        # except KeyError as e:
-        #     return Response(
-        #         {'error': f'Missing required field: {str(e)}'},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
-        # except ValueError as e:
-        #     return Response(
-        #         {'error': f'Invalid value: {str(e)}'},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
-        # except Exception as e:
-        #     return Response(
-        #         {'error': f'An unexpected error occurred: {str(e)}'},
-        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     )
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 #business admin position
 
