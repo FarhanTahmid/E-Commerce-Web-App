@@ -22,6 +22,7 @@ from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
 
 REFRESH_RATE = '50/m'
+SERVER_API_URL = 'server_api'
 
 # Create your views here.
 
@@ -435,7 +436,7 @@ class FetchBusinessAdminAvatar(APIView):
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,admin_user_name,format=None):
         try:
-
+            domain = request.get_host()
             admin_user_name = admin_user_name
 
             if admin_user_name!= "":
@@ -448,7 +449,7 @@ class FetchBusinessAdminAvatar(APIView):
             if fetched_admin_avatar:
                 return Response({
                     'message':message,
-                    'admin_avatar': 'server_api' + MEDIA_URL + str(fetched_admin_avatar)
+                    'admin_avatar': str(domain)+ '/' + SERVER_API_URL + MEDIA_URL + str(fetched_admin_avatar)
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
