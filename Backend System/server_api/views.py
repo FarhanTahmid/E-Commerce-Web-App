@@ -432,20 +432,12 @@ class FetchBusinessAdminAvatar(APIView):
     permission_classes = [IsAuthenticated]
     
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
-    def get(self,request,format=None):
+    def get(self,request,admin_user_name,format=None):
         try:
 
-            admin_unique_id = self.request.query_params.get('admin_unique_id',"")
-            admin_email = self.request.query_params.get('admin_email',"")
-            admin_user_name = self.request.query_params.get('admin_user_name',"")
+            admin_user_name = admin_user_name
 
-            if admin_unique_id != "":
-                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_unique_id=admin_unique_id)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
-            elif admin_email!= "":
-                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_email=admin_email)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
-            elif admin_user_name!= "":
+            if admin_user_name!= "":
                 fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_user_name=admin_user_name)
                 fetched_admin_data_avatar = serializers.BusinessAdminUserAvatarSerializer(fetched_admin_avatar,many=False)
             else:

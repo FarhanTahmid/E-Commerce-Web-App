@@ -854,6 +854,7 @@ class ManageProducts:
                     if os.path.exists(path):
                         os.remove(path)
                     product_brand.brand_logo.delete()
+                product_brand.rand_logo = brand_logo
             product_brand.save()
             SystemLogs.updated_by(request,product_brand)
             SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
