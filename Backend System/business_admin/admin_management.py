@@ -1282,7 +1282,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while removing admin position! Please try again later.")
         
-    def fetch_business_admin_profile_picture(request,admin_unique_id="",admin_email="",admin_user_name=""):
+    def fetch_business_admin_profile_picture(admin_unique_id="",admin_email="",admin_user_name=""):
         
         try:
             if admin_unique_id!="":
