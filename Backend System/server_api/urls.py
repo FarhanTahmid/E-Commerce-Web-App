@@ -1,5 +1,7 @@
-from django.urls import path
+from django.urls import path,re_path
+from django.views.static import serve
 from . import views
+from e_commerce_app import settings
 
 app_name='server_api'
 
@@ -88,4 +90,6 @@ urlpatterns = [                                                                 
     path('product/product-discounts/update/<int:product_discount_pk>/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
     path('product/product-discounts/delete/<int:product_discount_pk>/',views.DeleteProductDiscount.as_view(),name='delete_product_discount'),
 
+    re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
+    re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]

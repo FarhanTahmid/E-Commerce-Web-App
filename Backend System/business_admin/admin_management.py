@@ -1302,6 +1302,7 @@ class AdminManagement:
             
             if business_admin.admin_avatar:
                 avatar_url = business_admin.admin_avatar
+                print(avatar_url)
                 return avatar_url, "Avatar fetched successfully"
             else:
                 return False, "No avatar found"

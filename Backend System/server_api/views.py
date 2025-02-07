@@ -440,8 +440,6 @@ class FetchBusinessAdminAvatar(APIView):
 
             if admin_user_name!= "":
                 fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_user_name=admin_user_name)
-                fetched_admin_data_avatar = serializers.BusinessAdminUserSerializer(fetched_admin_avatar,many=False)
-                print(fetched_admin_data_avatar)
             else:
                 return Response({
                     'error':"Please provide admin unique id or email or admin user name"
@@ -450,7 +448,7 @@ class FetchBusinessAdminAvatar(APIView):
             if fetched_admin_avatar:
                 return Response({
                     'message':message,
-                    'admin_avatar': MEDIA_URL + str(fetched_admin_data_avatar.data['admin_avatar'])
+                    'admin_avatar': 'server_api' + MEDIA_URL + str(fetched_admin_avatar)
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
