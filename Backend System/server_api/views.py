@@ -448,7 +448,7 @@ class FetchBusinessAdminAvatar(APIView):
             if fetched_admin_avatar:
                 return Response({
                     'message':message,
-                    'admin_avatar': MEDIA_URL + str(fetched_admin_data_avatar.data)
+                    'admin_avatar': MEDIA_URL + str(fetched_admin_data_avatar.data['admin_avatar'])
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
