@@ -18,18 +18,21 @@ class IsAdminWithPermission(BasePermission):
         if request.user.is_superuser:
             return True
         
-        try:
-            # Get the user's role
-            user_role = request.user.admin_role.role
-            if not user_role:
+        if request.user.is_admin:
+            try:
+                # Get the user's role
+                user_role = request.user.admin_role.role
+                if not user_role:
+                    return False
+                # Check if the role has ANY of the required permissions
+                if self.required_permissions:
+                    return AdminRolePermission.objects.filter(
+                        role = user_role,
+                        permission__permission_name__in=self.required_permissions
+                    ).exists()
+                
                 return False
-            # Check if the role has ANY of the required permissions
-            if self.required_permissions:
-                return AdminRolePermission.objects.filter(
-                    role = user_role,
-                    permission__permission_name__in=self.required_permissions
-                ).exists()
-            
-            return False
-        except ObjectDoesNotExist:
+            except ObjectDoesNotExist:
+                return False
+        else:
             return False
