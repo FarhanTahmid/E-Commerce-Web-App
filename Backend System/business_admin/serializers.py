@@ -17,3 +17,7 @@ class BusinessAdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessAdminUser
         fields = '__all__'
+class BusinessAdminUserAvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusinessAdminUser
+        fields = ['admin_avatar']
