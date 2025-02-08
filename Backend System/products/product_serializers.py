@@ -21,7 +21,7 @@ class Product_Brands_Serializer(serializers.ModelSerializer):
         if obj.brand_logo:
             request = self.context.get('request')  # Get the request from context
             domain = request.get_host()
-            return  f"{str({domain})} + '/' + {str({SERVER_URL})} + {settings.MEDIA_URL}{obj.brand_logo}"
+            return  f"{str(domain)} + '/' + {str(SERVER_URL)} + {settings.MEDIA_URL}{obj.brand_logo}"
         return None
 
     class Meta:
