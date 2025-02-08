@@ -89,6 +89,7 @@ class ServerAPITestCases(APITestCase):
         self.admin_role_permission2.save()
         self.admin_user_role = AdminUserRole.objects.create(user=self.user,role=self.adminposition1)
         self.admin_user_role.save()
+        
 
         self.product_brand1 = Product_Brands.objects.create(brand_name="Loreal", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 1909,is_own_brand=False,created_at=self.now)
@@ -119,9 +120,18 @@ class ServerAPITestCases(APITestCase):
 
         self.businessadmin1 = BusinessAdminUser.objects.create(admin_full_name="SAMI",admin_user_name="sami2186",admin_position=self.adminposition1,admin_email="sami2186@example.com"
                                                                )
-        self.businessadmin1_user = Accounts.objects.create(username="sami2186",email="sami2186@example.com")
+        self.businessadmin1_user = Accounts.objects.create(username="sami2186",email="sami2186@example.com",is_admin=True)
         self.businessadmin1_user.set_password('1234')
         self.businessadmin1_user.save()
+
+        self.admin_user_role2 = AdminUserRole.objects.create(user=self.businessadmin1_user,role=self.adminposition1)
+        self.admin_user_role2.save()
+
+        self.user3 = Accounts(username='zz12',password='1234',email="zz12@gmail.com",is_admin=True)
+        self.user3.save()
+
+        self.businessadmin3 = BusinessAdminUser.objects.create(admin_full_name="zz12",admin_position=self.adminposition1,admin_email="zz12@gmail.com",admin_user_name='zz12')
+        self.businessadmin3.save()
         
         self.product_image = Product_Images.objects.create(product_id=self.product1)
 
@@ -881,15 +891,30 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Fetched successfully")
 
-    def test_update_postion_for_admin(self):
+    def test_add_postion_for_admin(self):
+        """
+        Test for adding position for admin
+        """
+        data= {'admin_user_name':self.businessadmin3.admin_user_name,'position_pk':self.adminposition1.pk}
+        response = self.client.post(f'/server_api/business-admin/admin-position/add-position-for-admin/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Successfully added")
+
+        #existing
+        data= {'admin_user_name':self.businessadmin1.admin_user_name,'position_pk':self.adminposition2.pk}
+        response = self.client.post(f'/server_api/business-admin/admin-position/add-position-for-admin/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'],"Admin already has a role")
+    
+    def test_update_position_for_admin(self):
+
         """
         Test for updating position for admin
         """
-        data= {'admin_user_name':self.businessadmin1.admin_user_name,'position_pk':self.adminposition2.pk}
-        response = self.client.post(f'/server_api/business-admin/admin-position/add-or-update-position-for-admin/',data,format='json')
-        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-
-        self.assertEqual(response.data['message'],"Successfull")
+        data = {'admin_user_name':self.businessadmin1.admin_user_name,'position_pk':self.adminposition2.pk}
+        response = self.client.put(f'/server_api/business-admin/admin-position/update-position-for-admin/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Successfully updated")
     
     def test_delete_position_for_admin(self):
         """

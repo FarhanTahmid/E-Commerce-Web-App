@@ -2665,7 +2665,7 @@ class FetchPositionForAdmin(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class AddOrUpdatePositionForAdmin(APIView):
+class AddPositionForAdmin(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -2682,11 +2682,11 @@ class AddOrUpdatePositionForAdmin(APIView):
             position_pk = self.request.data.get('position_pk',"")
             if position_pk == "":
                 return Response({
-                    'error':"Postion needed for position"
+                    'error':"Postion needed"
                 },status=status.HTTP_400_BAD_REQUEST)
             
-            add_or_update,message = AdminManagement.add_or_update_admin_position(request,admin_user_name,position_pk)
-            if add_or_update:
+            added,message = AdminManagement.add_user_admin_position(request,admin_user_name,position_pk)
+            if added:
                 return Response({
                     'message':message,
                 },status=status.HTTP_201_CREATED)
@@ -2716,8 +2716,58 @@ class AddOrUpdatePositionForAdmin(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+class UpdatePositionForAdmin(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,format=None):
+        try:
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            position_pk = self.request.data.get('position_pk',"")
+
+            
+            updated,message = AdminManagement.update_user_admin_position(request,admin_user_name,position_pk)
+            if updated:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class RemovePositionForAdmin(APIView):
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
