@@ -3,8 +3,7 @@ from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingE
 from system.models import *
 from system.system_log import SystemLogs
 from e_commerce_app import settings
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
+from business_admin.models import *
 import os
 
 class AdminManagement:
@@ -1153,58 +1152,28 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin position! Please try again later.")
         
-    def add_or_update_admin_position(request,admin_user_name,admin_position_pk):
-
-        """
-    Add or update the position of an admin user with detailed exception handling.
-
-    This function attempts to add or update the position of an admin user in the database. It fetches the admin user
-    and the admin position using the provided primary keys and updates the admin user's position. The function handles
-    various errors that might occur during the process, logging each error for further analysis.
-
-    Args:
-        request (Request): The request object containing the user information.
-        admin_user_name (str): The username of the admin whose position is to be added or updated.
-        admin_position_pk (int): The primary key (ID) of the admin position to be assigned to the admin user.
-
-    Returns:
-        tuple:
-            - bool: `True` if the admin position was added or updated successfully, `False` otherwise.
-            - str: A message indicating the success or failure of the operation.
-
-    Example Usage:
-        success, message = add_or_update_admin_position(
-            request,
-            admin_user_name="admin_user",
-            admin_position_pk=1
-        )
-        print(message)
-
-    Exception Handling:
-        - **DatabaseError**: Catches general database-related issues.
-            Message: "An unexpected error in Database occurred while adding admin position! Please try again later."
-        - **OperationalError**: Handles server-related issues such as connection problems.
-            Message: "An unexpected error in server occurred while adding admin position! Please try again later."
-        - **ProgrammingError**: Catches programming errors such as invalid queries.
-            Message: "An unexpected error in server occurred while adding admin position! Please try again later."
-        - **IntegrityError**: Handles data integrity issues.
-            Message: "Same type exists in Database!"
-        - **Exception**: A catch-all for any other unexpected errors.
-            Message: "An unexpected error occurred while adding admin position! Please try again later."
-
-    Notes:
-        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
-    """
+    def add_user_admin_position(request,admin_user_name,admin_position_pk):
 
         try:
             #getting the admin
+            user = Accounts.objects.get(username = admin_user_name)
+            all_exisiting_user_role = AdminUserRole.objects.filter(user = user)
+            if all_exisiting_user_role.first():
+                return False, "Admin already has a role"
+            
             business_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
             business_admin.admin_position = admin_position
             business_admin.save()
             SystemLogs.updated_by(request,business_admin)
             SystemLogs.admin_activites(request,f"Admin position added, {business_admin.admin_user_name}",message="Admin position added")
-            return True, "Successfull"
+
+            admin_user_role = AdminUserRole.objects.create(user = user,role = admin_position)
+            admin_user_role.save()
+            SystemLogs.updated_by(request,admin_user_role)
+            SystemLogs.admin_activites(request,f"Admin user role added, {admin_user_role.user.username}",message="Admin user role added")
+
+            return True, "Successfully added"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1223,7 +1192,56 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while adding admin position! Please try again later.")
     
-    def remove_position_of_admin(request,admin_user_name):
+    def update_user_admin_position(request,admin_user_name,admin_position_pk=""):
+
+        try:
+            #getting the admin
+            user = Accounts.objects.get(username = admin_user_name)
+            admin_user_role = AdminUserRole.objects.get(user = user)
+            business_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
+
+            if admin_position_pk == "":
+                admin_user_role.role = None
+                admin_user_role.save()
+                SystemLogs.updated_by(request,admin_user_role)
+                SystemLogs.admin_activites(request,f"Admin user role removed, {admin_user_role.user.username}",message="Admin user role removed")
+                business_admin.admin_position = None
+                business_admin.save()
+                SystemLogs.updated_by(request,business_admin)
+                SystemLogs.admin_activites(request,f"Admin position removed, {business_admin.admin_user_name}",message="Admin position removed") 
+
+            elif business_admin.admin_position.pk != admin_position_pk:
+                admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
+                admin_user_role.role = admin_position
+                admin_user_role.save()
+                SystemLogs.updated_by(request,admin_user_role)
+                SystemLogs.admin_activites(request,f"Admin user role updated, {admin_user_role.user.username}",message="Admin user role updated")
+                business_admin.admin_position = admin_position
+                business_admin.save()
+                SystemLogs.updated_by(request,business_admin)
+                SystemLogs.admin_activites(request,f"Admin position updated, {business_admin.admin_user_name}",message="Admin position updated")
+            
+
+            return True, "Successfully updated"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating admin position! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating admin position! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating admin position! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating admin position! Please try again later.")
+    
+    def remove_position_of_admin(request,admin_user_name,delete=False):
 
         """
     Remove the position of an admin user with detailed exception handling.
@@ -1266,11 +1284,19 @@ class AdminManagement:
 
         try:
             #getting the admin
+            user = Accounts.objects.get(username = admin_user_name)
+            admin_user_role = AdminUserRole.objects.get(user = user)
+            admin_user_role.role = None
+            admin_user_role.save()
+            SystemLogs.updated_by(request,admin_user_role)
+            SystemLogs.admin_activites(request,f"Admin user role removed, {admin_user_role.user.username}",message="Admin user role removed")
             business_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
             business_admin.admin_position = None
             business_admin.save()
             SystemLogs.updated_by(request,business_admin)
             SystemLogs.admin_activites(request,f"Admin position removed, {business_admin.admin_user_name}",message="Admin position removed")
+            if delete:
+                admin_user_role.delete()
             return True, "Admin position removed successfully"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1459,119 +1485,3 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin role permission! Please try again later.")
         
-    #admin user role
-    def fetch_admin_user_role(admin_user_role_pk="",admin_user_name=""):
-        try:
-            if admin_user_name!="":
-                admin_account = Accounts.objects.get(username = admin_user_name)
-                admin_user_role = AdminUserRole.objects.get(user=admin_account)
-                return admin_user_role, "Fetched successfully"
-            elif admin_user_role_pk!="":
-                admin_user_role = AdminUserRole.objects.get(pk=admin_user_role_pk)
-                return admin_user_role, "Fetched successfully"
-            else:
-                admin_user_role = AdminUserRole.objects.all()
-                return admin_user_role, "All fetched successfully" if len(admin_user_role)>0 else "No user role found"
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
-
-            # Return appropriate messages based on the error type
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while fetching admin user role! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while fetching admin user role! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while fetching admin user role! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
-
-            return False, error_messages.get(error_type, "An unexpected error occurred while creating admin user role! Please try again later.")
-        
-    def create_admin_user_role(request,admin_user_name,admin_position_pk):
-        try:
-            
-            admin_account = Accounts.objects.get(username = admin_user_name)
-
-            exisiting_admin_user_role_with_this_admin = AdminUserRole.objects.filter(user=admin_account)
-            if len(exisiting_admin_user_role_with_this_admin)>1:
-                return False, "Admin can have only one role"
-
-            admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-            admin_user_role = AdminUserRole.objects.create(user=admin_account,role=admin_position)
-            admin_user_role.save()
-            SystemLogs.updated_by(request,admin_user_role)
-            SystemLogs.admin_activites(request,f"Created admin user role, {admin_user_role.user.username}-{admin_user_role.role.name}",message="Created")
-
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
-
-            # Return appropriate messages based on the error type
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while creating admin user role! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while creating admin user role! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred whilecreating admin user role! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
-
-            return False, error_messages.get(error_type, "An unexpected error occurred while creating admin user role! Please try again later.")
-    
-    def update_admin_user_role(request,admin_user_role_pk,admin_position_pk=""):
-        try:
-            if admin_position_pk != "":
-                admin_user_role,message = AdminManagement.fetch_admin_user_role(admin_user_role_pk=admin_user_role_pk)
-                admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
-                admin_user_role.role = admin_position
-                admin_user_role.save()
-            elif admin_position_pk == "":
-                admin_user_role,message = AdminManagement.fetch_admin_user_role(admin_user_role_pk=admin_user_role_pk)
-                admin_user_role.role = None
-            SystemLogs.updated_by(request,admin_user_role)
-            SystemLogs.admin_activites(request,f"Updated admin user role, {admin_user_role.user.username}-{admin_user_role.role.name}",message="Updated")
-            return True, "Updated successfully"
-        
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
-
-            # Return appropriate messages based on the error type
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while updating admin user role! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while updating admin user role! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while updating admin user role! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
-
-            return False, error_messages.get(error_type, "An unexpected error occurred while updating admin user role! Please try again later.")
-        
-    def delete_admin_user_role(request,admin_user_role_pk):
-        
-        try:
-            admin_user_role,message = AdminManagement.fetch_admin_user_role(admin_user_role_pk=admin_user_role_pk)
-            SystemLogs.admin_activites(request,f"Deleted admin user role, {admin_user_role.user.username}-{admin_user_role.role.name}",message="Deleted")
-            admin_user_role.delete()
-            return True, "Deleted successfully"
-        
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
-
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while deleting admin user role! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while deleting admin user role! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while deleting admin user role! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
-
-            return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin user role! Please try again later.")

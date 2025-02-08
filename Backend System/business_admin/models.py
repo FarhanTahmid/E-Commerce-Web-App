@@ -112,7 +112,7 @@ class AdminRolePermission(models.Model):
 class AdminUserRole(models.Model):
 
     user = models.OneToOneField(Accounts, on_delete=models.CASCADE, related_name='admin_role')
-    role = models.ForeignKey(AdminPositions, on_delete=models.CASCADE, related_name='users')
+    role = models.ForeignKey(AdminPositions, on_delete=models.CASCADE, related_name='users',null=True,blank=True)
     updated_by = models.JSONField(blank=True, null=True)
 
     def __str__(self):

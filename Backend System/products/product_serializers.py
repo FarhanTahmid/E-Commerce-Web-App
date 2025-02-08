@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .models import *
+from e_commerce_app import settings
+
+SERVER_URL = 'server_api'
 
 class Product_Category_Serializer(serializers.ModelSerializer):
     class Meta:
@@ -13,6 +16,13 @@ class Product_Sub_Category_Serializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class Product_Brands_Serializer(serializers.ModelSerializer):
+
+    def get_brand_logo(self, obj):
+        if obj.brand_logo:
+            request = self.context.get('request')  # Get the request from context
+            domain = request.get_host()
+            return  f"str({domain}) + '/' + {SERVER_URL} + {settings.MEDIA_URL}{obj.brand_logo}"
+        return None
 
     class Meta:
         model = Product_Brands
