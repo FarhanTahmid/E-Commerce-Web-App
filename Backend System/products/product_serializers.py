@@ -18,11 +18,11 @@ class Product_Sub_Category_Serializer(serializers.ModelSerializer):
 class Product_Brands_Serializer(serializers.ModelSerializer):
     brand_logo_url = serializers.SerializerMethodField()
 
-    def get_brand_logo(self, obj):
+    def get_brand_logo_url(self, obj):
         if obj.brand_logo:
-            request = self.context.get('request')  # Get the request from context
-            domain = request.get_host()
-            return f"{domain}/{SERVER_API_URL}{settings.MEDIA_URL}{obj.brand_logo}"
+            request = self.context.get('request')  # Ensure request context is available
+            if request:
+                return request.build_absolute_uri(f"/server_api{settings.MEDIA_URL}{obj.brand_logo}")
         return None
 
     class Meta:
