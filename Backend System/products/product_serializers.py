@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import *
 from e_commerce_app import settings
 
-SERVER_API_URL = settings.SERVER_API_URL
+SERVER_API_URL = 'server_api'
 
 class Product_Category_Serializer(serializers.ModelSerializer):
     class Meta:
