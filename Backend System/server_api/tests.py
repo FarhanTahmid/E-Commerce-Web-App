@@ -43,7 +43,7 @@ class ServerAPITestCases(APITestCase):
             email='existing_admin@example.com',
             username='existing_admin',
             is_admin = True,
-            is_superuser = True
+            is_superuser = False
         )
         self.admin_existing_user.set_password('1234')
         self.admin_existing_user.save()
@@ -56,7 +56,8 @@ class ServerAPITestCases(APITestCase):
         self.user = Accounts(
             email=self.email,
             username='user',
-            is_superuser = False
+            is_superuser = False,
+            is_admin=True
         )
         self.user.set_password(self.password)
         self.user.save()
@@ -76,10 +77,18 @@ class ServerAPITestCases(APITestCase):
         self.adminposition1 = AdminPositions.objects.create(name="Owner",description="Ownerrr")
         self.adminposition2 = AdminPositions.objects.create(name="Manager",description="GRRR")
         self.admin_permission = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE)
+        self.admin_permission.save()
         self.admin_permission2 = AdminPermissions.objects.create(permission_name=AdminPermissions.UPDATE)
+        self.admin_permission2.save()
+        self.admin_permission3 = AdminPermissions.objects.create(permission_name=AdminPermissions.VIEW)
+        self.admin_permission3.save()
 
-        self.admin_role_permission = AdminRolePermission.objects.create(role=self.adminposition1,permission=self.admin_permission)
+        self.admin_role_permission1 = AdminRolePermission.objects.create(role=self.adminposition1,permission=self.admin_permission)
+        self.admin_role_permission1.save()
+        self.admin_role_permission2 = AdminRolePermission.objects.create(role=self.adminposition1,permission=self.admin_permission3)
+        self.admin_role_permission2.save()
         self.admin_user_role = AdminUserRole.objects.create(user=self.user,role=self.adminposition1)
+        self.admin_user_role.save()
 
         self.product_brand1 = Product_Brands.objects.create(brand_name="Loreal", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 1909,is_own_brand=False,created_at=self.now)
@@ -413,7 +422,7 @@ class ServerAPITestCases(APITestCase):
     #     #all
     #     response = self.client.get(f'/server_api/business-admin/admin-position/fetch-positions/')
     #     self.assertEqual(response.status_code,status.HTTP_200_OK)
-    #     self.assertEqual(len(response.data['admin_positions']),1)
+    #     self.assertEqual(len(response.data['admin_positions']),2)
     #     self.assertEqual(response.data['message'],"All Admin positions fetched successfully!")
     
     #     #name
@@ -444,7 +453,7 @@ class ServerAPITestCases(APITestCase):
     #     Test for updating admin postion
     #     """
     #     data = {'name':'pppl','description':'okoko'}
-    #     response = self.client.put(f'/server_api/business-admin/admin-position/update/{self.adminposition1.pk}',data,format='json')
+    #     response = self.client.put(f'/server_api/business-admin/admin-position/update/{self.adminposition1.pk}/',data,format='json')
     #     self.assertEqual(response.data['message'],"Admin position successfully updated")
     #     self.assertEqual(response.status_code,status.HTTP_200_OK)
 
@@ -452,7 +461,7 @@ class ServerAPITestCases(APITestCase):
     #     """
     #     Test delete admin postion
     #     """
-    #     response = self.client.delete(f'/server_api/business-admin/admin-position/delete/{self.adminposition1.pk}')
+    #     response = self.client.delete(f'/server_api/business-admin/admin-position/delete/{self.adminposition1.pk}/')
     #     self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
     #     self.assertEqual(response.data['message'],"Admin position deleted successfully")
 
@@ -821,7 +830,7 @@ class ServerAPITestCases(APITestCase):
         """
 
         response = self.client.get(f'/server_api/business-admin/admin-permissions/fetch-admin-permissions/')
-        self.assertEqual(len(response.data['admin_permission']),2)
+        self.assertEqual(len(response.data['admin_permission']),3)
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         
         #using name
@@ -900,10 +909,10 @@ class ServerAPITestCases(APITestCase):
         response = self.client.get(f'/server_api/business-admin/admin-role-permission/fetch-role-permissions/')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"All fetched successfully")
-        self.assertEqual(len(response.data['admin_role_permission']),1)
+        self.assertEqual(len(response.data['admin_role_permission']),2)
 
         #using pk
-        response = self.client.get(f'/server_api/business-admin/admin-role-permission/fetch-role-permissions/?admin_role_permission_pk={self.admin_role_permission.pk}')
+        response = self.client.get(f'/server_api/business-admin/admin-role-permission/fetch-role-permissions/?admin_role_permission_pk={self.admin_role_permission1.pk}')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Fetched successfully")
 

@@ -595,16 +595,13 @@ class UpdateBusinessAdminPosition(APIView):
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,admin_position_pk,format=None,*args, **kwargs):
         try:
-
             admin_position_pk= admin_position_pk
             name = self.request.data.get('name',"")
             description = self.request.data.get('description',"")
-
             if name == "":
                 return Response({
                     'message':"Admin position name is required"
                 },status=status.HTTP_400_BAD_REQUEST)
-            
             admin_position_updated,message = AdminManagement.update_admin_position(request,admin_position_pk,name,description)
             if admin_position_updated:
                 return Response({
@@ -1321,13 +1318,13 @@ class FetchProductBrands(APIView):
             brand_name = request.query_params.get('brand_name',"")
             if pk!= "":
                 product_brands,message = ManageProducts.fetch_product_brand(pk=pk)
-                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False)
+                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False,context={'request': request})
             elif brand_name!= "":
                 product_brands,message = ManageProducts.fetch_product_brand(brand_name=brand_name)
-                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False)
+                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False,context={'request': request})
             else:
                 product_brands,message = ManageProducts.fetch_product_brand()
-                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=True)
+                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=True,context={'request': request})
             if product_brands:
                 return Response(
                     {"message": message,"product_brands": product_brands_data.data},
