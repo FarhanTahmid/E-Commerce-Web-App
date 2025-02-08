@@ -1495,7 +1495,7 @@ class AdminManagement:
             admin_account = Accounts.objects.get(username = admin_user_name)
 
             exisiting_admin_user_role_with_this_admin = AdminUserRole.objects.filter(user=admin_account)
-            if len(exisiting_admin_user_role_with_this_admin)>1:
+            if len(exisiting_admin_user_role_with_this_admin)==1 or len(exisiting_admin_user_role_with_this_admin)>1:
                 return False, "Admin can have only one role"
 
             admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
@@ -1503,6 +1503,7 @@ class AdminManagement:
             admin_user_role.save()
             SystemLogs.updated_by(request,admin_user_role)
             SystemLogs.admin_activites(request,f"Created admin user role, {admin_user_role.user.username}-{admin_user_role.role.name}",message="Created")
+            return True, "Created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1528,11 +1529,13 @@ class AdminManagement:
                 admin_position,message = AdminManagement.fetch_admin_position(pk=admin_position_pk)
                 admin_user_role.role = admin_position
                 admin_user_role.save()
+                SystemLogs.updated_by(request,admin_user_role)
+                SystemLogs.admin_activites(request,f"Updated admin user role, {admin_user_role.user.username}-{admin_user_role.role.name}",message="Updated")
             elif admin_position_pk == "":
                 admin_user_role,message = AdminManagement.fetch_admin_user_role(admin_user_role_pk=admin_user_role_pk)
                 admin_user_role.role = None
-            SystemLogs.updated_by(request,admin_user_role)
-            SystemLogs.admin_activites(request,f"Updated admin user role, {admin_user_role.user.username}-{admin_user_role.role.name}",message="Updated")
+                SystemLogs.updated_by(request,admin_user_role)
+                SystemLogs.admin_activites(request,f"Updated admin user role, removed role",message="Updated")
             return True, "Updated successfully"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

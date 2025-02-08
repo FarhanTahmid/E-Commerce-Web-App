@@ -23,6 +23,9 @@ class BusinessAdminTest(TestCase):
         self.user2 = Accounts(username='rafi',password='1234',email="rafi@gmail.com",is_admin=True)
         self.user2.save()
 
+        self.user3 = Accounts(username='sakib',password='1234',email="sakib@gmail.com",is_admin=True)
+        self.user3.save()
+
         self.adminpermisison1 = AdminPermissions.objects.create(permission_name=AdminPermissions.CREATE)
         self.adminpermisison2 = AdminPermissions.objects.create(permission_name=AdminPermissions.UPDATE)
 
@@ -358,6 +361,74 @@ class BusinessAdminTest(TestCase):
         #new
         success,message = AdminManagement.delete_admin_role_permission(request,self.adminposition1.pk)
         self.assertTrue(success,"Admin role permissions should be successfully deleted")
+        self.assertEqual(message,"Deleted successfully")
+    
+    #test for admin user role
+    def test_fetch_admin_user_role(self):
+        """
+        Test for fetching admin user role
+        """
+        request = self.factory.post('/admins/fetch-user-role/')
+        request.user = self._create_mock_dev_user()
+
+        #all
+        success,message = AdminManagement.fetch_admin_user_role()
+        self.assertTrue(success,"Admin user role should be successfully fetched")
+        self.assertEqual(message,"All fetched successfully")
+
+        #using pk
+        success,message = AdminManagement.fetch_admin_user_role(admin_user_role_pk=self.adminuserrole1.pk)
+        self.assertTrue(success,"Admin user role should be successfully fetched")
+        self.assertEqual(message,"Fetched successfully")
+
+        #using user name
+        success,message = AdminManagement.fetch_admin_user_role(admin_user_name=self.user.username)
+        self.assertTrue(success,"Admin user role should be successfully fetched")
+        self.assertEqual(message,"Fetched successfully")
+
+    def test_create_admin_user_role(self):
+        """
+        Test for creating admin user role
+        """
+        request = self.factory.post('/admins/create-user-role/')
+        request.user = self._create_mock_dev_user()
+
+        #existing
+        success,message = AdminManagement.create_admin_user_role(request,self.user.username,self.adminposition1.pk)
+        self.assertFalse(success,"Admin user role should not be successfully created")
+        self.assertEqual(message,"Admin can have only one role")
+
+        #new
+        success,message = AdminManagement.create_admin_user_role(request,self.user3.username,self.adminposition1.pk)
+        self.assertTrue(success,"Admin user role should be successfully created")
+        self.assertEqual(message,"Created successfully")
+
+    def test_update_admin_user_role(self):
+        """
+        Test for updating admin user role
+        """
+        request = self.factory.post('/admins/update-user-role/')
+        request.user = self._create_mock_dev_user()
+
+        #existing
+        success,message = AdminManagement.update_admin_user_role(request,self.adminuserrole1.pk,self.adminposition1.pk)
+        self.assertTrue(success,"Admin user role should be successfully updated")
+        self.assertEqual(message,"Updated successfully")
+
+        #new
+        success,message = AdminManagement.update_admin_user_role(request,self.adminuserrole2.pk)
+        self.assertTrue(success,"Admin user role should be successfully updated")
+        self.assertEqual(message,"Updated successfully")
+
+    def delete_admin_user_role(self):
+        """
+        Test for deleting admin user role
+        """
+        request = self.factory.post('/admins/delete-user-role/')
+        request.user = self._create_mock_dev_user()
+
+        success,message = AdminManagement.delete_admin_user_role(request,self.adminuserrole1.pk)
+        self.assertTrue(success,"Admin user role should be successfully deleted")
         self.assertEqual(message,"Deleted successfully")
 
 
