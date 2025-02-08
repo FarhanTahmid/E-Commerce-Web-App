@@ -296,7 +296,7 @@ class BusinessAdminTest(TestCase):
         """
         request = self.factory.post('/admins/delete-admin-postiion/')
         request.user = self._create_mock_businessadmin_user()
-        success,message = AdminManagement.remove_position_of_admin(request,self.businessadmin1.admin_user_name)
+        success,message = AdminManagement.remove_position_of_admin(request,self.businessadmin1.admin_user_name,False)
         self.assertTrue(success,"Admin position should be successfully removed")
         self.assertEqual(message,"Admin position removed successfully")
         

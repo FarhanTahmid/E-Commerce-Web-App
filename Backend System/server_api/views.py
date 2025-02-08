@@ -2775,12 +2775,13 @@ class RemovePositionForAdmin(APIView):
     def delete(self,request,format=None):
         try:
             admin_user_name = self.request.data.get('admin_user_name',"")
+            delete = self.request.data.get('delete',False)
             if admin_user_name == "":
                 return Response({
                     'error':"User name needed for position"
                 },status=status.HTTP_400_BAD_REQUEST)
             
-            deleted,message = AdminManagement.remove_position_of_admin(request,admin_user_name)
+            deleted,message = AdminManagement.remove_position_of_admin(request,admin_user_name,delete)
             if deleted:
                 return Response({
                     'message':message

@@ -1241,7 +1241,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while updating admin position! Please try again later.")
     
-    def remove_position_of_admin(request,admin_user_name):
+    def remove_position_of_admin(request,admin_user_name,delete=False):
 
         """
     Remove the position of an admin user with detailed exception handling.
@@ -1295,6 +1295,8 @@ class AdminManagement:
             business_admin.save()
             SystemLogs.updated_by(request,business_admin)
             SystemLogs.admin_activites(request,f"Admin position removed, {business_admin.admin_user_name}",message="Admin position removed")
+            if delete:
+                admin_user_role.delete()
             return True, "Admin position removed successfully"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
