@@ -2199,13 +2199,13 @@ class FetchProductImages(APIView):
             product_image_pk = self.request.query_params.get('product_image_pk',"")
             if product_pk!= "":
                 product_images,message = ManageProducts.fetch_product_image(product_pk=product_pk)
-                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True,context={'request': request})
             elif product_image_pk!= "":
                 product_images,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
-                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=False)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=False,context={'request': request})
             else:
                 product_images,message = ManageProducts.fetch_product_image()
-                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True,context={'request': request})
             
             if product_images:
                 return Response({
@@ -2372,7 +2372,8 @@ class DeleteProductImage(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) 
-        
+
+#product discount        
 class FetchProductDiscount(APIView):
 
     authentication_classes = [JWTAuthentication]
