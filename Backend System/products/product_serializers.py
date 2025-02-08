@@ -18,7 +18,7 @@ class Product_Sub_Category_Serializer(serializers.ModelSerializer):
 class Product_Brands_Serializer(serializers.ModelSerializer):
     brand_logo = serializers.SerializerMethodField()
 
-    def get_brand_logo_url(self, obj):
+    def get_brand_logo(self, obj):
         if obj.brand_logo:
             request = self.context.get('request')  # Ensure request context is available
             if request:
