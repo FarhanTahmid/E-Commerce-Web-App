@@ -16,7 +16,7 @@ class Product_Sub_Category_Serializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class Product_Brands_Serializer(serializers.ModelSerializer):
-    brand_logo_url = serializers.SerializerMethodField()
+    brand_logo = serializers.SerializerMethodField()
 
     def get_brand_logo_url(self, obj):
         if obj.brand_logo:
