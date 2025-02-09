@@ -2212,6 +2212,69 @@ class ManageProducts:
         
     #product discount
     def fetch_product_discount(product_id=None,discount_name=None,is_active=None,product_discount_pk=None):
+        """
+    Fetches product discounts based on various filter criteria.
+
+    Parameters:
+    -----------
+    product_id : int, optional
+        The primary key of the product for which the discount is to be fetched.
+    discount_name : str, optional
+        The name of the discount to fetch.
+    is_active : bool, optional
+        If True, fetches all currently active discounts based on the start and end dates.
+    product_discount_pk : int, optional
+        The primary key of a specific product discount.
+
+    Returns:
+    --------
+    tuple
+        - If successful: (QuerySet or Object, "Success Message")
+        - If an error occurs: (False, "Error Message")
+
+    Process:
+    --------
+    1. If `product_id` is provided:
+        - Fetches the product using `ManageProducts.fetch_product`.
+        - Retrieves all discounts associated with that product.
+    2. If `product_discount_pk` is provided:
+        - Fetches a specific discount by its primary key.
+    3. If `discount_name` is provided:
+        - Retrieves a product discount by its discount name.
+    4. If `is_active` is `True`:
+        - Fetches active discounts based on the current date being within `start_date` and `end_date`.
+    5. If no specific filters are provided:
+        - Returns all product discounts.
+
+    Error Handling:
+    ---------------
+    - Logs errors in the `ErrorLogs` model.
+    - Handles various exceptions such as:
+        - `DatabaseError`: Issues with database queries.
+        - `OperationalError`: Unexpected server-related errors.
+        - `ProgrammingError`: Code-related issues.
+        - `IntegrityError`: Database integrity constraints.
+
+    Example Usage:
+    --------------
+    >>> fetch_product_discount(product_id=10)
+    ([<Product_Discount obj1>, <Product_Discount obj2>], "Product Discounts fetched successfully")
+
+    >>> fetch_product_discount(product_discount_pk=5)
+    (<Product_Discount obj>, "Product Discount fetched successfully")
+
+    >>> fetch_product_discount(discount_name="New Year Sale")
+    (<Product_Discount obj>, "Product Discount fetched successfully")
+
+    >>> fetch_product_discount(is_active=True)
+    ([<Product_Discount obj1>, <Product_Discount obj2>], "Active Product Discount fetched successfully")
+
+    >>> fetch_product_discount()
+    ([<Product_Discount obj1>, <Product_Discount obj2>, ...], "All product discounts fetched successfully")
+
+    Returns a user-friendly error message if any database-related issue occurs.
+
+    """
         try:
             if product_id:
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
@@ -2248,6 +2311,59 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product discount! Please try again later.")
         
     def create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date):
+
+        """
+    Creates a new product discount if it does not already exist.
+
+    Parameters:
+    -----------
+    request : HttpRequest
+        The HTTP request object (used for logging purposes).
+    product_id : int
+        The primary key of the product for which the discount is being created.
+    discount_name : str
+        The unique name of the discount.
+    discount_amount : float
+        The discount amount to be applied.
+    start_date : datetime
+        The start date of the discount.
+    end_date : datetime
+        The end date of the discount.
+
+    Returns:
+    --------
+    tuple
+        - If successful: (True, "Product discount created successfully")
+        - If an error occurs: (False, "Error Message")
+
+    Process:
+    --------
+    1. Fetches the product using `ManageProducts.fetch_product`.
+    2. Checks if a discount with the same `discount_name` already exists.
+        - If found and active, returns an error message.
+    3. Creates a new `Product_Discount` entry with the provided details.
+    4. Saves the new discount and logs the creation using `SystemLogs`.
+
+    Error Handling:
+    ---------------
+    - Logs errors in the `ErrorLogs` model.
+    - Handles various exceptions such as:
+        - `DatabaseError`: Issues with database queries.
+        - `OperationalError`: Unexpected server-related errors.
+        - `ProgrammingError`: Code-related issues.
+        - `IntegrityError`: Database integrity constraints.
+
+    Example Usage:
+    --------------
+    >>> create_product_discount(request, 10, "New Year Sale", 20.0, "2025-01-01", "2025-01-10")
+    (True, "Product discount created successfully")
+
+    >>> create_product_discount(request, 10, "New Year Sale", 20.0, "2025-01-01", "2025-01-10")
+    (False, "Product discount with this name already exists and is active")
+
+    If any database-related issue occurs, it returns a user-friendly error message.
+
+    """
         try:
             #getting the product
             product,message = ManageProducts.fetch_product(product_pk=product_id)
@@ -2279,6 +2395,61 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")
         
     def update_product_discount(request,product_discount_pk,product_id,discount_name,discount_amount,start_date,end_date):
+
+        """
+    Updates an existing product discount.
+
+    Parameters:
+    -----------
+    request : HttpRequest
+        The HTTP request object (used for logging purposes).
+    product_discount_pk : int
+        The primary key of the existing product discount to be updated.
+    product_id : int
+        The primary key of the product to associate with the discount.
+    discount_name : str
+        The name of the discount to update.
+    discount_amount : float
+        The new discount amount to be applied.
+    start_date : datetime
+        The new start date for the discount.
+    end_date : datetime
+        The new end date for the discount.
+
+    Returns:
+    --------
+    tuple
+        - If successful: (True, "Product Discount updated")
+        - If an error occurs: (False, "Error Message")
+
+    Process:
+    --------
+    1. Fetches the existing `Product_Discount` using `ManageProducts.fetch_product_discount`.
+    2. Fetches the new `Product` using `ManageProducts.fetch_product`.
+    3. Compares the current values with the new ones. If any values differ:
+        - Updates the `product_id`, `discount_name`, `discount_amount`, `start_date`, or `end_date`.
+    4. Saves the updated discount and logs the update using `SystemLogs`.
+
+    Error Handling:
+    ---------------
+    - Logs errors in the `ErrorLogs` model.
+    - Handles various exceptions such as:
+        - `DatabaseError`: Issues with database queries.
+        - `OperationalError`: Unexpected server-related errors.
+        - `ProgrammingError`: Code-related issues.
+        - `IntegrityError`: Database integrity constraints.
+
+    Example Usage:
+    --------------
+    >>> update_product_discount(request, 1, 10, "Winter Sale", 15.0, "2025-02-01", "2025-02-28")
+    (True, "Product Discount updated")
+
+    >>> update_product_discount(request, 1, 12, "Winter Sale", 15.0, "2025-02-01", "2025-02-28")
+    (False, "An unexpected error occurred while updating product discount! Please try again later.")
+
+    If any database-related issue occurs, it returns a user-friendly error message.
+
+    """
 
         try:
             #getting the product_discount
@@ -2316,6 +2487,50 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
         
     def delete_product_discount(request,product_discount_pk):
+        """
+    Deletes an existing product discount.
+
+    Parameters:
+    -----------
+    request : HttpRequest
+        The HTTP request object (used for logging purposes).
+    product_discount_pk : int
+        The primary key of the product discount to be deleted.
+
+    Returns:
+    --------
+    tuple
+        - If successful: (True, "Product discount deleted successfully")
+        - If an error occurs: (False, "Error Message")
+
+    Process:
+    --------
+    1. Fetches the existing `Product_Discount` using `ManageProducts.fetch_product_discount`.
+    2. Logs the action in `SystemLogs`.
+    3. Deletes the fetched `product_discount`.
+    4. Returns a success message if deletion is successful.
+
+    Error Handling:
+    ---------------
+    - Logs errors in the `ErrorLogs` model.
+    - Handles various exceptions such as:
+        - `DatabaseError`: Issues with database queries.
+        - `OperationalError`: Unexpected server-related errors.
+        - `ProgrammingError`: Code-related issues.
+        - `IntegrityError`: Database integrity constraints.
+    - Provides a specific error message based on the error type.
+
+    Example Usage:
+    --------------
+    >>> delete_product_discount(request, 1)
+    (True, "Product discount deleted successfully")
+
+    >>> delete_product_discount(request, 100)
+    (False, "An unexpected error occurred while deleting product discount! Please try again later.")
+    
+    If any database-related issue occurs, it returns a user-friendly error message.
+
+    """
         try:
             #getting the product discount
             product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
