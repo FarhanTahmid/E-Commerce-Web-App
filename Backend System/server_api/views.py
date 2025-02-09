@@ -537,6 +537,7 @@ class CreateBusinessAdminPosition(APIView):
 
     """Permissions"""
     authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     required_permissions = [
         AdminPermissions.CREATE,
         AdminPermissions.VIEW
