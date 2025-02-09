@@ -1,14 +1,12 @@
-# orders/serializers.py
 from rest_framework import serializers
 from .models import (
     Order,
     OrderDetails,
     OrderShippingAddress,
     OrderPayment,
-    CustomerAddress,
-    Coupon
 )
-from customer.models import Accounts
+
+from customer.models import Accounts,CustomerAddress,Coupon
 from django.utils import timezone
 
 class AddressSerializer(serializers.ModelSerializer):
