@@ -1,248 +1,267 @@
-import uuid
-from datetime import datetime
-from django.db import transaction
-from django.core.exceptions import PermissionDenied
-from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
-from rest_framework import status, viewsets
-from rest_framework.response import Response
+# orders/views.py
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.utils import timezone
+from django.db import transaction
+from datetime import timedelta
+import uuid
+from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems
+from customer.models import Coupon, CustomerAddress
+from customer.models import Accounts
 
-from orders.models import (
-    Order,
-    OrderDetails,
-    OrderShippingAddress,
-    OrderPayment,
-    Cart,
-    CartItems
-)
-from products.models import Product_SKU
-from system.models import Accounts  # Your custom user model
 from orders.serializers import (
     OrderSerializer,
-    OrderDetailsSerializer,
-    OrderShippingAddressSerializer,
-    OrderPaymentSerializer
+    OrderCreateSerializer,
+    OrderCancelSerializer,
+    CouponApplySerializer,
+    AddressSerializer
 )
 
-def generate_order_id():
-    """
-    Generates a unique order identifier.
-    Customize as needed. For example:
-      - Use UUID
-      - Use a prefix like "ORD-<timestamp>"
-      - Integrate with your own order ID logic
-    """
-    return "ORD-" + uuid.uuid4().hex[:8].upper()
+def generate_order_id(username, order_pk):
+    return f"#ORD-{username[:4]}-{order_pk}-{uuid.uuid4().hex[:4].upper()}"
 
+class CustomOrderPermission:
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_authenticated:
+            return obj.customer_id == request.user
+        return False
 
-class OrderViewSet(viewsets.ViewSet):
-    """
-    A ViewSet to handle order creation (checkout), retrieval, cancellation, etc.
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, CustomOrderPermission]
 
-    Endpoints:
-      - list (GET /orders/): List all orders belonging to the authenticated user.
-      - retrieve (GET /orders/{pk}/): Retrieve a specific order if owned by the user.
-      - checkout (POST /orders/checkout/): Create an order from a Cart.
-      - cancel (POST /orders/{pk}/cancel/): Cancel an order if still in a cancellable status.
-      - (optional) update_shipping_address, add_payment, etc. if you prefer separate endpoints.
-    """
-    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return self.queryset.filter(customer_id=self.request.user)
 
-    def list(self, request):
-        """
-        GET /orders/
-        Returns all orders belonging to the authenticated user.
-        """
-        orders = Order.objects.filter(customer_id=request.user).order_by('-order_date')
-        serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def retrieve(self, request, pk=None):
-        """
-        GET /orders/{pk}/
-        Retrieves a single order if it belongs to the authenticated user.
-        """
-        try:
-            order = Order.objects.get(pk=pk, customer_id=request.user)
-        except Order.DoesNotExist:
-            raise DRFPermissionDenied("You do not have permission to view this order.")
-
-        serializer = OrderSerializer(order)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['post'])
-    def checkout(self, request):
-        """
-        POST /orders/checkout/
-        Creates a new order from a provided cart_id.
+    @action(detail=False, methods=['post'], url_path='checkout')
+    def create_order(self, request):
+        serializer = OrderCreateSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
         
-        Expected JSON Body:
-          {
-            "cart_id": <int>,
-            "shipping_address": {
-              "address_line1": "...",
-              "address_line2": "...",
-              "country": "...",
-              "city": "...",
-              "postal_code": "..."
-            },
-            "payment": {
-              "payment_mode": "...",
-              "payment_status": "pending",
-              "payment_amount": <decimal>,
-              "payment_reference": "...any txn ref..."
-            }
-          }
-
-        Steps:
-          1. Validate the cart belongs to the user.
-          2. Generate a unique order_id and create the Order record.
-          3. Copy cart items into OrderDetails (with price, quantity).
-          4. Optionally deduct stock from Product_SKU (if you want).
-          5. Optionally create shipping address record.
-          6. Optionally create payment record.
-          7. Mark cart as checked out.
-        """
-        cart_id = request.data.get('cart_id')
-        if not cart_id:
-            return Response({"error": "Missing 'cart_id' in request data."}, status=status.HTTP_400_BAD_REQUEST)
-
-        shipping_data = request.data.get('shipping_address', {})
-        payment_data = request.data.get('payment', {})
-
         try:
             with transaction.atomic():
-                # 1. Fetch cart & check ownership
-                cart = Cart.objects.select_for_update().get(pk=cart_id)
-                if cart.customer_id != request.user:
-                    raise DRFPermissionDenied("Cart does not belong to the authenticated user.")
-                if cart.cart_checkout_status:
-                    return Response({"error": "Cart has already been checked out."}, status=status.HTTP_400_BAD_REQUEST)
-
-                # 2. Create the Order
-                new_order = Order.objects.create(
-                    order_id=generate_order_id(),
+                # Get user's cart
+                cart = Cart.objects.get(
                     customer_id=request.user,
-                    total_amount=0,  # Will calculate below
+                    cart_checkout_status=False
+                )
+                cart_items = CartItems.objects.filter(cart_id=cart)
+                
+                # Validate cart items
+                for item in cart_items:
+                    if item.quantity > item.product_sku.product_stock:
+                        return Response(
+                            {'error': f'Insufficient stock for {item.product_sku.product_sku}'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                # Generate order ID using cart PK
+                order_id = generate_order_id(request.user.username, cart.pk)
+
+                # Handle shipping address
+                address_data = serializer.validated_data.get('shipping_address')
+                save_address = serializer.validated_data.get('save_address', False)
+                
+                if serializer.validated_data.get('use_saved_address'):
+                    try:
+                        address = CustomerAddress.objects.get(customer_id=request.user)
+                        address_data = AddressSerializer(address).data
+                    except CustomerAddress.DoesNotExist:
+                        return Response(
+                            {'error': 'No saved address found'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                else:
+                    if save_address:
+                        address_serializer = AddressSerializer(data=address_data)
+                        address_serializer.is_valid(raise_exception=True)
+                        address = address_serializer.save(customer_id=request.user)
+                
+                # Apply coupon
+                coupon_code = serializer.validated_data.get('coupon_code')
+                coupon = None
+                if coupon_code:
+                    try:
+                        coupon = Coupon.objects.get(
+                            coupon_code=coupon_code,
+                            customer_id=request.user,
+                            start_date__lte=timezone.now(),
+                            end_date__gte=timezone.now()
+                        )
+                        if coupon.usage_limit <= 0:
+                            return Response(
+                                {'error': 'Coupon usage limit exceeded'},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                    except Coupon.DoesNotExist:
+                        return Response(
+                            {'error': 'Invalid or expired coupon'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                # Calculate totals
+                total_amount = cart.cart_total_amount
+                discount_amount = 0
+                
+                if coupon:
+                    if coupon.discount_type == 'percentage':
+                        discount_amount = total_amount * (coupon.discount_percentage / 100)
+                        if coupon.maximum_discount_amount:
+                            discount_amount = min(discount_amount, coupon.maximum_discount_amount)
+                    elif coupon.discount_type == 'fixed':
+                        discount_amount = coupon.discount_amount
+                    
+                    total_amount -= discount_amount
+                    coupon.usage_limit -= 1
+                    coupon.save()
+
+                # Create order
+                order = Order.objects.create(
+                    order_id=order_id,
+                    customer_id=request.user,
+                    total_amount=total_amount,
                     order_status='pending'
                 )
 
-                # 3. Copy cart items to OrderDetails
-                cart_items = CartItems.objects.select_for_update().filter(cart_id=cart)
-                total_amount = 0
+                # Create order details
                 for item in cart_items:
-                    sku = item.product_sku
-                    if item.quantity > sku.product_stock:
-                        return Response(
-                            {"error": f"Insufficient stock for SKU {sku.product_sku}."},
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-                    # (Optional) Deduct stock
-                    sku.product_stock -= item.quantity
-                    sku.save()
-
-                    # Calculate line subtotal
-                    line_subtotal = sku.product_price * item.quantity
-                    total_amount += line_subtotal
-
                     OrderDetails.objects.create(
-                        order_id=new_order,
-                        product_sku=sku,
+                        order_id=order,
+                        product_sku=item.product_sku,
                         quantity=item.quantity,
-                        units=1,  # or from item if you store "units" in cart
-                        subtotal=line_subtotal
+                        subtotal=item.product_sku.product_price * item.quantity
                     )
+                    # Update stock
+                    item.product_sku.product_stock -= item.quantity
+                    item.product_sku.save()
 
-                # Save total amount
-                new_order.total_amount = total_amount
-                new_order.save()
+                # Create shipping address
+                OrderShippingAddress.objects.create(
+                    order_id=order,
+                    **address_data
+                )
 
-                # 4. (optional) Shipping address
-                # Only create if user provided shipping fields
-                if shipping_data:
-                    OrderShippingAddress.objects.create(
-                        order_id=new_order,
-                        address_line1=shipping_data.get('address_line1', ''),
-                        address_line2=shipping_data.get('address_line2', ''),
-                        country=shipping_data.get('country', ''),
-                        city=shipping_data.get('city', ''),
-                        postal_code=shipping_data.get('postal_code', '')
-                    )
+                # Create payment record
+                payment_mode = serializer.validated_data['payment_mode']
+                OrderPayment.objects.create(
+                    order_id=order,
+                    payment_mode=payment_mode,
+                    payment_status='pending' if payment_mode == 'cash_on_delivery' else 'success',
+                    payment_amount=total_amount,
+                    payment_reference=f'PAY-{order.order_id}'
+                )
 
-                # 5. (optional) Payment record
-                if payment_data:
-                    mode = payment_data.get('payment_mode')
-                    amount = payment_data.get('payment_amount', total_amount)
-                    ref = payment_data.get('payment_reference', '')
-                    OrderPayment.objects.create(
-                        order_id=new_order,
-                        payment_mode=mode,
-                        payment_status=payment_data.get('payment_status', 'pending'),
-                        payment_amount=amount,
-                        payment_reference=ref
-                    )
-
-                # 6. Mark the cart as checked out
+                # Mark cart as checked out
                 cart.cart_checkout_status = True
                 cart.save()
 
-                # Clear cart items, if you want to empty it after checkout
-                cart_items.delete()
-
-                # 7. Return the order data
-                serializer = OrderSerializer(new_order)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
         except Cart.DoesNotExist:
-            return Response({"error": "Invalid 'cart_id'. Cart does not exist."}, status=status.HTTP_404_NOT_FOUND)
-        except DRFPermissionDenied as e:
-            raise e
+            return Response(
+                {'error': 'No active cart found'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
-            return Response({"error": f"Checkout failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        """
-        POST /orders/{pk}/cancel/
-        Cancels an order if it's still in a cancellable status (e.g., 'pending').
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel_order(self, request, pk=None):
+        order = self.get_object()
+        serializer = OrderCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        Example JSON body:
-          {
-            "reason": "No longer needed"
-          }
-
-        Steps:
-          1. Fetch the order, ensure it belongs to the user, and is in 'pending'.
-          2. Set status to 'cancelled'.
-          3. (Optionally) re-stock items in Product_SKU if desired.
-        """
-        reason = request.data.get('reason', 'No reason provided')
+        time_since_order = timezone.now() - order.order_date
+        cancellation_window = timedelta(hours=2)
 
         try:
             with transaction.atomic():
-                order = Order.objects.select_for_update().get(pk=pk, customer_id=request.user)
-                if order.order_status not in ['pending']:
+                if time_since_order <= cancellation_window:
+                    order.order_status = 'cancelled'
+                    order.save()
+                    
+                    # Restore stock
+                    order_details = OrderDetails.objects.filter(order_id=order)
+                    for detail in order_details:
+                        detail.product_sku.product_stock += detail.quantity
+                        detail.product_sku.save()
+                    
+                    # Handle payment reversal if needed
+                    payment = OrderPayment.objects.get(order_id=order)
+                    if payment.payment_status == 'success':
+                        payment.payment_status = 'refunded'
+                        payment.save()
+
                     return Response(
-                        {"error": "Order cannot be cancelled in its current status."},
-                        status=status.HTTP_400_BAD_REQUEST
+                        {'message': 'Order cancelled successfully'},
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    # Create cancellation request
+                    cancellation_reason = serializer.validated_data['reason']
+                    # Implement cancellation request workflow here
+                    return Response(
+                        {'message': 'Cancellation request submitted for approval'},
+                        status=status.HTTP_200_OK
                     )
 
-                order.order_status = 'cancelled'
-                order.save()
-
-                # (Optional) Re-stock items
-                # If you want to place item stock back:
-                # details = OrderDetails.objects.filter(order_id=order)
-                # for d in details:
-                #     d.product_sku.product_stock += d.quantity
-                #     d.product_sku.save()
-
-                serializer = OrderSerializer(order)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
-        except Order.DoesNotExist:
-            raise DRFPermissionDenied("You do not have permission to cancel this order.")
         except Exception as e:
-            return Response({"error": f"Could not cancel order: {str(e)}"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'], url_path='apply-coupon')
+    def apply_coupon(self, request, pk=None):
+        order = self.get_object()
+        serializer = CouponApplySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            coupon = Coupon.objects.get(
+                coupon_code=serializer.validated_data['coupon_code'],
+                customer_id=request.user,
+                start_date__lte=timezone.now(),
+                end_date__gte=timezone.now()
+            )
+
+            if coupon.usage_limit <= 0:
+                return Response(
+                    {'error': 'Coupon usage limit exceeded'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Calculate discount
+            total_amount = order.total_amount
+            discount_amount = 0
+
+            if coupon.discount_type == 'percentage':
+                discount_amount = total_amount * (coupon.discount_percentage / 100)
+                if coupon.maximum_discount_amount:
+                    discount_amount = min(discount_amount, coupon.maximum_discount_amount)
+            elif coupon.discount_type == 'fixed':
+                discount_amount = coupon.discount_amount
+
+            # Update order total
+            order.total_amount = total_amount - discount_amount
+            order.save()
+
+            # Update coupon usage
+            coupon.usage_limit -= 1
+            coupon.save()
+
+            return Response(OrderSerializer(order).data)
+
+        except Coupon.DoesNotExist:
+            return Response(
+                {'error': 'Invalid or expired coupon'},
+                status=status.HTTP_400_BAD_REQUEST
+            )

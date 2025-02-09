@@ -1,35 +1,22 @@
-from rest_framework import serializers
-from .models import Cart, CartItems
-from rest_framework import serializers
-from .models import Order, OrderDetails
-
+# orders/serializers.py
 from rest_framework import serializers
 from .models import (
     Order,
     OrderDetails,
     OrderShippingAddress,
-    OrderPayment
+    OrderPayment,
+    CustomerAddress,
+    Coupon
 )
+from customer.models import Accounts
+from django.utils import timezone
 
-class OrderDetailsSerializer(serializers.ModelSerializer):
+class AddressSerializer(serializers.ModelSerializer):
     class Meta:
-        model = OrderDetails
+        model = CustomerAddress
         fields = [
             'id',
-            'product_sku',
-            'quantity',
-            'units',
-            'subtotal',
-            'created_at',
-            'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-
-class OrderShippingAddressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrderShippingAddress
-        fields = [
-            'id',
+            'address_title',
             'address_line1',
             'address_line2',
             'country',
@@ -38,72 +25,123 @@ class OrderShippingAddressSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+class OrderShippingAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderShippingAddress
+        fields = [
+            'address_line1',
+            'address_line2',
+            'country',
+            'city',
+            'postal_code'
+        ]
+
 class OrderPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderPayment
         fields = [
-            'id',
             'payment_mode',
             'payment_status',
-            'payment_date',
             'payment_amount',
             'payment_reference',
-            'created_at',
-            'updated_at'
+            'payment_date'
         ]
-        read_only_fields = ['id', 'payment_date', 'created_at', 'updated_at']
+        read_only_fields = fields
+
+class OrderDetailsSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product_sku.product_id.product_name')
+    product_sku_code = serializers.CharField(source='product_sku.product_sku')
+    unit_price = serializers.DecimalField(
+        source='product_sku.product_price',
+        max_digits=10,
+        decimal_places=2
+    )
+
+    class Meta:
+        model = OrderDetails
+        fields = [
+            'product_sku_code',
+            'product_name',
+            'quantity',
+            'unit_price',
+            'subtotal'
+        ]
+        read_only_fields = fields
+
+class CouponSerializer(serializers.ModelSerializer):
+    is_valid = serializers.SerializerMethodField()
+    remaining_days = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Coupon
+        fields = [
+            'coupon_code',
+            'discount_type',
+            'discount_percentage',
+            'discount_amount',
+            'maximum_discount_amount',
+            'start_date',
+            'end_date',
+            'usage_limit',
+            'is_valid',
+            'remaining_days'
+        ]
+        read_only_fields = fields
+
+    def get_is_valid(self, obj):
+        return obj.start_date <= timezone.now() <= obj.end_date and obj.usage_limit > 0
+
+    def get_remaining_days(self, obj):
+        if obj.end_date > timezone.now():
+            return (obj.end_date - timezone.now()).days
+        return 0
 
 class OrderSerializer(serializers.ModelSerializer):
-    """
-    Includes nested details, shipping, and payment if you want to
-    display them in a single response. This depends on how you do your
-    relationships and queries.
-    """
-    orderdetails_set = OrderDetailsSerializer(many=True, source='orderdetails_set', read_only=True)
-    ordershippingaddress_set = OrderShippingAddressSerializer(many=True, source='ordershippingaddress_set', read_only=True)
-    orderpayment_set = OrderPaymentSerializer(many=True, source='orderpayment_set', read_only=True)
+    shipping_address = OrderShippingAddressSerializer(read_only=True)
+    payment_details = OrderPaymentSerializer(read_only=True)
+    items = OrderDetailsSerializer(many=True, read_only=True)
+    applied_coupon = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
-            'id',
             'order_id',
-            'customer_id',
             'order_date',
             'total_amount',
             'order_status',
-            'created_at',
-            'updated_at',
-            'updated_by',
-            # Nested
-            'orderdetails_set',
-            'ordershippingaddress_set',
-            'orderpayment_set'
+            'shipping_address',
+            'payment_details',
+            'items',
+            'applied_coupon'
         ]
-        read_only_fields = ['id', 'order_id', 'customer_id', 'order_date', 'created_at', 'updated_at']
+        read_only_fields = fields
 
+    def get_applied_coupon(self, obj):
+        try:
+            payment = OrderPayment.objects.get(order_id=obj)
+            if payment.payment_reference.startswith('CPN-'):
+                return CouponSerializer(obj.coupon).data
+        except OrderPayment.DoesNotExist:
+            return None
 
-class CartItemSerializer(serializers.ModelSerializer):
-    product_details = serializers.SerializerMethodField()
+class OrderCreateSerializer(serializers.Serializer):
+    use_saved_address = serializers.BooleanField(default=False)
+    save_address = serializers.BooleanField(default=False)
+    shipping_address = AddressSerializer(required=False)
+    payment_mode = serializers.ChoiceField(
+        choices=OrderPayment.PAYMENT_MODE_CHOICES,
+        required=True
+    )
+    coupon_code = serializers.CharField(required=False, allow_blank=True)
 
-    class Meta:
-        model = CartItems
-        fields = ['id', 'product_sku', 'quantity', 'product_details']
-        read_only_fields = ['id']
+    def validate(self, data):
+        if not data.get('use_saved_address') and not data.get('shipping_address'):
+            raise serializers.ValidationError("Shipping address is required when not using saved address")
+        return data
 
-    def get_product_details(self, obj):
-        return {
-            'name': obj.product_sku.product_id.product_name,
-            'price': str(obj.product_sku.product_price),
-            'sku': obj.product_sku.product_sku,
-            'color': obj.product_sku.product_color,
-            'size': obj.product_sku.product_size
-        }
+class OrderCancelSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=True)
+    refund_to_wallet = serializers.BooleanField(default=False)
 
-class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(source='cartitems_set', many=True, read_only=True)
-
-    class Meta:
-        model = Cart
-        fields = ['id', 'cart_total_amount', 'items']
-        read_only_fields = ['id', 'cart_total_amount', 'items']
+class CouponApplySerializer(serializers.Serializer):
+    coupon_code = serializers.CharField(required=True)
