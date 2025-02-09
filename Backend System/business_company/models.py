@@ -1,7 +1,11 @@
 from django.db import models
+from django_resized import ResizedImageField
 
 # Create your models here.
 
+
+def get_business_logo_image_path(instance, filename):
+    return f'product_images/{instance.product_id.product_name}/{filename}'
 class Business_Identity(models.Model):
     '''
     This class stores all the primary identities of the business company. This will be a single row class
@@ -9,7 +13,7 @@ class Business_Identity(models.Model):
     '''
     platform_product_key=models.CharField(null=False,blank=False,primary_key=True,max_length=200) #Product key will be provided by the mother company
     business_name=models.CharField(null=False,blank=False,max_length=100)
-    business_logo=models.ImageField(null=True,blank=True,upload_to="company_files/identity/")
+    business_logo=ResizedImageField(size=[632,632],upload_to=get_business_logo_image_path,blank=True, null=True)
     business_description=models.TextField(null=True,blank=True)
     
     class Meta:
