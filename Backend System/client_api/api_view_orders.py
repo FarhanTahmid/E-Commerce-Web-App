@@ -1,4 +1,3 @@
-# orders/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,7 +9,7 @@ from datetime import timedelta
 import uuid
 from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems
 from customer.models import Coupon, CustomerAddress
-from customer.models import Accounts
+from system.models import Accounts
 
 from orders.serializers import (
     OrderSerializer,
