@@ -45,16 +45,19 @@ const ProductBrandUpdate = () => {
     const handleLogoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setBrandLogo(file);
-            setPreviewLogo(URL.createObjectURL(file)); // Generate a preview URL
+            setBrandLogo(file); // Store new file
+            setPreviewLogo(URL.createObjectURL(file)); // Show new preview
         }
     };
 
+
+
     const handleRemoveLogo = () => {
-        setBrandLogo(null);
-        setPreviewLogo(null);
+        setPreviewLogo(null); // Remove preview
+        setBrandLogo(null); // Clear file state
         document.getElementById("brandLogo").value = ""; // Reset file input
     };
+
     const navigate = useNavigate(); // Initialize the navigate hook
 
     const handleDeletePosition = () => {
@@ -105,21 +108,27 @@ const ProductBrandUpdate = () => {
             params: { pk: id }
         })
             .then(response => {
+                const fetchedLogo = response.data.product_brands.brand_logo || null;
+
                 setBrandName(response.data.product_brands.brand_name || '');
                 setBrandDescription(response.data.product_brands.brand_description || '');
                 setBrandCountry(response.data.product_brands.brand_country || '');
                 setBrandEstablishedYear(response.data.product_brands.brand_established_year || '');
                 setIsOwnBrand(response.data.product_brands.is_own_brand || false);
-                setPreviewLogo(response.data.product_brands.brand_logo || null);
-                setBrandLogo(response.data.product_brands.brand_logo || null);
+
+                // If there is a brand logo, store only in preview, not in brandLogo state
+                setPreviewLogo(fetchedLogo);
+                setBrandLogo(null);
             })
             .catch(error => {
-                console.error("Error fetching categories:", error.response ? error.response.data : error);
+                console.error("Error fetching brand data:", error.response ? error.response.data : error);
             });
     }, []);
 
 
-    const handleSubmitCategory = (e) => {
+
+
+    const handleSubmitCategory = async (e) => {
         e.preventDefault();
 
         // Validate input fields
@@ -133,27 +142,50 @@ const ProductBrandUpdate = () => {
             return;
         }
 
-        // Change the method to PUT or PATCH based on your backend
-        axios.put(`${API_BASE_URL}/update/${id}/`, {
-            name: brandName,
-            description: brandDescription
-        }, {
-            headers: {
-                Authorization: `Bearer ${Cookies.get('accessToken')}`,
-                "Content-Type": "application/json"
-            }
-        })
-            .then(response => {
-                setBrandName(response.data.name);
-                setBrandDescription(response.data.description);
-                setMessage("Brand Updated Successfully!");
-                setMessageType('success');
-            })
-            .catch(error => {
-                console.error("Error Updating position:", error.response ? error.response.data : error.message);
+        // Ensure logo is present if the user removed the existing one
+        if (!previewLogo && !brandLogo) {
+            alert("You must upload a new brand logo after removing the previous one!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("brand_name", brandName);
+        formData.append("brand_description", brandDescription);
+        formData.append("brand_country", brandCountry);
+        formData.append("brand_established_year", brandEstablishedYear);
+        formData.append("is_own_brand", isOwnBrand ? 'True' : 'False');
+
+        // Send "" if fetched logo was kept, otherwise send new file
+        if (!brandLogo && previewLogo) {
+            formData.append("brand_logo", ""); // Keep existing logo
+        } else if (brandLogo) {
+            formData.append("brand_logo", brandLogo); // Include new logo
+        }
+        console.log("🔍 FormData Debugging:");
+        for (let pair of formData.entries()) {
+            console.log(`${pair[0]}:`, pair[1]);
+        }
+
+        try {
+            const response = await axios.put(`${API_BASE_URL}/update/${id}/`, formData, {
+                headers: {
+                    Authorization: `Bearer ${Cookies.get('accessToken')}`,
+                    "Content-Type": "multipart/form-data",
+                },
             });
 
+            setBrandName(response.data.name);
+            setBrandDescription(response.data.description);
+            setMessage("Brand Updated Successfully!");
+            setMessageType('success');
+        } catch (error) {
+            console.error("Error Updating Brand:", error.response ? error.response.data : error.message);
+            setMessage("Failed to update the brand.");
+            setMessageType('danger');
+        }
     };
+
+
 
     return (
         <div className="col-xl-12 p-2">
@@ -250,34 +282,47 @@ const ProductBrandUpdate = () => {
                                         onChange={(e) => setBrandDescription(e.target.value)}
                                     />
                                     <label htmlFor="brandLogo" className="form-label">Brand Logo</label>
-                                    <input
-                                        type="file"
-                                        className="form-control mb-2"
-                                        id="brandLogo"
-                                        accept="image/*"
-                                        onChange={handleLogoChange}
-                                    />
 
+
+                                    {/* Show file input if no preview logo (or if the user removed it) */}
+                                    {!previewLogo || brandLogo ? (
+                                        <>
+                                            <input
+                                                type="file"
+                                                className="form-control mb-2"
+                                                id="brandLogo"
+                                                accept="image/*"
+                                                onChange={handleLogoChange}
+                                                required={!previewLogo && !brandLogo} // Required if no preview or existing logo
+                                            />
+                                        </>
+                                    ) : null}
+
+                                    {/* If there's a preview logo, show only the preview */}
                                     {previewLogo && (
                                         <div className="mt-2 text-center">
                                             <img
                                                 src={previewLogo}
                                                 alt="Brand Logo Preview"
                                                 style={{ maxWidth: '200px', maxHeight: '150px', display: 'block', cursor: 'pointer' }}
-                                                onClick={() => window.open(previewLogo, "_blank")} // Open image in new tab on click
+                                                onClick={() => window.open(previewLogo, "_blank")}
                                             />
-                                            <button type="button" className="btn btn-danger mt-2" onClick={handleRemoveLogo}>Remove Logo</button>
+                                            <button type="button" className="btn btn-danger mt-2" onClick={handleRemoveLogo}>
+                                                Remove Logo
+                                            </button>
                                         </div>
                                     )}
+
+
                                 </div>
                                 <div className='d-flex gap-2'>
-                                    <button type="submit" className="btn btn-success">Update Admin Brand</button>
+                                    <button type="submit" className="btn btn-success">Update Product Brand</button>
                                     <button
                                         type="button"
                                         className="btn btn-danger"
                                         onClick={handleDeletePosition}  // Call the function here
                                     >
-                                        Delete Admin Brand
+                                        Delete Product Brand
                                     </button>
                                 </div>
                             </div>

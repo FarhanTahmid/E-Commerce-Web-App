@@ -38,7 +38,7 @@ const LoginForm = ({ registerPath, resetPath }) => {
                 navigate('/', { replace: true }); // ✅ Corrected navigation
             } else {
                 // Handle error response
-                setError(data.message || 'Login failed. Please try again.');
+                setError(data.error || 'Login failed. Please try again.');
             }
         } catch (err) {
             setError('An error occurred. Please try again later.');
