@@ -53,6 +53,12 @@ const Menus = () => {
                     name: "Brands",
                     path: "/products/brand",
                     subdropdownMenu: false
+                },
+                {
+                    id: 4,
+                    name: "Flavour",
+                    path: "/products/flavour",
+                    subdropdownMenu: false
                 }
             ]
         },

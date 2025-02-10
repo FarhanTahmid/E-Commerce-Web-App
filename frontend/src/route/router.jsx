@@ -82,6 +82,9 @@ import AccessError from "../pages/access-error";
 import ProductBrandCreate from "@/components/products/brand/ProductBrandCreate";
 import ProductBrandUpdate from "@/components/products/brand/ProductBrandUpdate";
 import ProductBrand from "../pages/product-brand";
+import ProductFlavour from "../pages/product-flavour";
+import ProductFlavourCreate from "@/components/products/flavour/ProductFlavourCreate";
+import ProductFlavourUpdate from "@/components/products/flavour/ProductFlavourUpdate";
 
 
 const parseJwt = (token) => {
@@ -265,6 +268,18 @@ export const router = createBrowserRouter([
             {
                 path: "/products/brand/:id",
                 element: <ProductBrandUpdate />
+            },
+            {
+                path: "/products/flavour",
+                element: <ProductFlavour />
+            },
+            {
+                path: "/products/flavour/create",
+                element: <ProductFlavourCreate />
+            },
+            {
+                path: "/products/flavour/:id",
+                element: <ProductFlavourUpdate />
             },
             {
                 path: "/admin-management/positions",
