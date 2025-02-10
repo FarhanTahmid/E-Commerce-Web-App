@@ -133,17 +133,3 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.activity_done_by_admin.admin_full_name} - {self.activity_done_by_admin.admin_unique_id} - {self.action}"
-
-
-# Session Model
-class Session(models.Model):
-    '''Sessions of every admin logins are stored in this model.'''
-    admin = models.ForeignKey(BusinessAdminUser, on_delete=models.CASCADE, related_name='sessions')
-    session_token = models.CharField(max_length=255, unique=True,blank=True,null=True)
-    ip_address = models.GenericIPAddressField(blank=True, null=True)
-    device_details = models.JSONField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(blank=True,null=True)
-
-    def __str__(self):
-        return f"{self.admin.admin_email} - {self.session_token}"
