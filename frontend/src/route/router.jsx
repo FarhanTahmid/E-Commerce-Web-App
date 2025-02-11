@@ -85,6 +85,9 @@ import ProductBrand from "../pages/product-brand";
 import ProductFlavour from "../pages/product-flavour";
 import ProductFlavourCreate from "@/components/products/flavour/ProductFlavourCreate";
 import ProductFlavourUpdate from "@/components/products/flavour/ProductFlavourUpdate";
+import Product from "../pages/product";
+import ProductCreate from "@/components/products/product/ProductCreate";
+import ProductUpdate from "@/components/products/product/ProductUpdate";
 
 
 const parseJwt = (token) => {
@@ -244,6 +247,18 @@ export const router = createBrowserRouter([
             {
                 path: "/help/knowledgebase",
                 element: <HelpKnowledgebase />
+            },
+            {
+                path: "/products",
+                element: <Product />
+            },
+            {
+                path: "/products/create",
+                element: <ProductCreate />
+            },
+            {
+                path: "/products/:id",
+                element: <ProductUpdate />
             },
             {
                 path: "/products/category",
