@@ -119,7 +119,7 @@ class Product(models.Model):
 
 class Product_SKU(models.Model):
 
-    product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE)
+    product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE,related_name='product')
     product_sku = models.CharField(null=False, blank=False, max_length=1000,unique=True)
     product_color = models.CharField(null=True, blank=True, max_length=1000)
     product_size = models.CharField(null=True, blank=True, max_length=1000)
