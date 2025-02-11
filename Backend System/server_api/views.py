@@ -537,6 +537,7 @@ class CreateBusinessAdminPosition(APIView):
 
     """Permissions"""
     authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     required_permissions = [
         AdminPermissions.CREATE,
         AdminPermissions.VIEW
@@ -2385,7 +2386,7 @@ class FetchProductDiscount(APIView):
             
             product_id = self.request.query_params.get('product_id',"")
             discount_name = self.request.query_params.get('discount_name',"")
-            is_active = self.request.query_params.get('is_active',"")
+            is_active = self.request.query_params.get('is_active',False)
             product_discount_pk = self.request.query_params.get('product_discount_pk',"")
 
             if product_id!= "":
@@ -2394,7 +2395,7 @@ class FetchProductDiscount(APIView):
             elif discount_name!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
-            elif is_active!= "":
+            elif is_active != False:
                 product_discount,message = ManageProducts.fetch_product_discount(is_active=True)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
             elif product_discount_pk!= "":

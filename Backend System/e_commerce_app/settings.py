@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     
 ]
 
+API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -86,7 +88,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_HEADERS = [
     "content-type",
     "authorization",
-    "x-api-key",
+    "HTTP_X_API_KEY",
 ]
 
 REST_FRAMEWORK = {

@@ -11,10 +11,6 @@ class IsAdminWithPermission(BasePermission):
 
     def has_permission(self, request, view):
 
-    
-        if not request.user or not request.user.is_authenticated:
-            return False  # User must be authenticated
-
         if request.user.is_superuser:
             return True
         
