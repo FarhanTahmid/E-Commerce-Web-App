@@ -5,6 +5,7 @@ import Select from "react-select";
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill'; // Import ReactQuill
 import 'react-quill/dist/react-quill'; // Import Quill CSS
+import QuillToolbar, { modules, formats } from '@/components/QuillToolbar';
 
 const ProductCreate = () => {
     const [productName, setProductName] = useState('');
@@ -21,7 +22,7 @@ const ProductCreate = () => {
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
 
-    const API_BASE_URL = 'http://127.0.0.1:8000/product';
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
 
     useEffect(() => {
         fetchCategories();
@@ -33,7 +34,7 @@ const ProductCreate = () => {
             const response = await axios.get(`${API_BASE_URL}/categories/fetch-all/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
             });
-            setCategories(response.data.product_category.map(c => ({ value: c.pk, label: c.name })));
+            setCategories(response.data.product_category.map(c => ({ value: c.id, label: c.category_name })));
         } catch (error) {
             console.error("Error fetching categories:", error);
         }
@@ -44,7 +45,7 @@ const ProductCreate = () => {
             const response = await axios.get(`${API_BASE_URL}/sub-categories/fetch-all-product-sub-categories-for-a-category/${categoryId}/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
             });
-            setSubCategories(response.data.product_sub_category.map(sc => ({ value: sc.pk, label: sc.name })));
+            setSubCategories(response.data.product_sub_category.map(sc => ({ value: sc.id, label: sc.sub_category_name })));
         } catch (error) {
             console.error("Error fetching subcategories:", error);
         }
@@ -63,7 +64,7 @@ const ProductCreate = () => {
             const response = await axios.get(`${API_BASE_URL}/product-brand/fetch-product-brands/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
             });
-            setBrands(response.data.product_brands.map(b => ({ value: b.pk, label: b.name })));
+            setBrands(response.data.product_brands.map(b => ({ value: b.pk, label: b.brand_name })));
         } catch (error) {
             console.error("Error fetching brands:", error);
         }
@@ -71,6 +72,38 @@ const ProductCreate = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!productName.trim()) {
+            setMessage("Product name is required.");
+            setMessageType("danger");
+            return;
+        }
+        if (!productDescription.trim()) {
+            setMessage("Product description is required.");
+            setMessageType("danger");
+            return;
+        }
+        if (!productSummary.trim()) {
+            setMessage("Product summary is required.");
+            setMessageType("danger");
+            return;
+        }
+        if (selectedCategories.length === 0) {
+            setMessage("At least one category is required.");
+            setMessageType("danger");
+            return;
+        }
+        if (selectedSubCategories.length === 0) {
+            setMessage("At least one subcategory is required.");
+            setMessageType("danger");
+            return;
+        }
+        if (!selectedBrand) {
+            setMessage("Brand is required.");
+            setMessageType("danger");
+            return;
+        }
+
         try {
             const response = await axios.post(`${API_BASE_URL}/create/`, {
                 product_name: productName,
@@ -78,7 +111,7 @@ const ProductCreate = () => {
                 product_sub_category_pk_list: selectedSubCategories.map(sc => sc.value),
                 product_description: productDescription,
                 product_summary: productSummary,
-                product_brand_pk: selectedBrand ? selectedBrand.value : null,
+                product_brand_pk: selectedBrand.value,
                 product_ingredients: productIngredients,
                 product_usage_direction: productUsageDirection,
             }, {
@@ -87,6 +120,8 @@ const ProductCreate = () => {
 
             setMessage(response.data.message);
             setMessageType('success');
+
+            // Reset form fields
             setProductName('');
             setSelectedCategories([]);
             setSelectedSubCategories([]);
@@ -100,6 +135,7 @@ const ProductCreate = () => {
             setMessageType('danger');
         }
     };
+
 
     return (
         <div className="col-xl-12 p-2">
@@ -124,39 +160,72 @@ const ProductCreate = () => {
                                         <input type="text" className="form-control" value={productName} onChange={(e) => setProductName(e.target.value)} required />
                                     </div>
 
-                                    <div className="mb-3">
+                                    <div className="mb-3 editor">
                                         <label className="form-label">Product Description</label>
-                                        <ReactQuill value={productDescription} onChange={setProductDescription} />
+                                        <QuillToolbar toolbarId={'t1'} />
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={productDescription}
+                                            onChange={setProductDescription}
+                                            modules={modules('t1')}
+                                            formats={formats}
+                                        />
+                                        <hr />
+                                        {!productDescription.trim() && <small className="text-danger">Product description is required.</small>}
+
                                     </div>
 
                                     <div className="mb-3">
                                         <label className="form-label">Product Summary</label>
                                         <textarea className="form-control" value={productSummary} onChange={(e) => setProductSummary(e.target.value)} required />
+                                        {!productSummary.trim() && <small className="text-danger">Product summary is required.</small>}
                                     </div>
 
                                     <div className="mb-3">
                                         <label className="form-label">Categories</label>
                                         <Select isMulti options={categories} value={selectedCategories} onChange={setSelectedCategories} />
+                                        {selectedCategories.length === 0 && <small className="text-danger">At least one category is required.</small>}
+
                                     </div>
 
                                     <div className="mb-3">
                                         <label className="form-label">Subcategories</label>
                                         <Select isMulti options={subCategories} value={selectedSubCategories} onChange={setSelectedSubCategories} />
+                                        {selectedSubCategories.length === 0 && <small className="text-danger">At least one subcategory is required.</small>}
+
                                     </div>
 
                                     <div className="mb-3">
                                         <label className="form-label">Brand</label>
                                         <Select options={brands} value={selectedBrand} onChange={setSelectedBrand} isClearable />
+                                        {!selectedBrand && <small className="text-danger">Brand is required.</small>}
+
                                     </div>
 
-                                    <div className="mb-3">
+                                    <div className="mb-3 editor">
                                         <label className="form-label">Ingredients</label>
-                                        <ReactQuill value={productIngredients} onChange={setProductIngredients} />
+                                        <QuillToolbar toolbarId={'t2'} />
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={productIngredients}
+                                            onChange={setProductIngredients}
+                                            modules={modules('t2')}
+                                            formats={formats}
+                                        />
+                                        <hr />
                                     </div>
 
-                                    <div className="mb-3">
+                                    <div className="mb-3 editor">
                                         <label className="form-label">Usage Direction</label>
-                                        <ReactQuill value={productUsageDirection} onChange={setProductUsageDirection} />
+                                        <QuillToolbar toolbarId={'t3'} />
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={productUsageDirection}
+                                            onChange={setProductUsageDirection}
+                                            modules={modules('t3')}
+                                            formats={formats}
+                                        />
+                                        <hr />
                                     </div>
 
                                     <button type="submit" className="btn btn-success">Create Product</button>
