@@ -10,7 +10,7 @@ from django.utils import timezone
 class ManageProducts:
     
     # Manage Product Category
-    def fetch_product_categories(product_category_pk=None):
+    def fetch_product_categories(product_category_pk=""):
 
         """
     Retrieve all product categories from the database with detailed exception handling.
@@ -63,7 +63,7 @@ class ManageProducts:
         - The `message` provides user-friendly feedback on the success or failure of the operation.
     """        
         try:
-            if product_category_pk:
+            if product_category_pk != "":
                 return Product_Category.objects.get(pk=product_category_pk), "Product categories successfully!"
             else:
                 product_category = Product_Category.objects.all()
@@ -325,6 +325,49 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Category! Please try again later.")
     
     # Manage Product Sub Category
+    def fetch_product_sub_category(product_sub_category_pk=""):
+        try:
+            if product_sub_category_pk != "":
+                product_sub_category = Product_Sub_Category.objects.get(pk=product_sub_category_pk)
+                return product_sub_category, "Product sub-categories successfully!"
+            else:
+                product_sub_category = Product_Sub_Category.objects.all()
+                return product_sub_category, "Fetched all product sub-categories successfully!" if len(product_sub_category) > 0 else "No product sub-categories found"
+        # Handle database-related errors
+        except DatabaseError as db_err:
+            print(f"Database error occurred: {db_err}")
+            new_error = ErrorLogs.objects.create(error_type="DatabaseError", error_message=str(db_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle Operational errors, e.g., connection issues
+        except OperationalError as op_err:
+            print(f"Operational error occurred: {op_err}")
+            new_error = ErrorLogs.objects.create(error_type="OperationalError", error_message=str(op_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle programming errors, e.g., invalid queries
+        except ProgrammingError as prog_err:
+            print(f"Programming error occurred: {prog_err}")
+            new_error = ErrorLogs.objects.create(error_type="ProgrammingError", error_message=str(prog_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle integrity errors, e.g., data inconsistency
+        except IntegrityError as integrity_err:
+            print(f"Integrity error occurred: {integrity_err}")
+            new_error = ErrorLogs.objects.create(error_type="IntegrityError", error_message=str(integrity_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle general exceptions (fallback for unexpected errors)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            new_error = ErrorLogs.objects.create(error_type="UnexpectedError", error_message=str(e))
+            new_error.save()
+            return None, "An unexpected error occurred! Please try again later."
+        
     def fetch_all_product_sub_categories_for_a_category(product_category_pk):
         """
         Fetch all product sub-categories for a given product category.
@@ -715,7 +758,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating Product brand! Please try again later.")
 
-    def fetch_product_brand(pk=None,brand_name=None):
+    def fetch_product_brand(pk="",brand_name=""):
 
         """
         Fetch a product brand by its name or pk with detailed exception handling.
@@ -758,9 +801,9 @@ class ManageProducts:
         """
         
         try:
-            if brand_name:
+            if brand_name != "":
                 return Product_Brands.objects.get(brand_name=brand_name), "Product brand fetched successfully!"
-            elif pk:
+            elif pk != "":
                 return Product_Brands.objects.get(pk=pk), "Product brand fetched successfully!"
             else:
                 product_brand = Product_Brands.objects.all()
@@ -942,7 +985,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product brand! Please try again later.")
         
     #Manage Product Flavour
-    def fetch_product_flavour(product_flavour_name=None,pk=None):
+    def fetch_product_flavour(product_flavour_name="",pk=""):
 
         """
         Fetch a product flavour by its name or primary key with detailed exception handling.
@@ -988,9 +1031,9 @@ class ManageProducts:
         """
 
         try:
-            if product_flavour_name:
+            if product_flavour_name!= "":
                 return Product_Flavours.objects.get(product_flavour_name=product_flavour_name), "Product flavour fetched successfully!"
-            elif pk:
+            elif pk!= "":
                 return Product_Flavours.objects.get(pk=pk), "Product flavour fetched successfully!"
             else:
                 product_flavour = Product_Flavours.objects.all()
@@ -1202,8 +1245,8 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product flavour! Please try again later.") 
         
     #Manage Product
-    def fetch_product(product_pk=None,product_name=None,product_brand_pk=None,
-                      product_category_pk_list=None,product_sub_category_pk_list=None):
+    def fetch_product(product_pk="",product_name="",product_brand_pk="",
+                      product_category_pk_list=[],product_sub_category_pk_list=[]):
         
         """
         Fetch products based on various optional parameters with detailed exception handling.
@@ -1259,21 +1302,21 @@ class ManageProducts:
         """
         try:
             #fetching products according to provided arguments
-            if product_pk:
+            if product_pk!= "":
                 return Product.objects.get(pk=product_pk), "Products fetched successfully!"
-            elif product_name:
+            elif product_name!= "":
                 return Product.objects.get(product_name=product_name), "Products fetched successfully!"
-            elif product_brand_pk:
+            elif product_brand_pk!= "":
                 product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
                 products = Product.objects.filter(product_brand=product_brand)
                 return products, "Products fetched successfully!" if products else "No products found using this brand"
-            elif product_category_pk_list:
+            elif len(product_category_pk_list)>0:
                 product_categories = [Product_Category.objects.get(pk=p) for p in product_category_pk_list]
                 products=set()
                 for categories in product_categories:
                     products.update(categories.products.all())
                 return products, "Products fetched successfully!" if products else "No products found using this categories"
-            elif product_sub_category_pk_list:
+            elif len(product_sub_category_pk_list)>0:
                 product_sub_categories = [Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list]
                 products = set()
                 for sub_categories in product_sub_categories:
@@ -1573,7 +1616,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product! Please try again later.")
     
     #Manage product sku
-    def fetch_product_sku(pk=None,product_id=None,product_name=None,product_sku=None):
+    def fetch_product_sku(pk="",product_id="",product_name="",product_sku=""):
 
         """
         Fetch product SKUs based on various optional parameters with detailed exception handling.
@@ -1623,17 +1666,17 @@ class ManageProducts:
         """
 
         try:
-            if pk:
+            if pk!= "":
                 return Product_SKU.objects.get(pk=pk), "Fetched successfully"
-            elif product_id:
+            elif product_id!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
                 product_skus = Product_SKU.objects.filter(product_id=product)
                 return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
-            elif product_name:
+            elif product_name!= "":
                 product,message = ManageProducts.fetch_product(product_name=product_name)
                 product_skus = Product_SKU.objects.filter(product_id=product)
                 return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
-            elif product_sku:
+            elif product_sku!= "":
                 try:
                     return Product_SKU.objects.get(product_sku=product_sku.upper()), "Fetched successfully"
                 except:
@@ -1901,7 +1944,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product sku! Please try again later.")
     
     #product images
-    def fetch_product_image(product_pk=None,product_image_pk=None):
+    def fetch_product_image(product_pk="",product_image_pk=""):
         
         """
     Fetch product images based on various optional parameters with detailed exception handling.
@@ -1947,11 +1990,11 @@ class ManageProducts:
         - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
     """
         try:
-            if product_pk:
+            if product_pk!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_pk)
                 product_images = Product_Images.objects.filter(product_id=product)
                 return product_images, "Product images fetched successfully" if len(product_images)>0 else "No images found for this product"
-            elif product_image_pk:
+            elif product_image_pk!= "":
                 product_image = Product_Images.objects.get(pk=product_image_pk)
                 return product_image, "Product images fetched successfully"
             else:
@@ -2211,79 +2254,29 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product image! Please try again later.")
         
     #product discount
-    def fetch_product_discount(product_id=None,discount_name=None,is_active=None,product_discount_pk=None):
-        """
-    Fetches product discounts based on various filter criteria.
+    def fetch_product_discount(product_id="",discount_name="",is_active=False,product_discount_pk="",brand_id="",sub_category_id="",category_id=""):
 
-    Parameters:
-    -----------
-    product_id : int, optional
-        The primary key of the product for which the discount is to be fetched.
-    discount_name : str, optional
-        The name of the discount to fetch.
-    is_active : bool, optional
-        If True, fetches all currently active discounts based on the start and end dates.
-    product_discount_pk : int, optional
-        The primary key of a specific product discount.
-
-    Returns:
-    --------
-    tuple
-        - If successful: (QuerySet or Object, "Success Message")
-        - If an error occurs: (False, "Error Message")
-
-    Process:
-    --------
-    1. If `product_id` is provided:
-        - Fetches the product using `ManageProducts.fetch_product`.
-        - Retrieves all discounts associated with that product.
-    2. If `product_discount_pk` is provided:
-        - Fetches a specific discount by its primary key.
-    3. If `discount_name` is provided:
-        - Retrieves a product discount by its discount name.
-    4. If `is_active` is `True`:
-        - Fetches active discounts based on the current date being within `start_date` and `end_date`.
-    5. If no specific filters are provided:
-        - Returns all product discounts.
-
-    Error Handling:
-    ---------------
-    - Logs errors in the `ErrorLogs` model.
-    - Handles various exceptions such as:
-        - `DatabaseError`: Issues with database queries.
-        - `OperationalError`: Unexpected server-related errors.
-        - `ProgrammingError`: Code-related issues.
-        - `IntegrityError`: Database integrity constraints.
-
-    Example Usage:
-    --------------
-    >>> fetch_product_discount(product_id=10)
-    ([<Product_Discount obj1>, <Product_Discount obj2>], "Product Discounts fetched successfully")
-
-    >>> fetch_product_discount(product_discount_pk=5)
-    (<Product_Discount obj>, "Product Discount fetched successfully")
-
-    >>> fetch_product_discount(discount_name="New Year Sale")
-    (<Product_Discount obj>, "Product Discount fetched successfully")
-
-    >>> fetch_product_discount(is_active=True)
-    ([<Product_Discount obj1>, <Product_Discount obj2>], "Active Product Discount fetched successfully")
-
-    >>> fetch_product_discount()
-    ([<Product_Discount obj1>, <Product_Discount obj2>, ...], "All product discounts fetched successfully")
-
-    Returns a user-friendly error message if any database-related issue occurs.
-
-    """
         try:
-            if product_id:
+            if product_id!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
                 product_discount = Product_Discount.objects.filter(product_id=product)
                 return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
-            elif product_discount_pk:
+            elif brand_id!= "":
+                brand,message = ManageProducts.fetch_product_brand(pk=brand_id)
+                product_discount = Product_Discount.objects.filter(brand_id=brand)
+                return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif sub_category_id!= "":
+                subcategory,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_id)
+                product_discount = Product_Discount.objects.filter(sub_category_id=subcategory)
+                return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif category_id!= "":
+                category,message = ManageProducts.fetch_product_categories(product_category_pk=category_id)
+                product_discount = Product_Discount.objects.filter(category_id=category)
+                return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif product_discount_pk!= "":
                 product_discount = Product_Discount.objects.get(pk=product_discount_pk)
                 return product_discount,"Product Discount fetched successfully"
-            elif discount_name:
+            elif discount_name!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
                 product_discount = Product_Discount.objects.get(discount_name=discount_name)
                 return product_discount, "Product Discount fetched successfully"
@@ -2309,61 +2302,10 @@ class ManageProducts:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product discount! Please try again later.")
-        
-    def create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date):
+    #TODO: can give dicount on brand, subcategory, category, all products or on any specific product  
+    def create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id="",brand_id="",sub_category_id="",category_id=""):
 
-        """
-    Creates a new product discount if it does not already exist.
-
-    Parameters:
-    -----------
-    request : HttpRequest
-        The HTTP request object (used for logging purposes).
-    product_id : int
-        The primary key of the product for which the discount is being created.
-    discount_name : str
-        The unique name of the discount.
-    discount_amount : float
-        The discount amount to be applied.
-    start_date : datetime
-        The start date of the discount.
-    end_date : datetime
-        The end date of the discount.
-
-    Returns:
-    --------
-    tuple
-        - If successful: (True, "Product discount created successfully")
-        - If an error occurs: (False, "Error Message")
-
-    Process:
-    --------
-    1. Fetches the product using `ManageProducts.fetch_product`.
-    2. Checks if a discount with the same `discount_name` already exists.
-        - If found and active, returns an error message.
-    3. Creates a new `Product_Discount` entry with the provided details.
-    4. Saves the new discount and logs the creation using `SystemLogs`.
-
-    Error Handling:
-    ---------------
-    - Logs errors in the `ErrorLogs` model.
-    - Handles various exceptions such as:
-        - `DatabaseError`: Issues with database queries.
-        - `OperationalError`: Unexpected server-related errors.
-        - `ProgrammingError`: Code-related issues.
-        - `IntegrityError`: Database integrity constraints.
-
-    Example Usage:
-    --------------
-    >>> create_product_discount(request, 10, "New Year Sale", 20.0, "2025-01-01", "2025-01-10")
-    (True, "Product discount created successfully")
-
-    >>> create_product_discount(request, 10, "New Year Sale", 20.0, "2025-01-01", "2025-01-10")
-    (False, "Product discount with this name already exists and is active")
-
-    If any database-related issue occurs, it returns a user-friendly error message.
-
-    """
+    
         try:
             #getting the product
             product,message = ManageProducts.fetch_product(product_pk=product_id)
@@ -2371,6 +2313,7 @@ class ManageProducts:
                 existing_product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
                 if existing_product_discount.is_discount_active():
                     return False, "Product discount with this name already exists and is active"
+                existing_brand_discount,message = ManageProducts.fetch_product_discount()
             except:
                 pass
             product_discount= Product_Discount.objects.create(product_id=product,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
