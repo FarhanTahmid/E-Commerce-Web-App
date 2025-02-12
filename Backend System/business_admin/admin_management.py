@@ -841,8 +841,7 @@ class AdminManagement:
             if business_admin_user.admin_full_name.lower() != admin_full_name.lower():
                 business_admin_user.admin_full_name = admin_full_name
             if admin_contact_no!="":
-                if business_admin_user.admin_contact_no != admin_contact_no:
-                    business_admin_user.admin_contact_no = admin_contact_no
+                business_admin_user.admin_contact_no = admin_contact_no
             if business_admin_user.admin_email != admin_email:
                 for p in all_business_admin_user:
                     if p != business_admin_user and p.admin_email == admin_email:
@@ -852,12 +851,11 @@ class AdminManagement:
                 user.email = admin_email
                 user.username = admin_email.split('@')[0]
             if admin_avatar != "":
-                if business_admin_user.admin_avatar != admin_avatar:
-                    if business_admin_user.admin_avatar:
-                        path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
-                        if os.path.exists(path):
-                            os.remove(path)
-                        business_admin_user.admin_avatar.delete()
+                if business_admin_user.admin_avatar:
+                    path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
+                    if os.path.exists(path):
+                        os.remove(path)
+                    business_admin_user.admin_avatar.delete()
                 business_admin_user.admin_avatar = admin_avatar
             business_admin_user.save()
             user.save()

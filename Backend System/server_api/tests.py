@@ -111,6 +111,10 @@ class ServerAPITestCases(APITestCase):
         self.product2.product_category.set([self.product_category1])
         self.product2.product_sub_category.set([self.product_sub_category1])
 
+        self.product3 = Product.objects.create(product_name="Puta Cleanser", product_brand=self.product_brand1,
+                                            product_description="A cleanser by Puta", product_summary="Puta",
+                                            product_ingredients="Water", product_usage_direction="Use twice daily", created_at=self.now)
+
 
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=self.now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=self.now)
@@ -974,7 +978,7 @@ class ServerAPITestCases(APITestCase):
         """
         Test for fetching products with discount and skus
         """
-        response = self.client.get(f'/server_api/product/fetch-product-details/?product_pk={self.product1.pk}')
+        response = self.client.get(f'/server_api/product/fetch-product-details/?product_pk={self.product3.pk}')
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Fetched successfully")
 
