@@ -1351,6 +1351,7 @@ class ManageProducts:
             if product_pk!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_pk)
                 product_skus,message = ManageProducts.fetch_product_sku(product_id=product_pk)
+                product_images,message = ManageProducts.fetch_product_image(product_pk=product_pk)
                 all_product_discount,message = ManageProducts.fetch_product_discount(product_id=product_pk)
                 product_discount = all_product_discount[0] if all_product_discount else ""
                 
@@ -1358,6 +1359,7 @@ class ManageProducts:
                 'product':product,
                 'product_skus':product_skus,
                 'product_discount':product_discount,
+                'product_images':product_images
                 }
 
             elif product_brand_pk!= "":

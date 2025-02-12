@@ -44,15 +44,6 @@ class Product_Discount_Serializer(serializers.ModelSerializer):
         model = Product_Discount
         fields = '__all__'
 
-class Product_Serializer(serializers.ModelSerializer):
-
-    product_sku = Product_SKU_Serializer(many=True,read_only=True)
-    product_discount = Product_Discount_Serializer(many=True,read_only=True)
-
-    class Meta:
-        model = Product
-        fields= '__all__'
-
 class Product_Images_Serializer(serializers.ModelSerializer):
     product_image = serializers.SerializerMethodField()
 
@@ -66,5 +57,16 @@ class Product_Images_Serializer(serializers.ModelSerializer):
     class Meta:
         model=Product_Images
         fields= '__all__'
+        
+class Product_Serializer(serializers.ModelSerializer):
+
+    product_sku = Product_SKU_Serializer(many=True,read_only=True)
+    product_discount = Product_Discount_Serializer(many=True,read_only=True)
+    product_images = Product_Images_Serializer(many=True,read_only=True)
+
+    class Meta:
+        model = Product
+        fields= '__all__'
+
 
     
