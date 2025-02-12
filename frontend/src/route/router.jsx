@@ -85,9 +85,12 @@ import ProductBrand from "../pages/product-brand";
 import ProductFlavour from "../pages/product-flavour";
 import ProductFlavourCreate from "@/components/products/flavour/ProductFlavourCreate";
 import ProductFlavourUpdate from "@/components/products/flavour/ProductFlavourUpdate";
+import ProductSKU from "../pages/product-sku";
 import Product from "../pages/product";
 import ProductCreate from "@/components/products/product/ProductCreate";
 import ProductUpdate from "@/components/products/product/ProductUpdate";
+import ProductSKUCreate from "@/components/products/sku/ProductSKUCreate";
+import ProductSKUUpdate from "@/components/products/sku/ProductSKUUpdate";
 
 
 const parseJwt = (token) => {
@@ -259,6 +262,18 @@ export const router = createBrowserRouter([
             {
                 path: "/products/:id",
                 element: <ProductUpdate />
+            },
+            {
+                path: "/products/sku",
+                element: <ProductSKU />
+            },
+            {
+                path: "/products/sku/create",
+                element: <ProductSKUCreate />
+            },
+            {
+                path: "/products/sku/:id",
+                element: <ProductSKUUpdate />
             },
             {
                 path: "/products/category",
