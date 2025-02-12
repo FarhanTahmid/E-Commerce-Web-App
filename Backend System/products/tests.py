@@ -665,22 +665,29 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product discount should be fetched successfully")
         self.assertEqual(message,"Active Product Discount fetched successfully")
 
-    # def test_create_product_discount(self):
-    #     """
-    #     Test create product discount
-    #     """
-    #     now = timezone.now()
-    #     request = self.factory.post('/product/product_discount/create/')
-    #     request.user = self._create_mock_dev_user()
-    #     #request.user = self._create_mock_businessadmin_user()
-    #     success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now,now + datetime.timedelta(days=2))
-    #     self.assertTrue(success,"Product discount should be created successfully")
-    #     self.assertEqual(message,"Product discount created successfully")
+    def test_create_product_discount(self):
+        """
+        Test create product discount
+        """
+        now = timezone.now()
+        request = self.factory.post('/product/product_discount/create/')
+        request.user = self._create_mock_dev_user()
+        #request.user = self._create_mock_businessadmin_user()
+        
+        #existing active
+        success,message = ManageProducts.create_product_discount(request,self.active_discount.discount_name,500,now,now + datetime.timedelta(days=2),[self.product1.pk,self.product3.pk])
+        self.assertFalse(success,"Product discount not should be created successfully")
+        self.assertEqual(message,"Product already has a discount and is active")
 
-    #     #same name
-    #     success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now-datetime.timedelta(days=1),now  + datetime.timedelta(days=2))
-    #     self.assertFalse(success,"Product discount should not be created successfully")
-    #     self.assertEqual(message,"Product discount with this name already exists and is active")
+        #same name
+        success,message = ManageProducts.create_product_discount(request,self.active_discount.discount_name,500,now,now + datetime.timedelta(days=2),[self.product2.pk])
+        self.assertTrue(success,"Product discount should be created successfully")
+        self.assertEqual(message,"Product discount created successfully")
+
+        #new
+        success,message = ManageProducts.create_product_discount(request,"DHAMAKAAA offer",500,now,now + datetime.timedelta(days=3),[self.product3.pk])
+        self.assertTrue(success,"Product discount should be created successfully")
+        self.assertEqual(message,"Product discount created successfully")
 
     # def test_update_product_discount(self):
     #     """

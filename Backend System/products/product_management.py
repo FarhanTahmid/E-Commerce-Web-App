@@ -2345,81 +2345,95 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product discount! Please try again later.")
          
-    def create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id="",brand_id="",sub_category_id="",category_id=""):
+    def create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id=[],brand_id=[],sub_category_id=[],category_id=[]):
 
         try:
 
-            if product_id!="":
-                product,message = ManageProducts.fetch_product(product_pk=product_id)#single product
-                existing_discount = Product_Discount.objects.filter(
-                product_id=product)
-                if any(p.is_discount_active() for p in existing_discount):
-                    return False, "Product already has a discount and is active"
-                product_discount = Product_Discount.objects.create(product_id=product,
-                        discount_name=discount_name,
-                        discount_amount=discount_amount,
-                        start_date=start_date,
-                        end_date=end_date)
-                product_discount.save()
-                SystemLogs.updated_by(request,product_discount)
-                SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+            if len(product_id)>0:
+                for prod in product_id:
+                    print(prod)
+                    product,message = ManageProducts.fetch_product(product_pk=prod)#single product
+                    existing_discount = Product_Discount.objects.filter(
+                    product_id=product)
+                    if any(p.is_discount_active() for p in existing_discount):
+                        return False, "Product already has a discount and is active"
+                for prod in product_id:
+                    product,message = ManageProducts.fetch_product(product_pk=prod)#single product
+                    product_discount = Product_Discount.objects.create(product_id=product,
+                            discount_name=discount_name,
+                            discount_amount=discount_amount,
+                            start_date=start_date,
+                            end_date=end_date)
+                    product_discount.save()
+                    SystemLogs.updated_by(request,product_discount)
+                    SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
             
-            elif brand_id!="":
-                products,message = ManageProducts.fetch_product(product_brand_pk=brand_id)#multiple products
+            elif len(brand_id)>0:
 
-                brand,message = ManageProducts.fetch_product_brand(pk=brand_id)
-                existing_discount = Product_Discount.objects.filter(brand_id=brand)
-                if any(p.is_discount_active() for p in existing_discount):
-                    return False, "Products of this brand already has a discount and is active"
+                for b in brand_id:
+                    products,message = ManageProducts.fetch_product(product_brand_pk=b)#multiple products
+                    brand,message = ManageProducts.fetch_product_brand(pk=b)
+                    existing_discount = Product_Discount.objects.filter(brand_id=brand)
+                    if any(p.is_discount_active() for p in existing_discount):
+                        return False, f"Products of the brand already has a discount and is active"
+                    
+                for b in brand_id: 
+                    products,message = ManageProducts.fetch_product(product_brand_pk=b)#multiple products
+                    brand,message = ManageProducts.fetch_product_brand(pk=b)
+                    for p in products:
+                        product_discount = Product_Discount.objects.create(product_id=p,
+                                brand_id =  brand,                                         
+                                discount_name=discount_name,
+                                discount_amount=discount_amount,
+                                start_date=start_date,
+                                end_date=end_date)
+                        product_discount.save()
+                        SystemLogs.updated_by(request,product_discount)
+                        SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+
+            elif len(sub_category_id)>0:
+                for sub_cat in sub_category_id:
+                    products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[sub_cat])#multiple
+                    sub_category,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_cat)
+                    existing_discount = Product_Discount.objects.filter(sub_category_id=sub_category)
+                    if any(p.is_discount_active() for p in existing_discount):
+                        return False, "Products of this sub category already has a discount and is active"
                 
-                for p in products:
-                    product_discount = Product_Discount.objects.create(product_id=p,
-                            brand_id =  brand,                                         
-                            discount_name=discount_name,
-                            discount_amount=discount_amount,
-                            start_date=start_date,
-                            end_date=end_date)
-                    product_discount.save()
-                    SystemLogs.updated_by(request,product_discount)
-                    SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+                for sub_cat in sub_category_id:
+                    products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[sub_cat])#multiple
+                    sub_category,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_cat)    
+                    for p in products:
+                        product_discount = Product_Discount.objects.create(product_id=p,
+                                sub_category_id = sub_category,                                          
+                                discount_name=discount_name,
+                                discount_amount=discount_amount,
+                                start_date=start_date,
+                                end_date=end_date)
+                        product_discount.save()
+                        SystemLogs.updated_by(request,product_discount)
+                        SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
 
-            elif sub_category_id!="":
-                products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[sub_category_id])#multiple
-
-                sub_category,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_id)
-                existing_discount = Product_Discount.objects.filter(sub_category_id=sub_category)
-                if any(p.is_discount_active() for p in existing_discount):
-                    return False, "Products of this sub category already has a discount and is active"
-                
-                for p in products:
-                    product_discount = Product_Discount.objects.create(product_id=p,
-                            sub_category_id = sub_category,                                          
-                            discount_name=discount_name,
-                            discount_amount=discount_amount,
-                            start_date=start_date,
-                            end_date=end_date)
-                    product_discount.save()
-                    SystemLogs.updated_by(request,product_discount)
-                    SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
-
-            elif category_id!="":
-                products,message = ManageProducts.fetch_product(product_category_pk_list=[category_id])#multiple
-
-                category,message = ManageProducts.fetch_product_categories(product_category_pk=category_id)
-                existing_discount = Product_Discount.objects.filter(category_id=category)
-                if any(p.is_discount_active() for p in existing_discount):
-                    return False, "Products of this category already has a discount and is active"
-                
-                for p in products:
-                    product_discount = Product_Discount.objects.create(product_id=p,
-                            category_id = category,
-                            discount_name=discount_name,
-                            discount_amount=discount_amount,
-                            start_date=start_date,
-                            end_date=end_date)
-                    product_discount.save()
-                    SystemLogs.updated_by(request,product_discount)
-                    SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+            elif len(category_id)>0:
+                for cat in category_id:
+                    products,message = ManageProducts.fetch_product(product_category_pk_list=[cat])#multiple
+                    category,message = ManageProducts.fetch_product_categories(product_category_pk=cat)
+                    existing_discount = Product_Discount.objects.filter(category_id=category)
+                    if any(p.is_discount_active() for p in existing_discount):
+                        return False, "Products of this category already has a discount and is active"
+                    
+                for cat in category_id:
+                    products,message = ManageProducts.fetch_product(product_category_pk_list=[cat])#multiple
+                    category,message = ManageProducts.fetch_product_categories(product_category_pk=cat)
+                    for p in products:
+                        product_discount = Product_Discount.objects.create(product_id=p,
+                                category_id = category,
+                                discount_name=discount_name,
+                                discount_amount=discount_amount,
+                                start_date=start_date,
+                                end_date=end_date)
+                        product_discount.save()
+                        SystemLogs.updated_by(request,product_discount)
+                        SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
 
             return True,"Product discount created successfully"
         
@@ -2439,28 +2453,10 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")
         
-    def update_product_discount(request,product_discount_pk,product_id,discount_name,discount_amount,start_date,end_date):
-
-       
+    def update_product_discount(request,product_discount_pk,discount_name="",discount_amount="",start_date="",end_date="",product_id=[],sub_category_id=[],category_id=[]):
 
         try:
-            #getting the product_discount
-            product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
-            new_product,message = ManageProducts.fetch_product(product_pk=product_id)
-            if product_discount.product_id != new_product:
-                product_discount.product_id = new_product
-            if product_discount.discount_name.lower() != discount_name.lower():
-                product_discount.discount_name = discount_name
-            if product_discount.discount_amount != discount_amount:
-                product_discount.discount_amount = discount_amount
-            if product_discount.start_date != start_date and start_date <= product_discount.end_date:
-                product_discount.start_date = start_date
-            if product_discount.end_date != end_date and end_date >= product_discount.start_date:
-                product_discount.end_date = end_date
-            product_discount.save()
-            SystemLogs.updated_by(request,product_discount)
-            SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
-            return True, "Product Discount updated"
+            pass
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
