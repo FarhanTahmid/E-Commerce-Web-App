@@ -10,10 +10,24 @@ import { set } from 'date-fns';
 
 const ProductUpdate = () => {
     const { id } = useParams(); // Get the ID from the URL
+    const [productName, setProductName] = useState('');
+    const [productDescription, setProductDescription] = useState('');
+    const [productSummary, setProductSummary] = useState('');
+    const [productIngredients, setProductIngredients] = useState('');
+    const [productUsageDirection, setProductUsageDirection] = useState('');
+    const [categories, setCategories] = useState([]);
+    const [selectedCategories, setSelectedCategories] = useState([]);
+    const [subCategories, setSubCategories] = useState([]);
+    const [selectedSubCategories, setSelectedSubCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
+    const [selectedBrand, setSelectedBrand] = useState(null);
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState('');
+
+
+
     const [brandName, setBrandName] = useState(''); // Initialize the position name state
     const [brandDescription, setBrandDescription] = useState(""); // Initialize the position description state
-    const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState(''); // 'success' or 'danger'
     const [showDeleteModal, setShowDeleteModal] = useState(false); // Show/hide the delete modal
     const [deleteAction, setDeleteAction] = useState(null); // Store the delete action type
     const [brandEstablishedYear, setBrandEstablishedYear] = useState('');
@@ -21,42 +35,9 @@ const ProductUpdate = () => {
     const [previewLogo, setPreviewLogo] = useState(null);
     const [brandCountry, setBrandCountry] = useState('');
     const [brandLogo, setBrandLogo] = useState(null);
-    const [countries, setCountries] = useState([]);
-
-    useEffect(() => {
-        // Fetch list of countries
-        fetch("https://restcountries.com/v3.1/all")
-            .then(response => response.json())
-            .then(data => {
-                // Sort countries alphabetically by their common name
-                const sortedCountries = data
-                    .map(country => ({
-                        value: country.name.common,
-                        label: country.name.common
-                    }))
-                    .sort((a, b) => a.label.localeCompare(b.label));
-
-                setCountries(sortedCountries);
-            })
-            .catch(error => console.error("Error fetching countries:", error));
-    }, []);
-
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product/product-brand'; // Define the API base URL
-    const handleLogoChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setBrandLogo(file); // Store new file
-            setPreviewLogo(URL.createObjectURL(file)); // Show new preview
-        }
-    };
 
 
-
-    const handleRemoveLogo = () => {
-        setPreviewLogo(null); // Remove preview
-        setBrandLogo(null); // Clear file state
-        document.getElementById("brandLogo").value = ""; // Reset file input
-    };
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product'; // Define the API base URL
 
     const navigate = useNavigate(); // Initialize the navigate hook
 
@@ -82,7 +63,7 @@ const ProductUpdate = () => {
                     setMessageType('success');
 
                     // Redirect to the position list page after deletion
-                    navigate('/products/brand');
+                    navigate('/products');
                 })
                 .catch(error => {
                     setMessage(error.message);
@@ -100,7 +81,7 @@ const ProductUpdate = () => {
 
 
     useEffect(() => {
-        axios.get(`${API_BASE_URL}/fetch-product-brands/`, {
+        axios.get(`${API_BASE_URL}/fetch-product/`, {
             headers: {
                 Authorization: `Bearer ${Cookies.get("accessToken")}`,
                 "Content-Type": "application/json"
