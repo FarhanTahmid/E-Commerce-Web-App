@@ -1575,14 +1575,14 @@ class ManageProducts:
             if product.product_summary.lower() != product_summary.lower():
                 product.product_summary = product_summary
             if product_brand_pk!= "":
-                if not product.product_brand.pk or product_brand_pk != product.product_brand.pk:
+                if product_brand_pk != product.product_brand.pk:
                     product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
                     product.product_brand = product_brand
             if product_ingredients!= "":
-                if not product.product_ingredients or product.product_ingredients.lower() != product_ingredients.lower():
+                if product.product_ingredients.lower() != product_ingredients.lower():
                     product.product_ingredients =  product_ingredients
             if product_usage_direction!= "":
-                if not product.product_usage_direction or product.product_usage_direction.lower() != product_usage_direction.lower():
+                if product.product_usage_direction.lower() != product_usage_direction.lower():
                     product.product_usage_direction = product_usage_direction
             product.save()
             SystemLogs.updated_by(request,product)
