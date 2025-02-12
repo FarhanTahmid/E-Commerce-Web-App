@@ -20,6 +20,7 @@ from business_admin import serializers
 from system.permissions import IsAdminWithPermission
 from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
+from datetime import datetime
 
 REFRESH_RATE = '50/m'
 SERVER_API_URL = 'server_api'
@@ -1720,11 +1721,11 @@ class FetchProduct(APIView):
     def get(self,request,format=None,*args, **kwargs):
         try:
 
-            product_pk = self.request.data.get('product_pk',"")
-            product_name = self.request.data.get('product_name',"")
-            product_brand_pk = self.request.data.get('product_brand_pk',"")
-            product_category_pk_list = self.request.data.get('product_category_pk_list',[])
-            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',[])
+            product_pk = self.request.query_params.get('product_pk',"")
+            product_name = self.request.query_params.get('product_name',"")
+            product_brand_pk = self.request.query_params.get('product_brand_pk',"")
+            product_category_pk_list = self.request.query_params.get('product_category_pk_list',[])
+            product_sub_category_pk_list = self.request.query_params.get('product_sub_category_pk_list',[])
 
             if product_pk!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_pk)
@@ -1734,7 +1735,7 @@ class FetchProduct(APIView):
                 product_data = product_serializers.Product_Serializer(product,many=False)
             elif product_brand_pk!= "":
                 product,message = ManageProducts.fetch_product(product_brand_pk=product_brand_pk)
-                product_data = product_serializers.Product_Serializer(product,many=False)
+                product_data = product_serializers.Product_Serializer(product,many=True)
             elif len(product_category_pk_list)!=0:
                 product,message = ManageProducts.fetch_product(product_category_pk_list=product_category_pk_list)
                 product_data = product_serializers.Product_Serializer(product,many=True)
@@ -2461,6 +2462,10 @@ class CreateProductDiscount(APIView):
                 missing_fields.append("Start date")
             if end_date == "":
                 missing_fields.append("End date")
+
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
 
             if missing_fields:
                 return Response({

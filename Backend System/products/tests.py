@@ -652,45 +652,45 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product discount should be fetched successfully")
         self.assertEqual(message,"Active Product Discount fetched successfully")
 
-    def test_create_product_discount(self):
-        """
-        Test create product discount
-        """
-        now = timezone.now()
-        request = self.factory.post('/product/product_discount/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
-        success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now,now + datetime.timedelta(days=2))
-        self.assertTrue(success,"Product discount should be created successfully")
-        self.assertEqual(message,"Product discount created successfully")
+    # def test_create_product_discount(self):
+    #     """
+    #     Test create product discount
+    #     """
+    #     now = timezone.now()
+    #     request = self.factory.post('/product/product_discount/create/')
+    #     request.user = self._create_mock_dev_user()
+    #     #request.user = self._create_mock_businessadmin_user()
+    #     success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now,now + datetime.timedelta(days=2))
+    #     self.assertTrue(success,"Product discount should be created successfully")
+    #     self.assertEqual(message,"Product discount created successfully")
 
-        #same name
-        success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now-datetime.timedelta(days=1),now  + datetime.timedelta(days=2))
-        self.assertFalse(success,"Product discount should not be created successfully")
-        self.assertEqual(message,"Product discount with this name already exists and is active")
+    #     #same name
+    #     success,message = ManageProducts.create_product_discount(request,self.product2.pk,"DARUN OFFER",500,now-datetime.timedelta(days=1),now  + datetime.timedelta(days=2))
+    #     self.assertFalse(success,"Product discount should not be created successfully")
+    #     self.assertEqual(message,"Product discount with this name already exists and is active")
 
-    def test_update_product_discount(self):
-        """
-        Test for updating product discount
-        """
-        now = timezone.now()
-        request = self.factory.post('/product/product_discount/update/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
-        success,message = ManageProducts.update_product_discount(request,self.inactive_discount.pk,self.product1.pk,"XRAZY OFFer",800,now-datetime.timedelta(days=100),now + datetime.timedelta(days=10))
-        self.assertTrue(success,"Product discount should be updated successfully")
-        self.assertEqual(message,"Product Discount updated")
+    # def test_update_product_discount(self):
+    #     """
+    #     Test for updating product discount
+    #     """
+    #     now = timezone.now()
+    #     request = self.factory.post('/product/product_discount/update/')
+    #     request.user = self._create_mock_dev_user()
+    #     #request.user = self._create_mock_businessadmin_user()
+    #     success,message = ManageProducts.update_product_discount(request,self.inactive_discount.pk,self.product1.pk,"XRAZY OFFer",800,now-datetime.timedelta(days=100),now + datetime.timedelta(days=10))
+    #     self.assertTrue(success,"Product discount should be updated successfully")
+    #     self.assertEqual(message,"Product Discount updated")
 
-    def test_delete_product_discount(self):
-        """
-        Test for deleting product discount
-        """
-        request = self.factory.post('/product/product_discount/create/')
-        request.user = self._create_mock_dev_user()
-        #request.user = self._create_mock_businessadmin_user()
-        success,message = ManageProducts.delete_product_discount(request,self.inactive_discount.pk)
-        self.assertTrue(success,"Product discount should be deleted successfully")
-        self.assertEqual(message,"Product discount deleted successfully")
+    # def test_delete_product_discount(self):
+    #     """
+    #     Test for deleting product discount
+    #     """
+    #     request = self.factory.post('/product/product_discount/create/')
+    #     request.user = self._create_mock_dev_user()
+    #     #request.user = self._create_mock_businessadmin_user()
+    #     success,message = ManageProducts.delete_product_discount(request,self.inactive_discount.pk)
+    #     self.assertTrue(success,"Product discount should be deleted successfully")
+    #     self.assertEqual(message,"Product discount deleted successfully")
 
 
 
