@@ -1575,15 +1575,12 @@ class ManageProducts:
             if product.product_summary.lower() != product_summary.lower():
                 product.product_summary = product_summary
             if product_brand_pk!= "":
-                if product_brand_pk != product.product_brand.pk:
-                    product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
-                    product.product_brand = product_brand
+                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                product.product_brand = product_brand
             if product_ingredients!= "":
-                if product.product_ingredients.lower() != product_ingredients.lower():
-                    product.product_ingredients =  product_ingredients
+                product.product_ingredients =  product_ingredients
             if product_usage_direction!= "":
-                if product.product_usage_direction.lower() != product_usage_direction.lower():
-                    product.product_usage_direction = product_usage_direction
+                product.product_usage_direction = product_usage_direction
             product.save()
             SystemLogs.updated_by(request,product)
             SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
@@ -1904,10 +1901,10 @@ class ManageProducts:
             if existing_product_flavours != new_product_flavours:
                 product_sku.product_flavours.set(new_product_flavours)
             if product_color!= "":
-                if not product_sku.product_color or product_sku.product_color.lower() != product_color.lower():
+                if product_sku.product_color.lower() != product_color.lower():
                     product_sku.product_color = product_color
             if product_size!= "":
-                if not product_sku.product_size or product_sku.product_size.lower() != product_size.lower():
+                if product_sku.product_size.lower() != product_size.lower():
                     if type(product_size) == int:
                         product_sku.product_size = str(product_size)
                     else:
@@ -2206,11 +2203,11 @@ class ManageProducts:
                     product_image.product_image.delete()
                 product_image.product_image = new_image
             if color!= "":
-                if not product_image.color or product_image.color != color:
+                if product_image.color != color:
                     product_image.color = color
             if size!= "":
                 size = str(size)
-                if not product_image.size or product_image.size != size:
+                if product_image.size != size:
                     product_image.size = size
             
             product_image.save()
