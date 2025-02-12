@@ -1776,7 +1776,71 @@ class FetchProduct(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+class FetchProductWithSKUAndDiscounts(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+
+            product_pk = self.request.query_params.get('product_pk',"")
+            product_brand_pk = self.request.query_params.get('product_brand_pk',"")
+            product_category_pk = self.request.query_params.get('product_category_pk',"")
+            product_sub_category_pk = self.request.query_params.get('product_sub_category_pk',"")
+
+            if product_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_pk=product_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=False).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
+            elif product_brand_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_brand_pk=product_brand_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=True).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
+            elif product_category_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_category_pk=product_category_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=True).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
+            elif product_sub_category_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_sub_category_pk=product_sub_category_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=True).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
+                
+            if product:
+                return Response({
+                    'message':message,
+                    'product_data':product_data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message,
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 class CreateProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

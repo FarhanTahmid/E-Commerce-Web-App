@@ -1343,43 +1343,37 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product! Please try again later.") 
     
     def fetch_product_with_sku_and_discount(product_pk="",product_brand_pk="",
-                      product_category_pk_list=[],product_sub_category_pk_list=[]):
+                      product_category_pk="",product_sub_category_pk=""):
         
         try:
-            product_with_sku_and_discount = []
+            product_with_sku_and_discount = {}
             #fetching products according to provided arguments
             if product_pk!= "":
-                product_with_sku_and_discount = {}
-                product = Product.objects.get(pk=product_pk), "Products fetched successfully!"
+                product,message = ManageProducts.fetch_product(product_pk=product_pk)
                 product_skus,message = ManageProducts.fetch_product_sku(product_id=product_pk)
                 all_product_discount,message = ManageProducts.fetch_product_discount(product_id=product_pk)
-                product_discount = all_product_discount[0]
+                product_discount = all_product_discount[0] if all_product_discount else ""
+                
                 product_with_sku_and_discount = {
                 'product':product,
                 'product_skus':product_skus,
                 'product_discount':product_discount,
                 }
-                return product_with_sku_and_discount
-            elif product_brand_pk!= "":
-                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
-                products = Product.objects.filter(product_brand=product_brand)
-                for p in products:
-                    product_with_sku_and_discount.append(ManageProducts.fetch_product_with_sku_and_discount(product_pk=p.pk))
 
-              
-            # elif len(product_category_pk_list)>0:
-            #     product_categories = [Product_Category.objects.get(pk=p) for p in product_category_pk_list]
-            #     products=set()
-            #     for categories in product_categories:
-            #         products.update(categories.products.all())
-            #     return products, "Products fetched successfully!" if products else "No products found using this categories"
-            # elif len(product_sub_category_pk_list)>0:
-            #     product_sub_categories = [Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list]
-            #     products = set()
-            #     for sub_categories in product_sub_categories:
-            #         products.update(sub_categories.products.all())
-            #     return products,"Products fetched successfully!"if products else "No products found using this sub categories"
+            elif product_brand_pk!= "":
+                products,message = ManageProducts.fetch_product(product_brand_pk=product_brand_pk)
+                for p in products:
+                    product_with_sku_and_discount[p.pk] = ManageProducts.fetch_product_with_sku_and_discount(product_pk=p.pk)
+            elif product_category_pk!= "":
+                products,message = ManageProducts.fetch_product(product_category_pk_list=[product_category_pk])
+                for p in products:
+                    product_with_sku_and_discount[p.pk] = ManageProducts.fetch_product_with_sku_and_discount(product_pk=p.pk)
+            elif product_sub_category_pk!= "":
+                products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[product_sub_category_pk])
+                for p in products:
+                    product_with_sku_and_discount[p.pk] = ManageProducts.fetch_product_with_sku_and_discount(product_pk=p.pk)
             
+            return product_with_sku_and_discount, "Fetched successfully"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1581,14 +1575,14 @@ class ManageProducts:
             if product.product_summary.lower() != product_summary.lower():
                 product.product_summary = product_summary
             if product_brand_pk!= "":
-                if not product.product_brand.pk or product_brand_pk != product.product_brand.pk:
+                if product_brand_pk != product.product_brand.pk:
                     product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
                     product.product_brand = product_brand
             if product_ingredients!= "":
-                if not product.product_ingredients or product.product_ingredients.lower() != product_ingredients.lower():
+                if product.product_ingredients.lower() != product_ingredients.lower():
                     product.product_ingredients =  product_ingredients
             if product_usage_direction!= "":
-                if not product.product_usage_direction or product.product_usage_direction.lower() != product_usage_direction.lower():
+                if product.product_usage_direction.lower() != product_usage_direction.lower():
                     product.product_usage_direction = product_usage_direction
             product.save()
             SystemLogs.updated_by(request,product)
