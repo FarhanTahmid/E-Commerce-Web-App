@@ -1,172 +1,185 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Cookies from 'js-cookie';
-import { Link, useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import ConfirmationModal from '../../ConfirmationModal'; // Import the modal component
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import ConfirmationModal from "../../ConfirmationModal";
 import Select from "react-select";
-import { set } from 'date-fns';
-
+import ReactQuill from "react-quill";
+import 'react-quill/dist/react-quill'; // Import Quill CSS
+import QuillToolbar, { modules, formats } from '@/components/QuillToolbar';
 
 const ProductUpdate = () => {
-    const { id } = useParams(); // Get the ID from the URL
-    const [productName, setProductName] = useState('');
-    const [productDescription, setProductDescription] = useState('');
-    const [productSummary, setProductSummary] = useState('');
-    const [productIngredients, setProductIngredients] = useState('');
-    const [productUsageDirection, setProductUsageDirection] = useState('');
+    const { id } = useParams();
+    const navigate = useNavigate();
+
+    const [productName, setProductName] = useState("");
+    const [productDescription, setProductDescription] = useState("");
+    const [productSummary, setProductSummary] = useState("");
+    const [productIngredients, setProductIngredients] = useState("");
+    const [productUsageDirection, setProductUsageDirection] = useState("");
+
     const [categories, setCategories] = useState([]);
-    const [selectedCategories, setSelectedCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
-    const [selectedSubCategories, setSelectedSubCategories] = useState([]);
     const [brands, setBrands] = useState([]);
+
+    const [selectedCategories, setSelectedCategories] = useState([]);
+    const [selectedSubCategories, setSelectedSubCategories] = useState([]);
     const [selectedBrand, setSelectedBrand] = useState(null);
-    const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState('');
 
-
-
-    const [brandName, setBrandName] = useState(''); // Initialize the position name state
-    const [brandDescription, setBrandDescription] = useState(""); // Initialize the position description state
-    const [showDeleteModal, setShowDeleteModal] = useState(false); // Show/hide the delete modal
+    const [message, setMessage] = useState("");
+    const [messageType, setMessageType] = useState("");
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteAction, setDeleteAction] = useState(null); // Store the delete action type
-    const [brandEstablishedYear, setBrandEstablishedYear] = useState('');
-    const [isOwnBrand, setIsOwnBrand] = useState(false);
-    const [previewLogo, setPreviewLogo] = useState(null);
-    const [brandCountry, setBrandCountry] = useState('');
-    const [brandLogo, setBrandLogo] = useState(null);
 
 
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product'; // Define the API base URL
+    const API_BASE_URL = "http://127.0.0.1:8000/server_api/product";
 
-    const navigate = useNavigate(); // Initialize the navigate hook
+    // Fetch Categories & Brands on Mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [categoriesRes, brandsRes] = await Promise.all([
+                    axios.get(`${API_BASE_URL}/categories/fetch-all/`, {
+                        headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+                    }),
+                    axios.get(`${API_BASE_URL}/product-brand/fetch-product-brands/`, {
+                        headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+                    })
+                ]);
 
-    const handleDeletePosition = () => {
-        setDeleteAction({ type: 'position' });
-        setShowDeleteModal(true);
+                const categoryOptions = categoriesRes.data.product_category.map(c => ({ value: c.id, label: c.category_name }));
+                const brandOptions = brandsRes.data.product_brands.map(b => ({ value: b.id, label: b.brand_name }));
+
+                setCategories(categoryOptions);
+                setBrands(brandOptions);
+
+                fetchProductDetails(categoryOptions, brandOptions);
+            } catch (error) {
+                console.error("Error fetching initial data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    // Fetch Product Details
+    const fetchProductDetails = async (categoryOptions, brandOptions) => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/fetch-product/`, {
+                headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
+                params: { product_pk: id },
+            });
+
+            const product = response.data.product_data;
+            setProductName(product.product_name);
+            setProductDescription(product.product_description);
+            setProductSummary(product.product_summary);
+            setProductIngredients(product.product_ingredients);
+            setProductUsageDirection(product.product_usage_direction);
+
+            const selectedCat = categoryOptions.filter(c => product.product_category.includes(c.value));
+            const selectedBrand = brandOptions.find(b => b.value === product.product_brand) || null;
+
+            setSelectedCategories(selectedCat);
+            setSelectedBrand(selectedBrand);
+
+            fetchSubcategoriesForCategories(selectedCat, product.product_sub_category);
+        } catch (error) {
+            console.error("Error fetching product details:", error);
+        }
     };
 
-    const confirmDelete = () => {
-        if (deleteAction.type === 'position') {
-            fetch(`${API_BASE_URL}/delete/${id}/`, {
-                method: 'DELETE',
+    // Fetch subcategories dynamically based on selected categories
+    const fetchSubcategoriesForCategories = async (selectedCategories, existingSubCategoryIds = []) => {
+        try {
+            const subCategoryRequests = selectedCategories.map(cat =>
+                axios.get(`${API_BASE_URL}/sub-categories/fetch-all-product-sub-categories-for-a-category/${cat.value}/`, {
+                    headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+                })
+            );
+
+            const responses = await Promise.all(subCategoryRequests);
+
+            const newSubCategories = responses.flatMap(res => res.data.product_sub_category)
+                .map(sc => ({ value: sc.id, label: sc.sub_category_name, categoryId: sc.category_id }));
+
+            setSubCategories(newSubCategories);
+
+            // Set only existing subcategories that belong to selected categories
+            setSelectedSubCategories(newSubCategories.filter(sc => existingSubCategoryIds.includes(sc.value)));
+        } catch (error) {
+            console.error("Error fetching subcategories:", error);
+        }
+    };
+
+    // Handle Category Selection
+    const handleCategoryChange = async (selectedOptions) => {
+        setSelectedCategories(selectedOptions);
+        fetchSubcategoriesForCategories(selectedOptions);
+    };
+
+    // Handle Product Update
+    const handleUpdateProduct = async (e) => {
+        e.preventDefault();
+
+        if (!productName.trim() || !selectedCategories.length || !selectedSubCategories.length || !selectedBrand) {
+            alert("All required fields must be filled!");
+            return;
+        }
+
+        try {
+            await axios.put(`${API_BASE_URL}/update/${id}/`, {
+                product_name: productName,
+                product_category_pk_list: selectedCategories.map(c => c.value),
+                product_sub_category_pk_list: selectedSubCategories.map(sc => sc.value),
+                product_description: productDescription,
+                product_summary: productSummary,
+                product_brand_pk: selectedBrand.value,
+                product_ingredients: productIngredients,
+                product_usage_direction: productUsageDirection,
+            }, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"
                 },
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to delete position');
-                    }
-                    setMessage('Brand deleted successfully!');
-                    setMessageType('success');
+            });
+            setMessage("Product Updated Successfully!");
+            setMessageType("success");
+        } catch (error) {
+            console.error("Error updating product:", error);
+            setMessage("Failed to update the product.");
+            setMessageType("danger");
+        }
+    };
 
-                    // Redirect to the position list page after deletion
-                    navigate('/products');
+
+    /** Handle product deletion */
+    const handleDeleteProduct = () => {
+        setDeleteAction({ type: "product" });
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        if (deleteAction?.type === "product") {
+            axios
+                .delete(`${API_BASE_URL}/delete/${id}/`, {
+                    headers: {
+                        Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                    },
                 })
-                .catch(error => {
-                    setMessage(error.message);
-                    setMessageType('danger');
+                .then(() => {
+                    setMessage("Product deleted successfully!");
+                    setMessageType("success");
+                    navigate("/products");
+                })
+                .catch((error) => {
+                    setMessage("Failed to delete product.");
+                    setMessageType("danger");
+                    console.error("Delete error:", error.response?.data || error.message);
                 });
         }
-
-        // Close the modal after confirmation
         setShowDeleteModal(false);
     };
-
-    const cancelDelete = () => {
-        setShowDeleteModal(false);
-    };
-
-
-    useEffect(() => {
-        axios.get(`${API_BASE_URL}/fetch-product/`, {
-            headers: {
-                Authorization: `Bearer ${Cookies.get("accessToken")}`,
-                "Content-Type": "application/json"
-            },
-            params: { pk: id }
-        })
-            .then(response => {
-                const fetchedLogo = response.data.product_brands.brand_logo || null;
-
-                setBrandName(response.data.product_brands.brand_name || '');
-                setBrandDescription(response.data.product_brands.brand_description || '');
-                setBrandCountry(response.data.product_brands.brand_country || '');
-                setBrandEstablishedYear(response.data.product_brands.brand_established_year || '');
-                setIsOwnBrand(response.data.product_brands.is_own_brand || false);
-
-                // If there is a brand logo, store only in preview, not in brandLogo state
-                setPreviewLogo(fetchedLogo);
-                setBrandLogo(null);
-            })
-            .catch(error => {
-                console.error("Error fetching brand data:", error.response ? error.response.data : error);
-            });
-    }, []);
-
-
-
-
-    const handleSubmitCategory = async (e) => {
-        e.preventDefault();
-
-        // Validate input fields
-        if (!brandName.trim()) {
-            alert("Brand name is required!");
-            return;
-        }
-
-        if (!brandDescription.trim()) {
-            alert("Brand description is required!");
-            return;
-        }
-
-        // Ensure logo is present if the user removed the existing one
-        if (!previewLogo && !brandLogo) {
-            alert("You must upload a new brand logo after removing the previous one!");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("brand_name", brandName);
-        formData.append("brand_description", brandDescription);
-        formData.append("brand_country", brandCountry);
-        formData.append("brand_established_year", brandEstablishedYear);
-        formData.append("is_own_brand", isOwnBrand ? 'True' : 'False');
-
-        // Send "" if fetched logo was kept, otherwise send new file
-        if (!brandLogo && previewLogo) {
-            formData.append("brand_logo", ""); // Keep existing logo
-        } else if (brandLogo) {
-            formData.append("brand_logo", brandLogo); // Include new logo
-        }
-        console.log("🔍 FormData Debugging:");
-        for (let pair of formData.entries()) {
-            console.log(`${pair[0]}:`, pair[1]);
-        }
-
-        try {
-            const response = await axios.put(`${API_BASE_URL}/update/${id}/`, formData, {
-                headers: {
-                    Authorization: `Bearer ${Cookies.get('accessToken')}`,
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-
-            setBrandName(response.data.name);
-            setBrandDescription(response.data.description);
-            setMessage("Brand Updated Successfully!");
-            setMessageType('success');
-        } catch (error) {
-            console.error("Error Updating Brand:", error.response ? error.response.data : error.message);
-            setMessage("Failed to update the brand.");
-            setMessageType('danger');
-        }
-    };
-
-
 
     return (
         <div className="col-xl-12 p-2">
@@ -189,137 +202,100 @@ const ProductUpdate = () => {
             )}
             <div className="card invoice-container">
                 <div className="card-header">
-                    <h5>Brand Update & Deletion</h5>
-                    <Link to="/products/brand" className="btn btn-primary">← Back</Link>
+                    <h5>Product Update & Deletion</h5>
+                    <Link to="/products" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">
-                    <form onSubmit={handleSubmitCategory}>
+                    <form onSubmit={handleUpdateProduct}>
                         <div className="px-4 py-4 row justify-content-between">
                             <div className="col-xl-6">
-                                <div className="form-group mb-3 mt-3">
-                                    <label htmlFor="brandName" className="form-label">Brand Name</label>
-                                    <input
-                                        type="text"
-                                        className="form-control mb-2"
-                                        id="brandName"
-                                        placeholder="Brand Name"
-                                        value={brandName}
-                                        onChange={(e) => setBrandName(e.target.value)}
-                                        required
-                                    />
-                                    <label htmlFor="brandEstablishedYear" className="form-label">Brand Established Year</label>
-                                    <input
-                                        type="number"
-                                        className="form-control mb-2"
-                                        id="brandEstablishedYear"
-                                        placeholder="Year"
-                                        value={brandEstablishedYear}
-                                        onChange={(e) => setBrandEstablishedYear(e.target.value)}
-                                        required
-                                    />
-                                    <label htmlFor="isOwnBrand" className="form-label">Is it your own brand?</label><br />
-                                    <div className="form-check form-check-inline">
-                                        <input
-                                            type="radio"
-                                            className="form-check-input form-control mb-2"
-                                            id="yesOption"
-                                            name="isOwnBrand"
-                                            value="yes"
-                                            checked={isOwnBrand === true}
-                                            onChange={() => setIsOwnBrand(true)}  // Ensure boolean value here
-                                        />
-                                        <label htmlFor="yesOption" className="form-check-label">Yes</label>
-                                    </div>
-                                    <div className="form-check form-check-inline mb-2">
-                                        <input
-                                            type="radio"
-                                            className="form-check-input form-control mb-2"
-                                            id="noOption"
-                                            name="isOwnBrand"
-                                            value="no"
-                                            checked={isOwnBrand === false}
-                                            onChange={() => setIsOwnBrand(false)}  // Ensure boolean value here
-                                        />
-                                        <label htmlFor="noOption" className="form-check-label">No</label>
+                                <div className="form-group">
+                                    <div className="mb-3">
+                                        <label className="form-label">Product Name</label>
+                                        <input type="text" className="form-control" value={productName} onChange={(e) => setProductName(e.target.value)} required />
                                     </div>
 
-                                    <br />
-                                    <label htmlFor="brandCountry" className="form-label">Brand Country</label>
-                                    <Select
-                                        id="brandCountry"
-                                        className='mb-2'
-                                        value={brandCountry ? { value: brandCountry, label: brandCountry } : null}
-                                        onChange={(selectedOption) => setBrandCountry(selectedOption.value)}
-                                        options={countries}
-                                        placeholder="Select a country"
-                                        isClearable
-                                    />
-                                    <label htmlFor="brandDescription" className="form-label">Brand Description</label>
-                                    <textarea
-                                        className="form-control mb-2"
-                                        id="brandDescription"
-                                        placeholder="Brand Description"
-                                        value={brandDescription}
-                                        onChange={(e) => setBrandDescription(e.target.value)}
-                                    />
-                                    <label htmlFor="brandLogo" className="form-label">Brand Logo</label>
+                                    <div className="mb-3 editor">
+                                        <label className="form-label">Product Description</label>
+                                        <QuillToolbar toolbarId={'t1'} />
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={productDescription}
+                                            onChange={setProductDescription}
+                                            modules={modules('t1')}
+                                            formats={formats}
+                                        />
+                                        <hr />
+                                        {!productDescription.trim() && <small className="text-danger">Product description is required.</small>}
 
+                                    </div>
 
-                                    {/* Show file input if no preview logo (or if the user removed it) */}
-                                    {!previewLogo || brandLogo ? (
-                                        <>
-                                            <input
-                                                type="file"
-                                                className="form-control mb-2"
-                                                id="brandLogo"
-                                                accept="image/*"
-                                                onChange={handleLogoChange}
-                                                required={!previewLogo && !brandLogo} // Required if no preview or existing logo
-                                            />
-                                        </>
-                                    ) : null}
+                                    <div className="mb-3">
+                                        <label className="form-label">Product Summary</label>
+                                        <textarea className="form-control" value={productSummary} onChange={(e) => setProductSummary(e.target.value)} required />
+                                        {!productSummary.trim() && <small className="text-danger">Product summary is required.</small>}
+                                    </div>
 
-                                    {/* If there's a preview logo, show only the preview */}
-                                    {previewLogo && (
-                                        <div className="mt-2 text-center">
-                                            <img
-                                                src={previewLogo}
-                                                alt="Brand Logo Preview"
-                                                style={{ maxWidth: '200px', maxHeight: '150px', display: 'block', cursor: 'pointer' }}
-                                                onClick={() => window.open(previewLogo, "_blank")}
-                                            />
-                                            <button type="button" className="btn btn-danger mt-2" onClick={handleRemoveLogo}>
-                                                Remove Logo
-                                            </button>
-                                        </div>
-                                    )}
+                                    <div className="mb-3">
+                                        <label className="form-label">Categories</label>
+                                        <Select isMulti options={categories} value={selectedCategories} onChange={handleCategoryChange} />
+                                        {selectedCategories.length === 0 && <small className="text-danger">At least one category is required.</small>}
 
+                                    </div>
 
-                                </div>
-                                <div className='d-flex gap-2'>
-                                    <button type="submit" className="btn btn-success">Update Product Brand</button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-danger"
-                                        onClick={handleDeletePosition}  // Call the function here
-                                    >
-                                        Delete Product Brand
-                                    </button>
+                                    <div className="mb-3">
+                                        <label className="form-label">Subcategories</label>
+                                        <Select isMulti options={subCategories} value={selectedSubCategories} onChange={setSelectedSubCategories} />
+                                        {selectedSubCategories.length === 0 && <small className="text-danger">At least one subcategory is required.</small>}
+
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label">Brand</label>
+                                        <Select options={brands} value={selectedBrand} onChange={setSelectedBrand} isClearable />
+                                        {!selectedBrand && <small className="text-danger">Brand is required.</small>}
+
+                                    </div>
+
+                                    <div className="mb-3 editor">
+                                        <label className="form-label">Ingredients</label>
+                                        <QuillToolbar toolbarId={'t2'} />
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={productIngredients}
+                                            onChange={setProductIngredients}
+                                            modules={modules('t2')}
+                                            formats={formats}
+                                        />
+                                        <hr />
+                                    </div>
+
+                                    <div className="mb-3 editor">
+                                        <label className="form-label">Usage Direction</label>
+                                        <QuillToolbar toolbarId={'t3'} />
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={productUsageDirection}
+                                            onChange={setProductUsageDirection}
+                                            modules={modules('t3')}
+                                            formats={formats}
+                                        />
+                                        <hr />
+                                    </div>
+                                    <div className='d-flex gap-2'>
+                                        <button type="submit" className="btn btn-success">Update Product</button>
+                                        <button type="button" className="btn btn-danger" onClick={handleDeleteProduct}>Delete Product</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
+                    <ConfirmationModal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={confirmDelete} message="Are you sure you want to delete this product?" />
 
-                    <ConfirmationModal
-                        show={showDeleteModal}
-                        onClose={cancelDelete}
-                        onConfirm={confirmDelete}
-                        message={`Are you sure you want to delete this position?`}
-                    />
                 </div>
             </div>
         </div>
     );
-}
+};
 
 export default ProductUpdate;

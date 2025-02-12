@@ -50,21 +50,49 @@ const ProductCreate = () => {
             console.error("Error fetching subcategories:", error);
         }
     };
+    // Fetch subcategories dynamically based on selected categories
+    const fetchSubcategoriesForCategories = async (selectedCategories, existingSubCategoryIds = []) => {
+        try {
+            const subCategoryRequests = selectedCategories.map(cat =>
+                axios.get(`${API_BASE_URL}/sub-categories/fetch-all-product-sub-categories-for-a-category/${cat.value}/`, {
+                    headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+                })
+            );
 
-    useEffect(() => {
-        if (selectedCategories.length > 0) {
-            fetchSubCategories(selectedCategories.map(c => c.value));
-        } else {
-            setSubCategories([]);
+            const responses = await Promise.all(subCategoryRequests);
+
+            const newSubCategories = responses.flatMap(res => res.data.product_sub_category)
+                .map(sc => ({ value: sc.id, label: sc.sub_category_name, categoryId: sc.category_id }));
+
+            setSubCategories(newSubCategories);
+
+            // Set only existing subcategories that belong to selected categories
+            setSelectedSubCategories(newSubCategories.filter(sc => existingSubCategoryIds.includes(sc.value)));
+        } catch (error) {
+            console.error("Error fetching subcategories:", error);
         }
-    }, [selectedCategories]);
+    };
+
+    // Handle Category Selection
+    const handleCategoryChange = async (selectedOptions) => {
+        setSelectedCategories(selectedOptions);
+        fetchSubcategoriesForCategories(selectedOptions);
+    };
+
+    // useEffect(() => {
+    //     if (selectedCategories.length > 0) {
+    //         fetchSubCategories(selectedCategories.map(c => c.value));
+    //     } else {
+    //         setSubCategories([]);
+    //     }
+    // }, [selectedCategories]);
 
     const fetchBrands = async () => {
         try {
             const response = await axios.get(`${API_BASE_URL}/product-brand/fetch-product-brands/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
             });
-            setBrands(response.data.product_brands.map(b => ({ value: b.pk, label: b.brand_name })));
+            setBrands(response.data.product_brands.map(b => ({ value: b.id, label: b.brand_name })));
         } catch (error) {
             console.error("Error fetching brands:", error);
         }
@@ -103,7 +131,7 @@ const ProductCreate = () => {
             setMessageType("danger");
             return;
         }
-
+        console.log(selectedBrand);
         try {
             const response = await axios.post(`${API_BASE_URL}/create/`, {
                 product_name: productName,
@@ -183,7 +211,7 @@ const ProductCreate = () => {
 
                                     <div className="mb-3">
                                         <label className="form-label">Categories</label>
-                                        <Select isMulti options={categories} value={selectedCategories} onChange={setSelectedCategories} />
+                                        <Select isMulti options={categories} value={selectedCategories} onChange={handleCategoryChange} />
                                         {selectedCategories.length === 0 && <small className="text-danger">At least one category is required.</small>}
 
                                     </div>
