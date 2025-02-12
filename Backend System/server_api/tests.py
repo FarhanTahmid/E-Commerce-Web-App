@@ -969,6 +969,16 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         self.assertEqual(response.data['message'],"Deleted successfully")
 
+    #test for fetching product with discounts and sku
+    def test_fetch_product_with_discounts_and_sku(self):
+        """
+        Test for fetching products with discount and skus
+        """
+        response = self.client.get(f'/server_api/product/fetch-product-details/?product_pk={self.product1.pk}')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Fetched successfully")
+
+
 
     
 

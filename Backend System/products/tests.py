@@ -574,7 +574,7 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product sku should be updated successfully!")
         self.assertEqual(message,"Product sku updated with new sku id","Success message is incorrect")
 
-    def delete_product_sku(self):
+    def test_delete_product_sku(self):
         """
         Test for deleting product
         """
@@ -584,6 +584,19 @@ class TestManageProducts(TestCase):
         success, message = ManageProducts.delete_product_sku(request,product_sku_pk=self.product_sku1.pk)
         self.assertTrue(success,"Product sku should be deleted successfully!")
         self.assertEqual(message,"Product sku successfully deleted!","Success message is incorrect")
+
+    #test product fetch all details
+    def test_fetch_product_fetch_with_sku_and_discount(self):
+        '''
+        Test fetch product with sku and discount
+        '''
+
+        request = self.factory.post('/product/fetch_product_with_sku_and_discount/')
+        request.user = self._create_mock_dev_user()
+        success,message = ManageProducts.fetch_product_with_sku_and_discount(product_brand_pk=self.brand1.pk)
+        self.assertTrue(True,"Should be fetched successfully")
+        self.assertEqual(message,"Fetched successfully")
+
 
     # #test product image
     #This test are working fine, as they create files so commenting them

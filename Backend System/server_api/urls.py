@@ -69,6 +69,7 @@ urlpatterns = [                                                                 
 
     #product
     path('product/fetch-product/',views.FetchProduct.as_view(),name='fetch_product'),#pass parameters /?pk= OR product_name= OR product_brand_pk= OR product_category_pk_list OR product_sub_category_pk_list Or no paramter to fetch all
+    path('product/fetch-product-details/',views.FetchProductWithSKUAndDiscounts.as_view(),name="fetch_product_with_details"),
     path('product/create/',views.CreateProduct.as_view(),name='create_product'),
     path('product/update/<int:product_pk>/',views.UpdateProduct.as_view(),name='update_product'),
     path('product/delete/<int:product_pk>/',views.DeleteProduct.as_view(),name='delete_product'),
