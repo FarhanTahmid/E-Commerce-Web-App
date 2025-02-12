@@ -79,13 +79,14 @@ const ProductBrandTable = () => {
                                                 <tr>
                                                     <th>Serial No</th>
                                                     <th>Brand Name</th>
+                                                    <th>Brand Established Year</th>
                                                     <th>Brand Description</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {filteredBrands.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan="3" className="text-center">
+                                                        <td colSpan="4" className="text-center">
                                                             No records available
                                                         </td>
                                                     </tr>
@@ -97,7 +98,8 @@ const ProductBrandTable = () => {
                                                                 {brand.brand_name}
                                                             </Link>
                                                         </td>
-                                                        <td className="truncate-text">{brand.description}</td>
+                                                        <td className="truncate-text">{brand.brand_established_year}</td>
+                                                        <td className="truncate-text">{brand.brand_description}</td>
                                                     </tr>
                                                 )))}
                                             </tbody>
