@@ -897,7 +897,7 @@ class ManageProducts:
                     if os.path.exists(path):
                         os.remove(path)
                     product_brand.brand_logo.delete()
-                product_brand.rand_logo = brand_logo
+                product_brand.brand_logo = brand_logo
             product_brand.save()
             SystemLogs.updated_by(request,product_brand)
             SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
@@ -1575,12 +1575,15 @@ class ManageProducts:
             if product.product_summary.lower() != product_summary.lower():
                 product.product_summary = product_summary
             if product_brand_pk!= "":
-                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
-                product.product_brand = product_brand
+                if product.product_brand == None or product_brand_pk != product.product_brand.pk:
+                    product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                    product.product_brand = product_brand
             if product_ingredients!= "":
-                product.product_ingredients =  product_ingredients
+                if product.product_ingredients.lower() != product_ingredients.lower():
+                    product.product_ingredients =  product_ingredients
             if product_usage_direction!= "":
-                product.product_usage_direction = product_usage_direction
+                if product.product_usage_direction.lower() != product_usage_direction.lower():
+                    product.product_usage_direction = product_usage_direction
             product.save()
             SystemLogs.updated_by(request,product)
             SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
