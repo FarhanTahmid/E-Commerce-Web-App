@@ -1794,23 +1794,24 @@ class FetchProductWithSKUAndDiscounts(APIView):
                 product,message = ManageProducts.fetch_product_with_sku_and_discount(product_pk=product_pk)
                 product_data = product_serializers.Product_Serializer(product['product'],many=False).data
                 product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
-                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=True).data
             elif product_brand_pk!= "":
                 product,message = ManageProducts.fetch_product_with_sku_and_discount(product_brand_pk=product_brand_pk)
                 product_data = product_serializers.Product_Serializer(product['product'],many=True).data
                 product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
-                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=True).data
             elif product_category_pk!= "":
                 product,message = ManageProducts.fetch_product_with_sku_and_discount(product_category_pk=product_category_pk)
                 product_data = product_serializers.Product_Serializer(product['product'],many=True).data
                 product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
-                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=True).data
             elif product_sub_category_pk!= "":
                 product,message = ManageProducts.fetch_product_with_sku_and_discount(product_sub_category_pk=product_sub_category_pk)
                 product_data = product_serializers.Product_Serializer(product['product'],many=True).data
                 product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
-                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount']).data
-                
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=True).data
+            
+            print(product_data)
             if product:
                 return Response({
                     'message':message,
