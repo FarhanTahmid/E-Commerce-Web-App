@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import {
     TablePagination
 } from '@mui/material';
 
-const ProductSKUTable = () => {
+const ProductSKUList = () => {
+    const { id } = useParams();
     const [products, setProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product/product-sku';
 
     useEffect(() => {
         fetchCategories();
@@ -19,11 +20,15 @@ const ProductSKUTable = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/fetch-product/`, {
+            const response = await axios.get(`${API_BASE_URL}/fetch-product-sku/`, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"
-                }
+                },
+                params: {
+                    pk: id
+                },
+
             });
             setProducts(response.data.product_data);
         } catch (error) {
@@ -120,4 +125,4 @@ const ProductSKUTable = () => {
     );
 };
 
-export default ProductSKUTable;
+export default ProductSKUList;

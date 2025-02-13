@@ -18,6 +18,7 @@ const ProductSKUUpdate = () => {
     const [productIngredients, setProductIngredients] = useState("");
     const [productUsageDirection, setProductUsageDirection] = useState("");
 
+    const [flavours, setFlavours] = useState([]);
     const [categories, setCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
     const [brands, setBrands] = useState([]);
@@ -38,22 +39,18 @@ const ProductSKUUpdate = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [categoriesRes, brandsRes] = await Promise.all([
-                    axios.get(`${API_BASE_URL}/categories/fetch-all/`, {
-                        headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
-                    }),
-                    axios.get(`${API_BASE_URL}/product-brand/fetch-product-brands/`, {
+                const [flavourRes] = await Promise.all([
+                    axios.get(`${API_BASE_URL}/product-flavour/fetch-product-flavour/`, {
                         headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
                     })
                 ]);
 
-                const categoryOptions = categoriesRes.data.product_category.map(c => ({ value: c.id, label: c.category_name }));
-                const brandOptions = brandsRes.data.product_brands.map(b => ({ value: b.id, label: b.brand_name }));
+                const flavourOptions = flavourRes.data.product_flavours_data.map(c => ({ value: c.id, label: c.product_flavour_name }));
 
-                setCategories(categoryOptions);
-                setBrands(brandOptions);
+                setFlavours(flavourOptions);
 
-                fetchProductDetails(categoryOptions, brandOptions);
+                fetchProductDetails();
+                console.log(flavourOptions);
             } catch (error) {
                 console.error("Error fetching initial data:", error);
             }
@@ -63,27 +60,30 @@ const ProductSKUUpdate = () => {
     }, []);
 
     // Fetch Product Details
-    const fetchProductDetails = async (categoryOptions, brandOptions) => {
+    const fetchProductDetails = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/fetch-product/`, {
+            const response = await axios.get(`${API_BASE_URL}/product-sku/fetch-product-sku/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
-                params: { product_pk: id },
+                params: { product_id: id },
             });
+            console.log("test")
+            const sku = response.data.product_sku_fetch;
 
-            const product = response.data.product_data;
-            setProductName(product.product_name);
-            setProductDescription(product.product_description);
-            setProductSummary(product.product_summary);
-            setProductIngredients(product.product_ingredients);
-            setProductUsageDirection(product.product_usage_direction);
+            console.log(sku);
 
-            const selectedCat = categoryOptions.filter(c => product.product_category.includes(c.value));
-            const selectedBrand = brandOptions.find(b => b.value === product.product_brand) || null;
+            // setProductName(product.product_name);
+            // setProductDescription(product.product_description);
+            // setProductSummary(product.product_summary);
+            // setProductIngredients(product.product_ingredients);
+            // setProductUsageDirection(product.product_usage_direction);
 
-            setSelectedCategories(selectedCat);
-            setSelectedBrand(selectedBrand);
+            // const selectedCat = categoryOptions.filter(c => product.product_category.includes(c.value));
+            // const selectedBrand = brandOptions.find(b => b.value === product.product_brand) || null;
 
-            fetchSubcategoriesForCategories(selectedCat, product.product_sub_category);
+            // setSelectedCategories(selectedCat);
+            // setSelectedBrand(selectedBrand);
+
+            // fetchSubcategoriesForCategories(selectedCat, product.product_sub_category);
         } catch (error) {
             console.error("Error fetching product details:", error);
         }
