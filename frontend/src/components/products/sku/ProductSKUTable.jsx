@@ -50,7 +50,7 @@ const ProductSKUTable = () => {
 
     return (
         <>
-            <div className="col-lg-12">
+            <div className="col-lg-12 p-2">
                 <div className="card stretch stretch-full function-table">
                     <div className="card-body p-0">
                         <div className="table-responsive">
@@ -79,12 +79,13 @@ const ProductSKUTable = () => {
                                                 <tr>
                                                     <th>Serial No</th>
                                                     <th>Product Name</th>
+                                                    <th>Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {filteredProducts.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan="2" className="text-center">
+                                                        <td colSpan="3" className="text-center">
                                                             No records available
                                                         </td>
                                                     </tr>
@@ -94,6 +95,11 @@ const ProductSKUTable = () => {
                                                         <td className="truncate-text">
                                                             <Link to={`/products/sku/${product.id}`} className='fw-bold'>
                                                                 {product.product_name}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="truncate-text">
+                                                            <Link to={`/products/sku/${product.id}`} className='fw-normal'>
+                                                                Click to see Stock Keeping Units
                                                             </Link>
                                                         </td>
                                                     </tr>

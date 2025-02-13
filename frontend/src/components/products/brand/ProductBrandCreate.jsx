@@ -185,7 +185,7 @@ const ProductBrandCreate = () => {
                                         type="file"
                                         className="form-control mb-2"
                                         id="brandLogo"
-                                        accept="image/*"
+                                        accept="image/jpeg, image/png, image/jpg"
                                         onChange={handleLogoChange}
                                     />
 

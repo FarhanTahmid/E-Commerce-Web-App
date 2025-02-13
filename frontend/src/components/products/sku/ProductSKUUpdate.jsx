@@ -4,28 +4,19 @@ import Cookies from "js-cookie";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import ConfirmationModal from "../../ConfirmationModal";
 import Select from "react-select";
-import ReactQuill from "react-quill";
-import 'react-quill/dist/react-quill'; // Import Quill CSS
-import QuillToolbar, { modules, formats } from '@/components/QuillToolbar';
 
 const ProductSKUUpdate = () => {
-    const { id } = useParams();
+    const { product_id, id } = useParams();
+
     const navigate = useNavigate();
-
-    const [productName, setProductName] = useState("");
-    const [productDescription, setProductDescription] = useState("");
-    const [productSummary, setProductSummary] = useState("");
-    const [productIngredients, setProductIngredients] = useState("");
-    const [productUsageDirection, setProductUsageDirection] = useState("");
-
-    const [flavours, setFlavours] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [subCategories, setSubCategories] = useState([]);
-    const [brands, setBrands] = useState([]);
-
-    const [selectedCategories, setSelectedCategories] = useState([]);
-    const [selectedSubCategories, setSelectedSubCategories] = useState([]);
-    const [selectedBrand, setSelectedBrand] = useState(null);
+    const [products, setProducts] = useState('');
+    const [productPrice, setProductPrice] = useState('');
+    const [productStock, setProductStock] = useState('');
+    const [productFlavours, setProductFlavours] = useState([]);
+    const [selectedProductFlavours, setSelectedProductFlavours] = useState([]);
+    const [productColor, setProductColor] = useState("#000000");
+    const [hexError, setHexError] = useState("");
+    const [productSize, setProductSize] = useState('');
 
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("");
@@ -35,22 +26,59 @@ const ProductSKUUpdate = () => {
 
     const API_BASE_URL = "http://127.0.0.1:8000/server_api/product";
 
+    // Function to validate hex code
+    const handleHexChange = (e) => {
+        const hex = e.target.value.toUpperCase();
+        setProductColor(hex);
+
+        // Validate hex format
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) {
+            setHexError(""); // Clear error if valid
+        } else {
+            setHexError("Invalid hex code");
+        }
+    };
+
+    useEffect(() => {
+        fetchProducts();
+    });
+
+
+    const fetchProducts = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/fetch-product/`, {
+                headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+            });
+
+            const productList = response.data.product_data.map(c => ({ value: c.id, label: c.product_name }));
+
+            // Find the product name based on product_id
+            const selectedProduct = productList.find(product => product.value === parseInt(product_id));
+
+            if (selectedProduct) {
+                setProducts(selectedProduct.label);
+            }
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
+    };
+
+
     // Fetch Categories & Brands on Mount
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [flavourRes] = await Promise.all([
+                const [flavoursRes] = await Promise.all([
                     axios.get(`${API_BASE_URL}/product-flavour/fetch-product-flavour/`, {
                         headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
                     })
                 ]);
 
-                const flavourOptions = flavourRes.data.product_flavours_data.map(c => ({ value: c.id, label: c.product_flavour_name }));
+                const flavourOptions = flavoursRes.data.product_flavours_data.map(c => ({ value: c.id, label: c.product_flavour_name }));
 
-                setFlavours(flavourOptions);
+                setProductFlavours(flavourOptions);
 
-                fetchProductDetails();
-                console.log(flavourOptions);
+                fetchProductDetails(flavourOptions);
             } catch (error) {
                 console.error("Error fetching initial data:", error);
             }
@@ -60,83 +88,47 @@ const ProductSKUUpdate = () => {
     }, []);
 
     // Fetch Product Details
-    const fetchProductDetails = async () => {
+    const fetchProductDetails = async (flavourOptions) => {
         try {
             const response = await axios.get(`${API_BASE_URL}/product-sku/fetch-product-sku/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
-                params: { product_id: id },
+                params: { pk: id },
             });
-            console.log("test")
-            const sku = response.data.product_sku_fetch;
 
-            console.log(sku);
+            const product = response.data.product_sku_fetch;
+            setProductColor(product.product_color);
+            setProductPrice(product.product_price);
+            setProductStock(product.product_stock);
+            setProductSize(product.product_size);
 
-            // setProductName(product.product_name);
-            // setProductDescription(product.product_description);
-            // setProductSummary(product.product_summary);
-            // setProductIngredients(product.product_ingredients);
-            // setProductUsageDirection(product.product_usage_direction);
+            const selectedflav = flavourOptions.filter(c => product.product_flavours.includes(c.value));
 
-            // const selectedCat = categoryOptions.filter(c => product.product_category.includes(c.value));
-            // const selectedBrand = brandOptions.find(b => b.value === product.product_brand) || null;
+            setSelectedProductFlavours(selectedflav);
 
-            // setSelectedCategories(selectedCat);
-            // setSelectedBrand(selectedBrand);
-
-            // fetchSubcategoriesForCategories(selectedCat, product.product_sub_category);
         } catch (error) {
             console.error("Error fetching product details:", error);
         }
     };
 
-    // Fetch subcategories dynamically based on selected categories
-    const fetchSubcategoriesForCategories = async (selectedCategories, existingSubCategoryIds = []) => {
-        try {
-            const subCategoryRequests = selectedCategories.map(cat =>
-                axios.get(`${API_BASE_URL}/sub-categories/fetch-all-product-sub-categories-for-a-category/${cat.value}/`, {
-                    headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
-                })
-            );
-
-            const responses = await Promise.all(subCategoryRequests);
-
-            const newSubCategories = responses.flatMap(res => res.data.product_sub_category)
-                .map(sc => ({ value: sc.id, label: sc.sub_category_name, categoryId: sc.category_id }));
-
-            setSubCategories(newSubCategories);
-
-            // Set only existing subcategories that belong to selected categories
-            setSelectedSubCategories(newSubCategories.filter(sc => existingSubCategoryIds.includes(sc.value)));
-        } catch (error) {
-            console.error("Error fetching subcategories:", error);
-        }
-    };
-
-    // Handle Category Selection
-    const handleCategoryChange = async (selectedOptions) => {
-        setSelectedCategories(selectedOptions);
-        fetchSubcategoriesForCategories(selectedOptions);
-    };
 
     // Handle Product Update
     const handleUpdateProduct = async (e) => {
         e.preventDefault();
 
-        if (!productName.trim() || !selectedCategories.length || !selectedSubCategories.length || !selectedBrand) {
-            alert("All required fields must be filled!");
+        if (selectedProductFlavours.length === 0) {
+            setMessage("At least one flavour is required.");
+            setMessageType("danger");
             return;
         }
 
         try {
-            await axios.put(`${API_BASE_URL}/update/${id}/`, {
-                product_name: productName,
-                product_category_pk_list: selectedCategories.map(c => c.value),
-                product_sub_category_pk_list: selectedSubCategories.map(sc => sc.value),
-                product_description: productDescription,
-                product_summary: productSummary,
-                product_brand_pk: selectedBrand.value,
-                product_ingredients: productIngredients,
-                product_usage_direction: productUsageDirection,
+            await axios.put(`${API_BASE_URL}/product-sku/update/${id}/`, {
+                product_id: product_id,
+                product_price: productPrice,
+                product_stock: productStock,
+                product_flavours_pk_list: selectedProductFlavours.map(c => c.value),
+                product_color: productColor,
+                product_size: productSize,
             }, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
@@ -162,7 +154,7 @@ const ProductSKUUpdate = () => {
     const confirmDelete = () => {
         if (deleteAction?.type === "product") {
             axios
-                .delete(`${API_BASE_URL}/delete/${id}/`, {
+                .delete(`${API_BASE_URL}/product-sku/delete/${id}/`, {
                     headers: {
                         Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     },
@@ -170,7 +162,7 @@ const ProductSKUUpdate = () => {
                 .then(() => {
                     setMessage("Product deleted successfully!");
                     setMessageType("success");
-                    navigate("/products");
+                    navigate(`/products/sku/${product_id}/`);
                 })
                 .catch((error) => {
                     setMessage("Failed to delete product.");
@@ -203,7 +195,7 @@ const ProductSKUUpdate = () => {
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Product Update & Deletion</h5>
-                    <Link to="/products" className="btn btn-primary">← Back</Link>
+                    <Link to={`/products/sku/${product_id}/`} className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleUpdateProduct}>
@@ -211,77 +203,51 @@ const ProductSKUUpdate = () => {
                             <div className="col-xl-6">
                                 <div className="form-group">
                                     <div className="mb-3">
-                                        <label className="form-label">Product Name</label>
-                                        <input type="text" className="form-control" value={productName} onChange={(e) => setProductName(e.target.value)} required />
+                                        <h3 className="">Product Name: {products}</h3>
                                     </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Product Price</label>
+                                        <input type="number" className="form-control" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Product Stock</label>
+                                        <input type="number" className="form-control" value={productStock} onChange={(e) => setProductStock(e.target.value)} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Product Flavours</label>
+                                        <Select isMulti options={productFlavours} value={selectedProductFlavours} onChange={setSelectedProductFlavours} />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Product Color</label>
+                                        <div className="d-flex align-items-center">
+                                            {/* Color Picker */}
+                                            <input
+                                                type="color"
+                                                className="form-control form-control-color me-2"
+                                                style={{ width: "100px" }}
+                                                value={productColor}
+                                                onChange={(e) => setProductColor(e.target.value)}
+                                            />
 
-                                    <div className="mb-3 editor">
-                                        <label className="form-label">Product Description</label>
-                                        <QuillToolbar toolbarId={'t1'} />
-                                        <ReactQuill
-                                            theme="snow"
-                                            value={productDescription}
-                                            onChange={setProductDescription}
-                                            modules={modules('t1')}
-                                            formats={formats}
-                                        />
-                                        <hr />
-                                        {!productDescription.trim() && <small className="text-danger">Product description is required.</small>}
+                                            {/* Hex Code Input */}
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                style={{ width: "120px", textTransform: "uppercase" }}
+                                                value={productColor}
+                                                onChange={handleHexChange}
+                                            />
+                                        </div>
+                                        {hexError && <small className="text-danger">{hexError}</small>}
 
                                     </div>
 
                                     <div className="mb-3">
-                                        <label className="form-label">Product Summary</label>
-                                        <textarea className="form-control" value={productSummary} onChange={(e) => setProductSummary(e.target.value)} required />
-                                        {!productSummary.trim() && <small className="text-danger">Product summary is required.</small>}
+                                        <label className="form-label">Product Size</label>
+                                        <input type="text" className="form-control" value={productSize} onChange={(e) => setProductSize(e.target.value)} required />
                                     </div>
 
-                                    <div className="mb-3">
-                                        <label className="form-label">Categories</label>
-                                        <Select isMulti options={categories} value={selectedCategories} onChange={handleCategoryChange} />
-                                        {selectedCategories.length === 0 && <small className="text-danger">At least one category is required.</small>}
 
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <label className="form-label">Subcategories</label>
-                                        <Select isMulti options={subCategories} value={selectedSubCategories} onChange={setSelectedSubCategories} />
-                                        {selectedSubCategories.length === 0 && <small className="text-danger">At least one subcategory is required.</small>}
-
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <label className="form-label">Brand</label>
-                                        <Select options={brands} value={selectedBrand} onChange={setSelectedBrand} isClearable />
-                                        {!selectedBrand && <small className="text-danger">Brand is required.</small>}
-
-                                    </div>
-
-                                    <div className="mb-3 editor">
-                                        <label className="form-label">Ingredients</label>
-                                        <QuillToolbar toolbarId={'t2'} />
-                                        <ReactQuill
-                                            theme="snow"
-                                            value={productIngredients}
-                                            onChange={setProductIngredients}
-                                            modules={modules('t2')}
-                                            formats={formats}
-                                        />
-                                        <hr />
-                                    </div>
-
-                                    <div className="mb-3 editor">
-                                        <label className="form-label">Usage Direction</label>
-                                        <QuillToolbar toolbarId={'t3'} />
-                                        <ReactQuill
-                                            theme="snow"
-                                            value={productUsageDirection}
-                                            onChange={setProductUsageDirection}
-                                            modules={modules('t3')}
-                                            formats={formats}
-                                        />
-                                        <hr />
-                                    </div>
                                     <div className='d-flex gap-2'>
                                         <button type="submit" className="btn btn-success">Update Product</button>
                                         <button type="button" className="btn btn-danger" onClick={handleDeleteProduct}>Delete Product</button>

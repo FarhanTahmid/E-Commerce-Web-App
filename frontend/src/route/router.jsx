@@ -91,6 +91,8 @@ import ProductCreate from "@/components/products/product/ProductCreate";
 import ProductUpdate from "@/components/products/product/ProductUpdate";
 import ProductSKUCreate from "@/components/products/sku/ProductSKUCreate";
 import ProductSKUUpdate from "@/components/products/sku/ProductSKUUpdate";
+import ProductSKUList from "@/components/products/sku/ProductSKUList";
+import ProductSKUTable from "@/components/products/sku/ProductSKUTable";
 
 
 const parseJwt = (token) => {
@@ -265,14 +267,18 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/products/sku",
-                element: <ProductSKU />
+                element: <ProductSKUTable />
             },
             {
-                path: "/products/sku/create",
+                path: "/products/sku/create/:product_id",
                 element: <ProductSKUCreate />
             },
             {
-                path: "/products/sku/:id",
+                path: "/products/sku/:product_id",
+                element: <ProductSKU />
+            },
+            {
+                path: "/products/sku/:product_id/:id",
                 element: <ProductSKUUpdate />
             },
             {

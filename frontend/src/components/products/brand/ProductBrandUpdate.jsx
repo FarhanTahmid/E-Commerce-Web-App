@@ -178,6 +178,11 @@ const ProductBrandUpdate = () => {
             setBrandDescription(response.data.description);
             setMessage("Brand Updated Successfully!");
             setMessageType('success');
+
+            // Reload the window after 1 second
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } catch (error) {
             console.error("Error Updating Brand:", error.response ? error.response.data : error.message);
             setMessage("Failed to update the brand.");
@@ -291,7 +296,7 @@ const ProductBrandUpdate = () => {
                                                 type="file"
                                                 className="form-control mb-2"
                                                 id="brandLogo"
-                                                accept="image/*"
+                                                accept="image/jpeg, image/png, image/jpg"
                                                 onChange={handleLogoChange}
                                                 required={!previewLogo && !brandLogo} // Required if no preview or existing logo
                                             />

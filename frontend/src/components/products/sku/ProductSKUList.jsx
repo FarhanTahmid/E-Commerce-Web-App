@@ -5,10 +5,11 @@ import Cookies from 'js-cookie';
 import {
     TablePagination
 } from '@mui/material';
+import { FiPlus } from 'react-icons/fi';
 
 const ProductSKUList = () => {
-    const { id } = useParams();
-    const [products, setProducts] = useState([]);
+    const { product_id } = useParams();
+    const [productsSkus, setProductsSkus] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -26,13 +27,13 @@ const ProductSKUList = () => {
                     "Content-Type": "application/json"
                 },
                 params: {
-                    pk: id
+                    product_id: product_id
                 },
 
             });
-            setProducts(response.data.product_data);
+            setProductsSkus(response.data.product_sku_fetch);
         } catch (error) {
-            console.error("Error fetching products:", error.response ? error.response.data : error);
+            console.error("Error fetching productsSkus:", error.response ? error.response.data : error);
         }
     };
 
@@ -49,8 +50,8 @@ const ProductSKUList = () => {
         setPage(0);
     };
 
-    const filteredProducts = products.filter(product =>
-        product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredProducts = productsSkus.filter(product =>
+        product.product_sku.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -63,16 +64,22 @@ const ProductSKUList = () => {
                                 <div className='row gy-2'>
                                     <div className='col-xl-12 col-md-6 ps-0 m-0 pb-10'>
                                         <div className='dataTables_filter d-flex justify-content-md-end justify-content-center'>
-                                            <label className='d-inline-flex align-items-center gap-2'>
-                                                Search:
-                                                <input
-                                                    type="text"
-                                                    value={searchTerm}
-                                                    onChange={handleSearch}
-                                                    placeholder='Search...'
-                                                    className="form-control form-control-sm"
-                                                />
-                                            </label>
+                                            <div className="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                                                <label className='d-inline-flex align-items-center gap-2'>
+                                                    Search:
+                                                    <input
+                                                        type="text"
+                                                        value={searchTerm}
+                                                        onChange={handleSearch}
+                                                        placeholder='Search...'
+                                                        className="form-control form-control-sm"
+                                                    />
+                                                </label>
+                                                <Link to={`/products/sku/create/${product_id}`} className="btn btn-primary">
+                                                    <FiPlus size={16} className='me-2' />
+                                                    <span>Add New</span>
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -83,13 +90,16 @@ const ProductSKUList = () => {
                                             <thead>
                                                 <tr>
                                                     <th>Serial No</th>
-                                                    <th>Product Name</th>
+                                                    <th>Product SKU</th>
+                                                    <th>Product Color</th>
+                                                    <th>Product Price</th>
+                                                    <th>Product Stock</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {filteredProducts.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan="2" className="text-center">
+                                                        <td colSpan="5" className="text-center">
                                                             No records available
                                                         </td>
                                                     </tr>
@@ -97,10 +107,13 @@ const ProductSKUList = () => {
                                                     <tr key={product.id} className='single-item chat-single-item'>
                                                         <td>{index + 1 + page * rowsPerPage}</td> {/* Serial Number */}
                                                         <td className="truncate-text">
-                                                            <Link to={`/products/sku/${product.id}`} className='fw-bold'>
-                                                                {product.product_name}
+                                                            <Link to={`/products/sku/${product_id}/${product.id}`} className='fw-bold'>
+                                                                {product.product_sku}
                                                             </Link>
                                                         </td>
+                                                        <td className="truncate-text">{product.product_color}</td>
+                                                        <td className="truncate-text">{product.product_price}</td>
+                                                        <td className="truncate-text">{product.product_stock}</td>
                                                     </tr>
                                                 )))}
                                             </tbody>

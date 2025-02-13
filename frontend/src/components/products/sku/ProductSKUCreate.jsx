@@ -2,21 +2,37 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Select from "react-select";
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 const ProductSKUCreate = () => {
-    const [products, setProducts] = useState([]);
-    const [selectedProduct, setSelectedProduct] = useState('');
+    const { product_id } = useParams();
+    const [products, setProducts] = useState('');
     const [productPrice, setProductPrice] = useState('');
     const [productStock, setProductStock] = useState('');
     const [productFlavours, setProductFlavours] = useState([]);
     const [selectedProductFlavours, setSelectedProductFlavours] = useState([]);
-    const [productColor, setProductColor] = useState('');
+    const [productColor, setProductColor] = useState("#000000");
+    const [hexError, setHexError] = useState("");
     const [productSize, setProductSize] = useState('');
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
 
     const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
+
+
+    // Function to validate hex code
+    const handleHexChange = (e) => {
+        const hex = e.target.value.toUpperCase();
+        setProductColor(hex);
+
+        // Validate hex format
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) {
+            setHexError(""); // Clear error if valid
+        } else {
+            setHexError("Invalid hex code");
+        }
+    };
+
 
     useEffect(() => {
         fetchProducts();
@@ -28,7 +44,19 @@ const ProductSKUCreate = () => {
             const response = await axios.get(`${API_BASE_URL}/fetch-product/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
             });
-            setProducts(response.data.product_data.map(c => ({ value: c.id, label: c.product_name })));
+
+            const productList = response.data.product_data.map(c => ({ value: c.id, label: c.product_name }));
+
+            // Find the product name based on product_id
+            const selectedProduct = productList.find(product => product.value === parseInt(product_id));
+
+            if (selectedProduct) {
+                setProducts(selectedProduct.label);
+            }
+
+
+            // setProducts(filteredProducts);
+            // console.log(filteredProducts);
         } catch (error) {
             console.error("Error fetching products:", error);
         }
@@ -47,11 +75,7 @@ const ProductSKUCreate = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedProduct) {
-            setMessage("Product is required.");
-            setMessageType("danger");
-            return;
-        }
+
         if (selectedProductFlavours.length === 0) {
             setMessage("At least one flavour is required.");
             setMessageType("danger");
@@ -60,7 +84,7 @@ const ProductSKUCreate = () => {
 
         try {
             const response = await axios.post(`${API_BASE_URL}/product-sku/create/`, {
-                product_pk: selectedProduct.value,
+                product_pk: product_id,
                 product_price: productPrice,
                 product_stock: productStock,
                 product_flavours_pk_list: selectedProductFlavours.map(c => c.value),
@@ -74,11 +98,10 @@ const ProductSKUCreate = () => {
             setMessageType('success');
 
             // Reset form fields
-            setSelectedProduct('');
             setProductPrice('');
             setProductStock('');
             setSelectedProductFlavours([]);
-            setProductColor('');
+            setProductColor("#000000");
             setProductSize('');
         } catch (error) {
             setMessage(error.response ? error.response.data.error : error.message);
@@ -97,7 +120,7 @@ const ProductSKUCreate = () => {
             <div className="card">
                 <div className="card-header">
                     <h5>Create Product SKU</h5>
-                    <Link to="/products/sku" className="btn btn-primary">← Back</Link>
+                    <Link to={`/products/sku/${product_id}`} className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body">
                     <form onSubmit={handleSubmit}>
@@ -105,8 +128,7 @@ const ProductSKUCreate = () => {
                             <div className="col-xl-6">
                                 <div className="form-group">
                                     <div className="mb-3">
-                                        <label className="form-label">Product</label>
-                                        <Select options={products} value={selectedProduct} onChange={setSelectedProduct} />
+                                        <h3 className="">Product Name: {products}</h3>
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label">Product Price</label>
@@ -122,8 +144,29 @@ const ProductSKUCreate = () => {
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label">Product Color</label>
-                                        <input type="color" className="form-control form-control-color w-10" value={productColor} onChange={(e) => setProductColor(e.target.value)} />
+                                        <div className="d-flex align-items-center">
+                                            {/* Color Picker */}
+                                            <input
+                                                type="color"
+                                                className="form-control form-control-color me-2"
+                                                style={{ width: "100px" }}
+                                                value={productColor}
+                                                onChange={(e) => setProductColor(e.target.value)}
+                                            />
+
+                                            {/* Hex Code Input */}
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                style={{ width: "120px", textTransform: "uppercase" }}
+                                                value={productColor}
+                                                onChange={handleHexChange}
+                                            />
+                                        </div>
+                                        {hexError && <small className="text-danger">{hexError}</small>}
+
                                     </div>
+
                                     <div className="mb-3">
                                         <label className="form-label">Product Size</label>
                                         <input type="text" className="form-control" value={productSize} onChange={(e) => setProductSize(e.target.value)} required />
