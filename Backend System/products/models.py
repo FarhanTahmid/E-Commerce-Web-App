@@ -5,6 +5,7 @@ from inventory.models import *
 from django.core.validators import MaxValueValidator
 from customer.models import Accounts
 from django_resized import ResizedImageField
+from django.core.exceptions import ValidationError
 import hashlib
 
 # Create your models here.
@@ -116,6 +117,12 @@ class Product(models.Model):
     def __lt__(self,other):
         return self.product_name< other.product_name
     
+    def has_active_discount(self):
+        """
+        Checks whether a product has an active discount
+        """
+        now = timezone.now()
+        return self.product_discount.filter(start_date__lte=now, end_date__gte=now).exists()
 
 class Product_SKU(models.Model):
 
@@ -216,10 +223,10 @@ class Product_Videos(models.Model):
 class Product_Discount(models.Model):
     ''''This table stores all the discounts of a product'''
 
-    product_id = models.ForeignKey(Product, null=True, blank=True, on_delete=models.CASCADE, related_name='product_discount')
-    brand_id = models.ForeignKey(Product_Brands, null=True, blank=True, on_delete=models.CASCADE, related_name='brand_discount')
-    sub_category_id = models.ForeignKey(Product_Sub_Category, null=True, blank=True, on_delete=models.CASCADE, related_name='sub_category_discount')
-    category_id = models.ForeignKey(Product_Category, null=True, blank=True, on_delete=models.CASCADE, related_name='category_discount')
+    product_id = models.ManyToManyField(Product,blank=True, related_name='product_discount')
+    brand_id = models.ForeignKey(Product_Brands,null=True,blank=True,on_delete=models.CASCADE, related_name='brand_discount')
+    sub_category_id = models.ForeignKey(Product_Sub_Category,null=True,blank=True,on_delete=models.CASCADE, related_name='sub_category_discount')
+    category_id = models.ForeignKey(Product_Category,null=True,blank=True,on_delete=models.CASCADE, related_name='category_discount')
     discount_name = models.CharField(null=False, blank=False, max_length=100)
     discount_amount = models.DecimalField(null=False, blank=False, max_digits=10, decimal_places=2)
     start_date = models.DateTimeField(null=False, blank=False)
@@ -233,7 +240,7 @@ class Product_Discount(models.Model):
         verbose_name_plural="Product Discounts"
 
     def __str__(self):
-        return f"{self.product_id.product_name} - {self.discount_amount}. Discount duration - {self.start_date} - {self.end_date}"
+        return f"Discount amount:{self.discount_amount}. Discount duration - {self.start_date} - {self.end_date}"
     
     def is_discount_active(self):
 
@@ -243,6 +250,25 @@ class Product_Discount(models.Model):
             return True
         else:
             return False
+        
+    def clean(self):
+        """Ensure that each product has at most one active discount."""
+        now = timezone.now()
+
+        # Fetch all products related to this discount
+        if self.id:
+            for product in self.product_id.all():
+                active_discounts = product.product_discount.filter(
+                    start_date__lte=now, end_date__lte=now
+                ).exclude(id=self.id)  # Exclude itself during update
+
+                if active_discounts.exists():
+                    raise ValidationError(f"Product '{product.product_name}' already has an active discount.")
+
+    def save(self, *args, **kwargs):
+        """Validate before saving."""
+        self.clean()  # Call clean method to enforce validation
+        super().save(*args, **kwargs)
     
 class Product_Review(models.Model):
 
