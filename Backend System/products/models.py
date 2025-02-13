@@ -254,25 +254,6 @@ class Product_Discount(models.Model):
             return True
         else:
             return False
-        
-    def clean(self):
-        """Ensure that each product has at most one active discount."""
-        now = timezone.now()
-
-        # Fetch all products related to this discount
-        if self.id:
-            for product in self.product_id.all():
-                active_discounts = product.product_discount.filter(
-                    start_date__lte=now, end_date__lte=now
-                ).exclude(id=self.id)  # Exclude itself during update
-
-                if active_discounts.exists():
-                    raise ValidationError(f"Product '{product.product_name}' already has an active discount.")
-
-    def save(self, *args, **kwargs):
-        """Validate before saving."""
-        self.clean()  # Call clean method to enforce validation
-        super().save(*args, **kwargs)
     
 class Product_Review(models.Model):
 

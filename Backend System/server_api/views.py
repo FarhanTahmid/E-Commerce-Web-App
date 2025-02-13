@@ -2047,7 +2047,7 @@ class FetchProductSKU(APIView):
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
             elif product_id!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_id=product_id)
-                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
+                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=True)
             elif product_name!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_name=product_name)
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
