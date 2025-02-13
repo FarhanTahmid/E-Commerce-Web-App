@@ -19,7 +19,7 @@ const ProductSKUTable = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/fetch-sku-sku/`, {
+            const response = await axios.get(`${API_BASE_URL}/fetch-sku/`, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"

@@ -5,15 +5,6 @@ import Select from "react-select";
 import { Link } from 'react-router-dom';
 
 const ProductSKUCreate = () => {
-    // product_pk = self.request.data.get('product_pk',"")
-    // product_price = self.request.data.get('product_price',"")
-    // product_stock = self.request.data.get('product_stock',"")
-    // product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',[])
-
-    // #can none
-    // product_color = self.request.data.get('product_color',"")
-    // product_size = self.request.data.get('product_size',"")
-
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [productPrice, setProductPrice] = useState('');
@@ -22,8 +13,6 @@ const ProductSKUCreate = () => {
     const [selectedProductFlavours, setSelectedProductFlavours] = useState([]);
     const [productColor, setProductColor] = useState('');
     const [productSize, setProductSize] = useState('');
-
-
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
 
@@ -41,9 +30,10 @@ const ProductSKUCreate = () => {
             });
             setProducts(response.data.product_data.map(c => ({ value: c.id, label: c.product_name })));
         } catch (error) {
-            console.error("Error fetching categories:", error);
+            console.error("Error fetching products:", error);
         }
     };
+
     const fetchProductFlavours = async () => {
         try {
             const response = await axios.get(`${API_BASE_URL}/product-flavour/fetch-product-flavour/`, {
@@ -51,15 +41,13 @@ const ProductSKUCreate = () => {
             });
             setProductFlavours(response.data.product_flavours_data.map(c => ({ value: c.id, label: c.product_flavour_name })));
         } catch (error) {
-            console.error("Error fetching categories:", error);
+            console.error("Error fetching product flavours:", error);
         }
     };
 
-
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (selectedProduct.length === 0) {
+        if (!selectedProduct) {
             setMessage("Product is required.");
             setMessageType("danger");
             return;
@@ -71,12 +59,12 @@ const ProductSKUCreate = () => {
         }
 
         try {
-            const response = await axios.post(`${API_BASE_URL}/create/`, {
-                product_pk: selectedProduct,
+            const response = await axios.post(`${API_BASE_URL}/product-sku/create/`, {
+                product_pk: selectedProduct.value,
                 product_price: productPrice,
                 product_stock: productStock,
                 product_flavours_pk_list: selectedProductFlavours.map(c => c.value),
-                product_color: "test",
+                product_color: productColor,
                 product_size: productSize,
             }, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}`, "Content-Type": "application/json" }
@@ -98,7 +86,6 @@ const ProductSKUCreate = () => {
         }
     };
 
-
     return (
         <div className="col-xl-12 p-2">
             {message && (
@@ -110,7 +97,7 @@ const ProductSKUCreate = () => {
             <div className="card">
                 <div className="card-header">
                     <h5>Create Product SKU</h5>
-                    <Link to="/products" className="btn btn-primary">← Back</Link>
+                    <Link to="/products/sku" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body">
                     <form onSubmit={handleSubmit}>
@@ -120,10 +107,7 @@ const ProductSKUCreate = () => {
                                     <div className="mb-3">
                                         <label className="form-label">Product</label>
                                         <Select options={products} value={selectedProduct} onChange={setSelectedProduct} />
-                                        {!selectedProduct && <small className="text-danger">Product is required.</small>}
                                     </div>
-
-
                                     <div className="mb-3">
                                         <label className="form-label">Product Price</label>
                                         <input type="number" className="form-control" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} required />
@@ -135,13 +119,15 @@ const ProductSKUCreate = () => {
                                     <div className="mb-3">
                                         <label className="form-label">Product Flavours</label>
                                         <Select isMulti options={productFlavours} value={selectedProductFlavours} onChange={setSelectedProductFlavours} />
-                                        {selectedProductFlavours.length === 0 && <small className="text-danger">At least one flavours is required.</small>}
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Product Color</label>
+                                        <input type="color" className="form-control form-control-color w-10" value={productColor} onChange={(e) => setProductColor(e.target.value)} />
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label">Product Size</label>
-                                        <input type="number" className="form-control" value={productSize} onChange={(e) => setProductSize(e.target.value)} required />
+                                        <input type="text" className="form-control" value={productSize} onChange={(e) => setProductSize(e.target.value)} required />
                                     </div>
-
                                     <button type="submit" className="btn btn-success">Create Product SKU</button>
                                 </div>
                             </div>
