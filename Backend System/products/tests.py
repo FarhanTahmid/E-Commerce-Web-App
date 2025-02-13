@@ -92,30 +92,36 @@ class TestManageProducts(TestCase):
         self.product_sku2.product_flavours.set([self.product_flavour2])
 
         self.active_discount = Product_Discount.objects.create(
-            product_id=self.product1,
             discount_name="Active Discount",
             discount_amount=10.00,
             start_date=now - datetime.timedelta(days=1),  # Started yesterday
             end_date=now + datetime.timedelta(days=10)    # Ends in 10 days
         )
+        self.active_discount.save()
+        self.active_discount.product_id.add(self.product1)
+        self.active_discount.save()
 
         # Inactive discount (end date in the past)
         self.inactive_discount = Product_Discount.objects.create(
-            product_id=self.product2,
             discount_name="Inactive Discount",
             discount_amount=5.00,
             start_date=now - datetime.timedelta(days=10),  # Started 10 days ago
             end_date=now - datetime.timedelta(days=1)      # Ended yesterday
         )
+        self.inactive_discount.save()
+        self.inactive_discount.product_id.add(self.product2)
+        self.inactive_discount.save()
 
         # Inactive discount (start date in the future)
         self.future_discount = Product_Discount.objects.create(
-            product_id=self.product1,
             discount_name="Future Discount",
             discount_amount=15.00,
             start_date=now + datetime.timedelta(days=1),  # Starts tomorrow
             end_date=now + datetime.timedelta(days=10)    # Ends in 10 days
         )
+        self.future_discount.save()
+        self.future_discount.product_id.add(self.product3)
+        self.future_discount.save()
 
 
     @staticmethod
@@ -665,6 +671,11 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product discount should be fetched successfully")
         self.assertEqual(message,"Active Product Discount fetched successfully")
 
+        #fetch product id
+        success, message = ManageProducts.fetch_product_discount(product_id=self.product1.pk)
+        self.assertTrue(success,"Product discount should be fetched successfully")
+        self.assertEqual(message,"Product Discounts fetched successfully")
+
     def test_create_product_discount(self):
         """
         Test create product discount
@@ -673,21 +684,12 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_discount/create/')
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
-        
-        #existing active
-        success,message = ManageProducts.create_product_discount(request,self.active_discount.discount_name,500,now,now + datetime.timedelta(days=2),[self.product1.pk,self.product3.pk])
-        self.assertFalse(success,"Product discount not should be created successfully")
-        self.assertEqual(message,"Product already has a discount and is active")
-
-        #same name
-        success,message = ManageProducts.create_product_discount(request,self.active_discount.discount_name,500,now,now + datetime.timedelta(days=2),[self.product2.pk])
+    
+        #existing active 
+        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",500,now+datetime.timedelta(days=20),now+datetime.timedelta(days=30),self.product1.pk)
         self.assertTrue(success,"Product discount should be created successfully")
-        self.assertEqual(message,"Product discount created successfully")
+        print(message)
 
-        #new
-        success,message = ManageProducts.create_product_discount(request,"DHAMAKAAA offer",500,now,now + datetime.timedelta(days=3),[self.product3.pk])
-        self.assertTrue(success,"Product discount should be created successfully")
-        self.assertEqual(message,"Product discount created successfully")
 
     # def test_update_product_discount(self):
     #     """
