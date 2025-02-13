@@ -7,19 +7,45 @@ import {
 } from '@mui/material';
 
 const ProductSKUTable = () => {
+    const [products, setProducts] = useState([]);
+    const [productFlavours, setProductFlavours] = useState([]);
     const [skus, setSkus] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/sku/sku-sku';
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
 
     useEffect(() => {
-        fetchCategories();
+        fetchProducts();
+        fetchProductFlavours();
+        fetchSkus();
     }, []);
-
-    const fetchCategories = async () => {
+    const fetchProducts = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/fetch-sku/`, {
+            const response = await axios.get(`${API_BASE_URL}/fetch-product/`, {
+                headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+            });
+            setProducts(response.data.product_data.map(c => ({ value: c.id, label: c.product_name })));
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
+    };
+
+    const fetchProductFlavours = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/product-flavour/fetch-product-flavour/`, {
+                headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+            });
+            setProductFlavours(response.data.product_flavours_data.map(c => ({ value: c.id, label: c.product_flavour_name })));
+        } catch (error) {
+            console.error("Error fetching product flavours:", error);
+        }
+    };
+
+
+    const fetchSkus = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/product-sku/fetch-product-sku/`, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"
