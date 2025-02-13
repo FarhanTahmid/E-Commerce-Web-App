@@ -2362,12 +2362,13 @@ class ManageProducts:
                 #adding the products
                 product_discount = Product_Discount.objects.create(discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
                 product_discount.save()
-                for p in products:
-                    try:
-                        product_discount.product_id.add(p)
-                        product_discount.save()
-                    except ValidationError as e:
-                        message+=f"{p.product_name}, "
+                try:
+                    product_discount.product_id.add(p)
+                    product_discount.save()
+                except ValidationError as e:
+                    message+=f"{p.product_name}, "
+                product_discount.product_id_pk += 1
+                product_discount.save()
                 SystemLogs.updated_by(request,product_discount)
                 SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
@@ -2393,6 +2394,8 @@ class ManageProducts:
                     except ValidationError as e:
                         message+=f"{p.product_name}, "
                 message += f"of brand {brand.brand_name}."
+                product_discount.brand_id_pk += 1
+                product_discount.save()
                 SystemLogs.updated_by(request,product_discount)
                 SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
@@ -2416,6 +2419,8 @@ class ManageProducts:
                     except ValidationError as e:
                         message+=f"{p.product_name}, "
                 message += f"of Sub category {sub_category.sub_category_name}."
+                product_discount.sub_category_id_pk += 1
+                product_discount.save()
                 SystemLogs.updated_by(request,product_discount)
                 SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
@@ -2439,6 +2444,8 @@ class ManageProducts:
                     except ValidationError as e:
                         message+=f"{p.product_name}, "
                 message += f"of Category {category.category_name}."
+                product_discount.category_id_pk += 1
+                product_discount.save()
                 SystemLogs.updated_by(request,product_discount)
                 SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
@@ -2464,23 +2471,23 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")
         
-    def update_product_discount(request,product_discount_pk,discount_name="",discount_amount="",start_date="",end_date="",product_id="",brand_id="",sub_category_id="",category_id=""):
+    def update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name="",discount_amount="",start_date="",end_date="",brand_id="",delete=False):
 
-        '''
-        To update brand must pass 
-        -
-        '''
         try:
-            final_message = message + 'already has active discounts. Were skipped'
+
             message=""
 
             #getting product discount
-            product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
+            product_discount,message = Product_Discount.objects.get(brand_id_pk = product_discount_brand_id_pk)
+            if delete:
+                product_discount.delete()
+                return True, "Deleted Successfully"
+            
             if product_discount.brand_id:
 
-                #updating only brands
                 new_brand, message = ManageProducts.fetch_product_brand(pk=brand_id)
                 if new_brand != product_discount.brand_id:
+                    product_discount.brand_id = new_brand
                     product_discount.product_id.clear()
                     product_discount.save()
                     new_products,message = ManageProducts.fetch_product(product_brand_pk=brand_id)
@@ -2491,7 +2498,6 @@ class ManageProducts:
                         except ValidationError as e:
                             message+=f"{p.product_name}, "
                     message += f"of brand {new_brand.brand_name}."
-            if product_id!="":
                 
             if discount_name.lower() != product_discount.discount_name.lower():
                 product_discount.discount_name = discount_name
@@ -2502,7 +2508,64 @@ class ManageProducts:
             if product_discount.end_data != end_date:
                 product_discount.end_date = end_date
 
+            final_message = message + 'already has active discounts. Was skipped'
+            return True, f"Product Discount Updated. {final_message}"
+            
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
 
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
+    
+    def update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name="",discount_amount="",start_date="",end_date="",sub_category_id="",delete=False):
+
+        try:
+            message=""
+
+            #getting product discount
+            product_discount,message = Product_Discount.objects.get(sub_category_id_pk =product_discount_sub_category_id_pk)
+            if delete:
+                product_discount.delete()
+                return True, "Deleted Successfully"
+            if product_discount.sub_category_id:
+
+
+                new_sub_category, message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_id)
+                if new_sub_category != product_discount.sub_category_id:
+                    product_discount.sub_category_id = new_sub_category
+                    product_discount.product_id.clear()
+                    product_discount.save()
+                    new_products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[new_sub_category.pk])
+                    for p in new_products:
+                        try:
+                            product_discount.add(p)
+                            product_discount.save()
+                        except ValidationError as e:
+                            message+=f"{p.product_name}, "
+                    message += f"of sub category {new_sub_category.sub_category_name}."
+                
+            if discount_name.lower() != product_discount.discount_name.lower():
+                product_discount.discount_name = discount_name
+            if product_discount.discount_amount != discount_amount:
+                product_discount.discount_amount = discount_amount
+            if product_discount.start_data != start_date:
+                product_discount.start_data = start_date
+            if product_discount.end_data != end_date:
+                product_discount.end_date = end_date
+
+            final_message = message + 'already has active discounts. Was skipped'
+            return True, f"Product Discount Updated. {final_message}"
             
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -2521,57 +2584,44 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
         
-    def delete_product_discount(request,product_discount_pk):
-        """
-    Deletes an existing product discount.
+    def update_product_discount_for_category(request,product_discount_category_id_pk,discount_name="",discount_amount="",start_date="",end_date="",category_id="",delete=False):
 
-    Parameters:
-    -----------
-    request : HttpRequest
-        The HTTP request object (used for logging purposes).
-    product_discount_pk : int
-        The primary key of the product discount to be deleted.
-
-    Returns:
-    --------
-    tuple
-        - If successful: (True, "Product discount deleted successfully")
-        - If an error occurs: (False, "Error Message")
-
-    Process:
-    --------
-    1. Fetches the existing `Product_Discount` using `ManageProducts.fetch_product_discount`.
-    2. Logs the action in `SystemLogs`.
-    3. Deletes the fetched `product_discount`.
-    4. Returns a success message if deletion is successful.
-
-    Error Handling:
-    ---------------
-    - Logs errors in the `ErrorLogs` model.
-    - Handles various exceptions such as:
-        - `DatabaseError`: Issues with database queries.
-        - `OperationalError`: Unexpected server-related errors.
-        - `ProgrammingError`: Code-related issues.
-        - `IntegrityError`: Database integrity constraints.
-    - Provides a specific error message based on the error type.
-
-    Example Usage:
-    --------------
-    >>> delete_product_discount(request, 1)
-    (True, "Product discount deleted successfully")
-
-    >>> delete_product_discount(request, 100)
-    (False, "An unexpected error occurred while deleting product discount! Please try again later.")
-    
-    If any database-related issue occurs, it returns a user-friendly error message.
-
-    """
         try:
-            #getting the product discount
-            product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
-            SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
-            product_discount.delete()
-            return True,"Product discount deleted successfully"
+            message=""
+
+            #getting product discount
+            product_discount,message = Product_Discount.objects.get(category_id_pk = product_discount_category_id_pk)
+            if delete:
+                product_discount.delete()
+                return True,"Deleted Successfully"
+            if product_discount.category_id:
+                new_category, message = ManageProducts.fetch_product_categories(product_category_pk=category_id)
+                if new_category != product_discount.category_id:
+                    product_discount.category_id = new_category
+                    product_discount.product_id.clear()
+                    product_discount.save()
+                    new_products,message = ManageProducts.fetch_product(product_category_pk_list=[new_category.pk])
+                    for p in new_products:
+                        try:
+                            product_discount.add(p)
+                            product_discount.save()
+                        except ValidationError as e:
+                            message+=f"{p.product_name}, "
+                    message += f"of category {new_category.category_name}."
+                
+            if discount_name.lower() != product_discount.discount_name.lower():
+                product_discount.discount_name = discount_name
+            if product_discount.discount_amount != discount_amount:
+                product_discount.discount_amount = discount_amount
+            if product_discount.start_data != start_date:
+                product_discount.start_data = start_date
+            if product_discount.end_data != end_date:
+                product_discount.end_date = end_date
+
+            final_message = message + 'already has active discounts. Was skipped'
+            return True, f"Product Discount Updated. {final_message}"
+            
+        
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -2581,11 +2631,65 @@ class ManageProducts:
 
             # Return appropriate messages based on the error type
             error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while deleting product discount! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while deleting product discount! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while deleting product discount! Please try again later.",
+                "DatabaseError": "An unexpected error in Database occurred while updating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product discount! Please try again later.",
                 "IntegrityError": "Same type exists in Database!",
             }
-            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product discount! Please try again later.") 
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
+        
+    def update_product_discount_for_product(request,product_discount_product_id_pk,discount_name="",discount_amount="",start_date="",end_date="",product_id="",delete=False):
+
+        try:
+            message=""
+
+            #getting product discount
+            product_discount,message = Product_Discount.objects.get(product_id_pk = product_discount_product_id_pk)
+
+            if delete:
+                product_discount.delete()
+                return True, "Deleted Successfully"
+            
+            if len(product_discount.product_id.all())>0:
+
+                product = product_discount.product_id.all()[0]
+                new_product, message = ManageProducts.fetch_product(product_pk=product_id)
+                if new_product != product:
+                    product_discount.product_id.clear()
+                    product_discount.save()
+                    try:
+                        product_discount.product_id.add(new_product)
+                        product_discount.save()
+                    except ValidationError as e:
+                        message+=f"{new_product.product_name}, "
+                
+            if discount_name.lower() != product_discount.discount_name.lower():
+                product_discount.discount_name = discount_name
+            if product_discount.discount_amount != discount_amount:
+                product_discount.discount_amount = discount_amount
+            if product_discount.start_data != start_date:
+                product_discount.start_data = start_date
+            if product_discount.end_data != end_date:
+                product_discount.end_date = end_date
+
+            final_message = message + 'already has active discounts. Was skipped'
+            return True, f"Product Discount Updated. {final_message}"
+            
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.")
 
         

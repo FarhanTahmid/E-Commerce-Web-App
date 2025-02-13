@@ -224,9 +224,13 @@ class Product_Discount(models.Model):
     ''''This table stores all the discounts of a product'''
 
     product_id = models.ManyToManyField(Product,blank=True, related_name='product_discount')
+    product_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
     brand_id = models.ForeignKey(Product_Brands,null=True,blank=True,on_delete=models.CASCADE, related_name='brand_discount')
+    brand_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
     sub_category_id = models.ForeignKey(Product_Sub_Category,null=True,blank=True,on_delete=models.CASCADE, related_name='sub_category_discount')
+    sub_category_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
     category_id = models.ForeignKey(Product_Category,null=True,blank=True,on_delete=models.CASCADE, related_name='category_discount')
+    category_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
     discount_name = models.CharField(null=False, blank=False, max_length=100)
     discount_amount = models.DecimalField(null=False, blank=False, max_digits=10, decimal_places=2)
     start_date = models.DateTimeField(null=False, blank=False)
