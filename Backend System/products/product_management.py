@@ -2349,14 +2349,18 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product discount! Please try again later.")
         
-    def check_product_discount_entry_applicability(product_id):
+    def check_product_discount_entry_applicability(product_discount_pk,product_id,start_date,end_date):
 
         try:
             now = timezone.now()
-            for active_product_discount in Product_Discount.objects.filter(start_date__lte=now,end_date__gte=now):
-                print(active_product_discount.product_id.filter(id=product_id).exists())
+            for active_product_discount in Product_Discount.objects.filter(start_date__lte=now,end_date__gte=now).exclude(id=product_discount_pk):
                 if active_product_discount.product_id.filter(id=product_id).exists():
-                    return False
+                    if start_date<=active_product_discount.start_date and active_product_discount.start_date<=end_date and end_date<=active_product_discount.end_date:
+                        return False
+                    elif start_date>=active_product_discount.start_date and start_date<=active_product_discount.end_date and active_product_discount.end_date<=end_date:
+                        return False
+                    elif start_date>=active_product_discount.start_date and end_date<=active_product_discount.end_date:
+                        return False
             return True
                 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -2377,7 +2381,7 @@ class ManageProducts:
          
     def create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id="",brand_id="",sub_category_id="",category_id=""):
 
-        # try:
+        try:
             
             glo_message=""
 
@@ -2387,15 +2391,14 @@ class ManageProducts:
                 #adding the products
                 product_discount = Product_Discount.objects.create(discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
                 product_discount.save()
-                if ManageProducts.check_product_discount_entry_applicability(products.pk):
+                if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,products.pk,start_date,end_date):
                     product_discount.product_id.add(products)
                     product_discount.save()
+                    print("created")
                 else:
                     glo_message+=f"{products.product_name}, "
                 product_discount.product_id_pk += 1
                 product_discount.save()
-                print(product_discount.product_id.all())
-                print(product_discount)
                 SystemLogs.updated_by(request,product_discount)
                 SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
@@ -2416,19 +2419,21 @@ class ManageProducts:
                 product_discount = Product_Discount.objects.create(brand_id=brand,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
                 product_discount.save()
                 for p in products:
-                    if ManageProducts.check_product_discount_entry_applicability(p.pk):
+                    if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,start_date,end_date):
                         product_discount.product_id.add(p)
                         product_discount.save()
+                        print("created")
                     else:
+                        print("not created")
                         glo_message+=f"{p.product_name}, "
 
                 product_discount.brand_id_pk += 1
                 product_discount.save()
                 SystemLogs.updated_by(request,product_discount)
-                SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+                SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
                     SystemLogs.updated_by(request,product_discount)
-                    SystemLogs.admin_activites(request,f"Deleted Product Discount for the product, {product_discount.product_id.product_name}",message="Deleted Product Discount")
+                    SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
                     product_discount.delete()
 
             elif sub_category_id!="":
@@ -2441,7 +2446,7 @@ class ManageProducts:
                 product_discount = Product_Discount.objects.create(sub_category_id=sub_category,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
                 product_discount.save()
                 for p in products:
-                    if ManageProducts.check_product_discount_entry_applicability(p.pk):
+                    if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,start_date,end_date):
                         product_discount.product_id.add(p)
                         product_discount.save()
                     else:
@@ -2466,7 +2471,7 @@ class ManageProducts:
                 product_discount = Product_Discount.objects.create(category_id=category,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
                 product_discount.save()
                 for p in products:
-                    if ManageProducts.check_product_discount_entry_applicability(p.pk):
+                    if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,start_date,end_date):
                         product_discount.product_id.add(p)
                         product_discount.save()
                     else:
@@ -2488,21 +2493,21 @@ class ManageProducts:
                 final_message = ""
             return True,f"Product discount created successfully. {final_message}"
         
-        # except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-        #     # Log the error
-        #     error_type = type(error).__name__  # Get the name of the error as a string
-        #     error_message = str(error)
-        #     ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-        #     print(f"{error_type} occurred: {error_message}")
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
 
-        #     # Return appropriate messages based on the error type
-        #     error_messages = {
-        #         "DatabaseError": "An unexpected error in Database occurred while creating product discount! Please try again later.",
-        #         "OperationalError": "An unexpected error in server occurred while creating product discount! Please try again later.",
-        #         "ProgrammingError": "An unexpected error in server occurred while creating product discount! Please try again later.",
-        #         "IntegrityError": "Same type exists in Database!",
-        #     }
-        #     return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")
         
     def update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name="",discount_amount="",start_date="",end_date="",brand_id="",delete=False):
 

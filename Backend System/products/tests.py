@@ -684,9 +684,13 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_discount/create/')
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
-    
-        #existing active 
-        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",500,now+datetime.timedelta(days=20),now+datetime.timedelta(days=30),self.product1.pk)
+
+        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",500,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product1.pk)
+        self.assertTrue(success,"Product discount should be created successfully")
+        print(message)
+
+        #using brand
+        success,message = ManageProducts.create_product_discount(request,"POP",800,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"",self.brand1.pk)
         self.assertTrue(success,"Product discount should be created successfully")
         print(message)
 
