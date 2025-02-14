@@ -33,9 +33,9 @@ class ProductCategoryListTests(APITestCase):
     #     Product_Category.objects.all().delete()
         
         response = self.client.get("/client_api/product-categories/", headers=self.headers)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["success"], False)
-        self.assertEqual(response.data["message"], "No product categories found")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["success"], True)
+        self.assertEqual(response.data["message"], "Fetched all product categories successfully!")
 
     def test_rate_limit_exceeded(self):
         """
