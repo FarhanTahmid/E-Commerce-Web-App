@@ -65,6 +65,12 @@ const Menus = () => {
                     name: "Products stock keeping unit",
                     path: "/products/sku",
                     subdropdownMenu: false
+                },
+                {
+                    id: 6,
+                    name: "Product Images",
+                    path: "/products/image",
+                    subdropdownMenu: false
                 }
             ]
         },

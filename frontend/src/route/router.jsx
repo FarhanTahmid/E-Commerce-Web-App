@@ -91,8 +91,10 @@ import ProductCreate from "@/components/products/product/ProductCreate";
 import ProductUpdate from "@/components/products/product/ProductUpdate";
 import ProductSKUCreate from "@/components/products/sku/ProductSKUCreate";
 import ProductSKUUpdate from "@/components/products/sku/ProductSKUUpdate";
-import ProductSKUList from "@/components/products/sku/ProductSKUList";
 import ProductSKUTable from "@/components/products/sku/ProductSKUTable";
+import ProductImageCreate from "@/components/products/image/ProductImageCreate";
+import ProductImage from "../pages/product-image";
+import ProductImageUpdate from "@/components/products/image/ProductImageUpdate";
 
 
 const parseJwt = (token) => {
@@ -280,6 +282,18 @@ export const router = createBrowserRouter([
             {
                 path: "/products/sku/:product_id/:id",
                 element: <ProductSKUUpdate />
+            },
+            {
+                path: "/products/image",
+                element: <ProductImage />
+            },
+            {
+                path: "/products/image/:id",
+                element: <ProductImageUpdate />
+            },
+            {
+                path: "/products/image/:id/create",
+                element: <ProductImageCreate />
             },
             {
                 path: "/products/category",
