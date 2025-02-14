@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 
 const ProductImageCreate = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+
     const [productImages, setProductImages] = useState([]);
     const [previewImages, setPreviewImages] = useState([]);
     const [message, setMessage] = useState('');
@@ -50,6 +52,7 @@ const ProductImageCreate = () => {
                 setProductImages([]);
                 setPreviewImages([]);
                 document.getElementById("productImages").value = "";
+                navigate(`/products/image/${id}`);
             })
             .catch(error => {
                 setMessage(error.response ? error.response.data.error : error.message);

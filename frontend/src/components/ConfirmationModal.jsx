@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ConfirmationModal = ({ show, onClose, onConfirm, message }) => {
+const ConfirmationModal = ({ show, onClose, onConfirm, message, option }) => {
     if (!show) return null;
 
     return (
@@ -9,7 +9,7 @@ const ConfirmationModal = ({ show, onClose, onConfirm, message }) => {
                 <h5>{message}</h5>
                 <div className="d-flex justify-content-between mt-4">
                     <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-                    <button className="btn btn-danger" onClick={onConfirm}>Delete</button>
+                    {option ? <button className="btn btn-primary" onClick={onConfirm}>{option}</button> : <button className="btn btn-danger" onClick={onConfirm}>Delete</button>}
                 </div>
             </div>
         </div>

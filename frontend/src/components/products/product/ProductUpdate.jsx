@@ -203,7 +203,10 @@ const ProductUpdate = () => {
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Product Update & Deletion</h5>
-                    <Link to="/products" className="btn btn-primary">← Back</Link>
+                    <div className="d-flex gap-2">
+                        <Link to={`/products/image/${id}`} className="btn btn-primary">Add Product Images</Link>
+                        <Link to="/products" className="btn btn-primary">← Back</Link>
+                    </div>
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleUpdateProduct}>
