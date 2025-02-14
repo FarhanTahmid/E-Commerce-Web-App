@@ -2388,7 +2388,6 @@ class ManageProducts:
                 if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,products.pk):
                     product_discount.product_id.add(products)
                     product_discount.save()
-                    print("created")
                 else:
                     glo_message+=f"{products.product_name}, "
                 product_discount.product_id_pk += 1
@@ -2398,7 +2397,6 @@ class ManageProducts:
                 if len(product_discount.product_id.all()) == 0:
                     SystemLogs.updated_by(request,product_discount)
                     SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
-                    print("deleted")
                     product_discount.delete()
 
             
@@ -2416,9 +2414,7 @@ class ManageProducts:
                     if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
                         product_discount.product_id.add(p)
                         product_discount.save()
-                        print("created")
                     else:
-                        print("not created")
                         glo_message+=f"{p.product_name}, "
 
                 product_discount.brand_id_pk += 1
@@ -2449,10 +2445,10 @@ class ManageProducts:
                 product_discount.sub_category_id_pk += 1
                 product_discount.save()
                 SystemLogs.updated_by(request,product_discount)
-                SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+                SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
                     SystemLogs.updated_by(request,product_discount)
-                    SystemLogs.admin_activites(request,f"Deleted Product Discount for the product, {product_discount.product_id.product_name}",message="Deleted Product Discount")
+                    SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
                     product_discount.delete()
 
             elif category_id!="":
@@ -2461,10 +2457,12 @@ class ManageProducts:
                 if any(p.category_id == category for p in existing_active_discount_on_category):
                     return False, "Category already has existing active discount"
                 products,message = ManageProducts.fetch_product(product_category_pk_list=[category.pk])#multiple products
+                print(products)
                 #adding the products
                 product_discount = Product_Discount.objects.create(category_id=category,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
                 product_discount.save()
                 for p in products:
+                    print(ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk))
                     if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
                         product_discount.product_id.add(p)
                         product_discount.save()
@@ -2474,10 +2472,10 @@ class ManageProducts:
                 product_discount.category_id_pk += 1
                 product_discount.save()
                 SystemLogs.updated_by(request,product_discount)
-                SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
+                SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
                 if len(product_discount.product_id.all()) == 0:
                     SystemLogs.updated_by(request,product_discount)
-                    SystemLogs.admin_activites(request,f"Deleted Product Discount for the product, {product_discount.product_id.product_name}",message="Deleted Product Discount")
+                    SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
                     product_discount.delete()
             else:
                 return False,"No paramters passed"

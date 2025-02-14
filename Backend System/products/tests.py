@@ -699,6 +699,11 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product discount should be created successfully")
         print(message)
 
+        #category
+        success,message = ManageProducts.create_product_discount(request,"POP",800,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
+        self.assertTrue(success,"Product discount should be created successfully")
+        print(message)
+
 
     # def test_update_product_discount(self):
     #     """
