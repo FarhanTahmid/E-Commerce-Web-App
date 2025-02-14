@@ -136,11 +136,13 @@ class SystemLogs:
                 "date": timezone.now().isoformat() 
                 }
             
-            current_data = model_instance.updated_by or {}
-            if isinstance(current_data, dict):
-                current_data.update(user_type)
-            else:
-                current_data = user_type
+            current_data = model_instance.updated_by
+            if not isinstance(current_data, list):
+                current_data = [] if not current_data else [current_data]  
+
+            # Append new entry
+            current_data.append(user_type)
+
             model_instance.updated_by = current_data
             model_instance.save()
    

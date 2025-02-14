@@ -686,7 +686,7 @@ class TestManageProducts(TestCase):
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
 
-        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",500,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product1.pk,"","","",True)
+        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",400,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product1.pk,"","","",True)
         self.assertTrue(success,"Product discount should be created successfully")
         print(message)
 
@@ -700,9 +700,14 @@ class TestManageProducts(TestCase):
         print(message)
 
         #category
-        success,message = ManageProducts.create_product_discount(request,"POP",800,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
+        success,message = ManageProducts.create_product_discount(request,"POP",900,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"",self.brand1.pk,"","",True)
+        self.assertFalse(success,"Product discount not should be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
         self.assertTrue(success,"Product discount should be created successfully")
         print(message)
+
 
 
     # def test_update_product_discount(self):
