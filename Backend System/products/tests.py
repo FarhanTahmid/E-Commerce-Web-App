@@ -133,7 +133,7 @@ class TestManageProducts(TestCase):
             discount_amount=15.00,
             start_date=now + datetime.timedelta(days=1),  # Starts tomorrow
             end_date=now + datetime.timedelta(days=10),    # Ends in 10 days
-            sub_category_id_pk=1
+            brand_id_pk = 1
         )
         self.future_discount.save()
         self.future_discount.product_id.add(self.product3)
@@ -750,7 +750,11 @@ class TestManageProducts(TestCase):
         # self.assertTrue(success,"Product discount should be updated successfully")
         # print(message)
 
-        success,message = ManageProducts.update_product_discount_for_sub_category(request,self.future_discount.sub_category_id_pk,"[]",4,"","",self.sub_category4.pk,False)
+        # success,message = ManageProducts.update_product_discount_for_sub_category(request,self.future_discount.sub_category_id_pk,"[]",4,"","",self.sub_category4.pk,False)
+        # self.assertTrue(success,"Product discount should be updated successfully")
+        # print(message)
+
+        success,message = ManageProducts.update_product_discount_for_brand(request,self.future_discount.brand_id_pk,";;",7,"","",self.brand3.pk,True)
         self.assertTrue(success,"Product discount should be updated successfully")
         print(message)
 
