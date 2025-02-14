@@ -143,7 +143,9 @@ class ServerAPITestCases(APITestCase):
             discount_name="Active Discount",
             discount_amount=10.00,
             start_date=self.now - datetime.timedelta(days=1),  # Started yesterday
-            end_date=self.now + datetime.timedelta(days=10)    # Ends in 10 days
+            end_date=self.now + datetime.timedelta(days=10),    # Ends in 10 days
+            is_active=True,
+            product_id_pk=1
         )
         self.active_discount.save()
         self.active_discount.product_id.add(self.product1)
@@ -154,7 +156,8 @@ class ServerAPITestCases(APITestCase):
             discount_name="Inactive Discount",
             discount_amount=5.00,
             start_date=self.now - datetime.timedelta(days=10),  # Started 10 days ago
-            end_date=self.now - datetime.timedelta(days=1)      # Ended yesterday
+            end_date=self.now - datetime.timedelta(days=1),      # Ended yesterday
+            product_id_pk=2
         )
         self.inactive_discount.save()
         self.inactive_discount.product_id.add(self.product2)
@@ -165,7 +168,8 @@ class ServerAPITestCases(APITestCase):
             discount_name="Future Discount",
             discount_amount=15.00,
             start_date=self.now + datetime.timedelta(days=1),  # Starts tomorrow
-            end_date=self.now + datetime.timedelta(days=10)    # Ends in 10 days
+            end_date=self.now + datetime.timedelta(days=10),    # Ends in 10 days
+            brand_id_pk = 1
         )
         self.future_discount.save()
         self.future_discount.product_id.add(self.product3)
@@ -814,8 +818,8 @@ class ServerAPITestCases(APITestCase):
 
         #discount_name
         response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?discount_name={self.inactive_discount.discount_name}')
-        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['error'],"An unexpected error occurred while fetching product discount! Please try again later.")
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.data['message'],"Product Discount fetched successfully")
 
         #is_active
         response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?is_active={True}')
@@ -827,26 +831,40 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Product Discounts fetched successfully")
 
-    # def test_create_product_discount(self):
-    #     """
-    #     Test for creating product discount
-    #     """
+    def test_create_product_discount(self):
+        """
+        Test for creating product discount
+        """
 
-    #     data = {
-    #         'discount_name': 'EWEWEW',
-    #         'discount_amount': 500,
-    #         'start_date': "2025-01-29T15:47:32.987654",
-    #         'end_date': "2025-02-02T15:47:32.987654"
-    #     }
-    #     response = self.client.post(f'/server_api/product/product-discounts/create/{self.product2.pk}/',data,format='json')
-    #     self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-    #     self.assertEqual(response.data['message'],"Product discount created successfully")
+        data = {
+            'discount_name': 'EWEWEW',
+            'discount_amount': 500,
+            'start_date': "2025-01-29T15:47:32.987654",
+            'end_date': "2025-02-02T15:47:32.987654",
+            'is_active':True,
+            'product_id':self.product2.pk
+        }
+        response = self.client.post(f'/server_api/product/product-discounts/create/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'],"Product discount created successfully. ")
 
-    #     #start date more than end data
-    #     data = {'discount_name':'EWEWEW','discount_amount':500,'end_date':self.now + datetime.timedelta(days=1),'start_date':self.now + datetime.timedelta(days=5)}
-    #     response = self.client.post(f'/server_api/product/product-discounts/create-product-discount/{self.product2.pk}/',data,format='json')
-    #     self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
-    #     self.assertEqual(response.data['message'],"Start date of dicount must be less than or equal to end data")
+    def test_update_product_discount(self):
+        """
+        Test for updating product discount
+        """
+        data = {
+            'discount_name': 'EWEWEW85',
+            'discount_amount': 500,
+            'start_date': "2025-01-29T15:47:32.987654",
+            'end_date': "2025-02-02T15:47:32.987654",
+            'is_active':True,
+            'product_id':self.product3.pk,
+            'product_discount_product_id_pk':self.active_discount.product_id_pk
+        }
+        response = self.client.put(f'/server_api/product/product-discounts/update/',data,format='json')
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        print(response.data['message'])
+
 
 
 

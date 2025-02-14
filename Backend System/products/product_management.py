@@ -2299,7 +2299,8 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product image! Please try again later.")
         
     #product discount
-    def fetch_product_discount(product_id="",discount_name="",is_active=False,product_discount_pk="",brand_id="",sub_category_pk="",category_pk="",product_id_pk="",brand_id_pk="",sub_category_id_pk="",category_id_pk=""):
+    def fetch_product_discount(product_id="",discount_name="",is_active=False,product_discount_pk="",brand_id="",sub_category_pk="",category_pk="",product_id_pk="",brand_id_pk="",sub_category_id_pk="",category_id_pk="",
+                               product_id_pk_all=False,brand_id_pk_all=False,sub_category_id_pk_all=False,category_id_pk_all=False):
 
         #fetches all active discount if parameters passed, else all discounts are fetched
         try:
@@ -2326,10 +2327,10 @@ class ManageProducts:
             elif discount_name!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
                 product_discount = Product_Discount.objects.filter(discount_name=discount_name)
-                return product_discount, "Product Discount fetched successfully"
+                return product_discount, "Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif is_active == True:
                 product_discount = Product_Discount.objects.filter(is_active=True).order_by('-pk')
-                return product_discount, "Active Product Discount fetched successfully"
+                return product_discount, "Active Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif brand_id!= "":
                 brand,message = ManageProducts.fetch_product_brand(pk=brand_id)
                 product_discount = Product_Discount.objects.filter(brand_id=brand,is_active=True).order_by('-pk')
@@ -2342,9 +2343,21 @@ class ManageProducts:
                 category,message = ManageProducts.fetch_product_categories(product_category_pk=category_pk)
                 product_discount=Product_Discount.objects.filter(category_id=category,is_active=True)
                 return product_discount,"Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif product_id_pk_all:
+                product_discount = Product_Discount.objects.filter(product_id_pk__gt=0)
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif brand_id_pk_all:
+                product_discount = Product_Discount.objects.filter(brand_id_pk__gt=0)
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif sub_category_id_pk_all:
+                product_discount = Product_Discount.objects.filter(sub_category_id_pk__gt=0)
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif category_id_pk_all:
+                product_discount = Product_Discount.objects.filter(category_id_pk__gt=0)
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
             else:
                 product_discount = Product_Discount.objects.all()
-                return product_discount,"All product discounts fetched successfully"
+                return product_discount,"All product discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string

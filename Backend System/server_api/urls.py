@@ -87,10 +87,9 @@ urlpatterns = [                                                                 
     path('product/product-image/delete/<int:product_image_pk>/',views.DeleteProductImage.as_view(),name='delete_product_image'),
 
     #product discount
-    path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),#pass parameters either /?product_id= OR discount_name= OR is_active= OR product_discount_pk OR brand_id= OR sub_category_pk OR category_pk OR none to fetch all
-    path('product/product-discounts/create/<int:product_id>/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
-    path('product/product-discounts/update/<int:product_discount_pk>/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
-    path('product/product-discounts/delete/<int:product_discount_pk>/',views.DeleteProductDiscount.as_view(),name='delete_product_discount'),
+    path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),#pass parameters either /?product_id= OR discount_name= OR is_active= OR product_discount_pk OR brand_id= OR sub_category_pk OR category_pk OR product_id_pk= OR brand_id_pk= OR sub_category_id_pk= OR category_id_pk= OR  product_id_pk_all= OR brand_id_pk_all= OR sub_category_id_pk_all= OR category_id_pk_all= OR none to fetch all
+    path('product/product-discounts/create/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
+    path('product/product-discounts/update/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
 
     re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),

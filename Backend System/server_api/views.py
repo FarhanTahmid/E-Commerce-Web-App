@@ -2460,7 +2460,14 @@ class FetchProductDiscount(APIView):
             brand_id = self.request.query_params.get('brand_id',"")
             sub_category_pk = self.request.query_params.get('sub_category_pk',"")
             category_pk = self.request.query_params.get('category_pk',"")
-
+            product_id_pk= self.request.query_params.get('product_id_pk',"")
+            brand_id_pk = self.request.query_params.get('brand_id_pk',"")
+            sub_category_id_pk = self.request.query_params.get('sub_category_id_pk',"")
+            category_id_pk = self.request.query_params.get('category_id_pk',"")
+            product_id_pk_all = self.request.data.get('product_id_pk_all',False)
+            brand_id_pk_all = self.request.data.get('brand_id_pk_all',False)
+            sub_category_id_pk_all = self.request.data.get('sub_category_id_pk_all',False)
+            category_id_pk_all = self.request.data.get('category_id_pk_all',False)
 
             if product_id!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(product_id=product_id)
@@ -2482,6 +2489,30 @@ class FetchProductDiscount(APIView):
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
             elif category_pk!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(category_pk=category_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif product_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(product_id_pk=product_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif brand_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(brand_id_pk=brand_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif sub_category_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(sub_category_id_pk=sub_category_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif category_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(category_id_pk=category_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif product_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(product_id_pk=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif brand_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(brand_id_pk=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif sub_category_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(sub_category_id_pk=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif category_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(category_id_pk=True)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
             else:
                 product_discount,message = ManageProducts.fetch_product_discount()
@@ -2525,14 +2556,20 @@ class CreateProductDiscount(APIView):
     permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
-    def post(self,request,product_id):
+    def post(self,request,format=None,*args, **kwargs):
 
         try:
-            product_id = product_id
             discount_name = self.request.data.get('discount_name',"")
             discount_amount = self.request.data.get('discount_amount',"")
-            start_date = self.request.get('start_date',"")
-            end_date = self.request.get('end_date',"")
+            start_date = self.request.data.get('start_date',"")
+            end_date = self.request.data.get('end_date',"")
+            is_active = self.request.data.get('is_active',False)
+
+            #any one from here
+            product_id = self.request.data.get('product_id',"")
+            brand_id = self.request.data.get('brand_id',"")
+            sub_category_id = self.request.data.get('sub_category_id',"")
+            category_id = self.request.data.get('category_id',"")
 
             missing_fields = []
             if discount_name == "":
@@ -2544,8 +2581,8 @@ class CreateProductDiscount(APIView):
             if end_date == "":
                 missing_fields.append("End date")
 
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+            start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S.%f")
+            end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S.%f")
 
 
             if missing_fields:
@@ -2557,10 +2594,23 @@ class CreateProductDiscount(APIView):
                 return Response({
                     'error':"Start date of discount must be less than or equal to end data"
                 },status=status.HTTP_400_BAD_REQUEST)
-            discount_created,message = ManageProducts.create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date)
+            
+            if brand_id!="" and sub_category_id=="" and product_id=="" and category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"",brand_id,"","",is_active)
+            elif sub_category_id!="" and brand_id=="" and product_id=="" and category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","",sub_category_id,"",is_active)
+            elif product_id!="" and brand_id=="" and sub_category_id=="" and category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id,"","","",is_active)
+            elif category_id!="" and brand_id=="" and product_id=="" and sub_category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","","",category_id,is_active)
+            else:
+                return Response({
+                    'error':"Must provide either one of product id or brand id or sub category id or category id, not more than one"
+                },status=status.HTTP_400_BAD_REQUEST)
+
             if discount_created:
                 return Response({
-                    'messge':message
+                    'message':message
                 },status=status.HTTP_201_CREATED)
             else:
                 return Response({
@@ -2595,16 +2645,31 @@ class UpdateProductDiscount(APIView):
     permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
-    def put(self,request,product_discount_pk,format=None):
+    def put(self,request,format=None):
 
         try:
             #getting the product discount
-            product_discount_pk = product_discount_pk
-            product_id = self.request.data.get('product_id',"")
+            product_discount_brand_id_pk = self.request.data.get('product_discount_brand_id_pk',"")
+            product_discount_sub_category_id_pk = self.request.data.get('product_discount_sub_category_id_pk',"")
+            product_discount_category_id_pk = self.request.data.get('product_discount_category_id_pk',"")
+            product_discount_product_id_pk = self.request.data.get('product_discount_product_id_pk',"")
+
+            
             discount_name = self.request.data.get('discount_name',"")
             discount_amount = self.request.data.get('discount_amount',"")
             start_date = self.request.data.get('start_date',"")
-            end_data = self.request.data.get('end_date',"")
+            end_date = self.request.data.get('end_date',"")
+            is_active = self.request.data.get('is_active',"")
+            delete = self.request.data.get('delete',False)
+
+            start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S.%f")
+            end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S.%f")
+
+            #getting optional parametes, MUST have one
+            brand_id = self.request.data.get('brand_id',"")
+            sub_category_id = self.request.data.get('sub_category_id',"")
+            category_id = self.request.data.get('category_id',"")
+            product_id = self.request.data.get('product_id',"")
 
             missing_fields = []
             if product_id == "":
@@ -2615,7 +2680,7 @@ class UpdateProductDiscount(APIView):
                 missing_fields.append("Discount amount")
             if start_date == "":
                 missing_fields.append("Start date")
-            if end_data == "":
+            if end_date == "":
                 missing_fields.appned("End date")
 
             if missing_fields:
@@ -2623,14 +2688,21 @@ class UpdateProductDiscount(APIView):
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
                 },status=status.HTTP_400_BAD_REQUEST)
 
-            if start_date>end_data:
+            if start_date>end_date:
                 return Response({
                     'error':"Start date of discount must be less than or equal to end data"
                 },status=status.HTTP_400_BAD_REQUEST)
             
-            product_discount_updated,message = ManageProducts.update_product_discount(request,product_discount_pk,product_id,discount_name,discount_amount,
-                                                                              start_date,end_data)
-            if product_discount_updated:
+            if product_discount_brand_id_pk!="" and product_discount_sub_category_id_pk=="" and product_discount_category_id_pk=="" and product_discount_product_id_pk=="":
+                updated,message = ManageProducts.update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name,discount_amount,start_date,end_date,brand_id,is_active,delete)
+            elif product_discount_sub_category_id_pk!="" and product_discount_brand_id_pk=="" and product_discount_category_id_pk=="" and product_discount_product_id_pk == "":
+                updated,message = ManageProducts.update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name,discount_amount,start_date,end_date,sub_category_id,is_active,delete)
+            elif product_discount_category_id_pk!="" and product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_product_id_pk=="":
+                updated,message = ManageProducts.update_product_discount_for_category(request,product_discount_category_id_pk,discount_name,discount_amount,start_date,end_date,category_id,is_active,delete)
+            elif product_discount_product_id_pk!="" and  product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_category_id_pk=="":
+                updated, message = ManageProducts.update_product_discount_for_product(request,product_discount_product_id_pk,discount_name,discount_amount,start_date,end_date,product_id,is_active,delete)
+           
+            if updated:
                 return Response({
                     'message':message
                 },status=status.HTTP_200_OK)
@@ -2639,47 +2711,6 @@ class UpdateProductDiscount(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
-        except JSONDecodeError as e:
-            return Response(
-                {'error': 'Invalid JSON format'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except KeyError as e:
-            return Response(
-                {'error': f'Missing required field: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except ValueError as e:
-            return Response(
-                {'error': f'Invalid value: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        except Exception as e:
-            return Response(
-                {'error': f'An unexpected error occurred: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) 
-        
-class DeleteProductDiscount(APIView):
-
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
-    def delete(self,request,product_discount_pk,format=None):
-        
-        try:
-            product_discount_pk=product_discount_pk
-            deleted,message = ManageProducts.delete_product_discount(request,product_discount_pk)
-            if deleted:
-                return Response({
-                    'message':message
-                },status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response({
-                    'error':message
-                },status=status.HTTP_400_BAD_REQUEST)
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},
