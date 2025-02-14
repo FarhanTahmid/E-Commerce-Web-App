@@ -2299,17 +2299,29 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product image! Please try again later.")
         
     #product discount
-    def fetch_product_discount(product_id="",discount_name="",is_active=False,product_discount_pk="",brand_id="",sub_category_pk="",category_pk=""):
+    def fetch_product_discount(product_id="",discount_name="",is_active=False,product_discount_pk="",brand_id="",sub_category_pk="",category_pk="",product_id_pk="",brand_id_pk="",sub_category_id_pk="",category_id_pk=""):
 
         #fetches all active discount if parameters passed, else all discounts are fetched
         try:
-            now = timezone.now()
+
             if product_id!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
                 product_discount = Product_Discount.objects.filter(product_id__id=product.pk,is_active=True).order_by('-pk')
                 return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif product_discount_pk!= "":
                 product_discount = Product_Discount.objects.get(pk=product_discount_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif product_id_pk!= "":
+                product_discount = Product_Discount.objects.get(product_id_pk=product_id_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif sub_category_id_pk!= "":
+                product_discount = Product_Discount.objects.get(sub_category_id_pk=sub_category_id_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif category_id_pk!= "":
+                product_discount = Product_Discount.objects.get(category_id_pk=category_id_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif brand_id_pk!= "":
+                product_discount = Product_Discount.objects.get(brand_id_pk=brand_id_pk)
                 return product_discount,"Product Discount fetched successfully"
             elif discount_name!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
@@ -2349,6 +2361,49 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product discount! Please try again later.")
         
+    def fetch_products_having_existing_discount(product_id="",product_id_pk="",brand_id_pk="",sub_category_id_pk="",category_id_pk=""):
+        
+        try:
+            existing_list = []
+            if product_id!= "":
+                #only of active discount
+                product,message = ManageProducts.fetch_product(product_pk=product_id)
+                for p in Product_Discount.objects.filter(product_id__id=product.pk,is_active=True).order_by('-pk'):
+                    existing_list += p.existing_discounts
+                return existing_list, "Fetched successfully"
+            elif product_id_pk!= "":
+                discount = Product_Discount.objects.get(product_id_pk=product_id_pk)
+                existing_list+=discount.existing_discounts
+                return existing_list,"Fetched successfully"
+            elif brand_id_pk!= "":
+                discount = Product_Discount.objects.get(brand_id_pk=brand_id_pk)
+                existing_list+=discount.existing_discounts
+                return existing_list,"Fetched successfully"
+            elif sub_category_id_pk!= "":
+                discount = Product_Discount.objects.get(sub_category_id_pk=sub_category_id_pk)
+                existing_list+=discount.existing_discounts
+                return existing_list,"Fetched successfully"
+            elif category_id_pk!= "":
+                discount = Product_Discount.objects.get(category_id_pk=category_id_pk)
+                existing_list+=discount.existing_discounts
+                return existing_list,"Fetched successfully"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching existing product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching existing product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching existing product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching exisiting product discount! Please try again later.")
+        
     def check_product_discount_entry_applicability(product_discount_pk,product_id):
 
         try:
@@ -2376,6 +2431,59 @@ class ManageProducts:
          
     def create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id="",brand_id="",sub_category_id="",category_id="",is_active=False):
 
+        """
+    Create a new product discount with detailed exception handling.
+
+    This function attempts to add a new product discount to the database. It first checks if a discount with the same name
+    already exists for the specified product, brand, sub-category, or category. If it does, it returns an error message.
+    Otherwise, it creates a new discount with the specified attributes and associates it with the provided product, brand,
+    sub-category, or category. The function handles various errors that might occur during the process, logging each error
+    for further analysis.
+
+    Args:
+        request (Request): The request object containing the user information.
+        discount_name (str): The name of the discount to be created.
+        discount_amount (float): The amount of the discount.
+        start_date (datetime): The start date of the discount.
+        end_date (datetime): The end date of the discount.
+        product_id (int, optional): The primary key (ID) of the product to be associated with the discount. Defaults to None.
+        brand_id (int, optional): The primary key (ID) of the brand to be associated with the discount. Defaults to None.
+        sub_category_id (int, optional): The primary key (ID) of the sub-category to be associated with the discount. Defaults to None.
+        category_id (int, optional): The primary key (ID) of the category to be associated with the discount. Defaults to None.
+        is_active (bool, optional): Indicates if the discount is active. Defaults to False.
+
+    Returns:
+        tuple:
+            - bool: `True` if the discount was created successfully, `False` otherwise.
+            - str: A message indicating the success or failure of the operation.
+
+    Example Usage:
+        success, message = create_product_discount(
+            request,
+            discount_name="Summer Sale",
+            discount_amount=20.0,
+            start_date="2025-06-01T00:00:00Z",
+            end_date="2025-06-30T23:59:59Z",
+            product_id=1,
+            is_active=True
+        )
+        print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues.
+            Message: "An unexpected error in Database occurred while creating product discount! Please try again later."
+        - **OperationalError**: Handles server-related issues such as connection problems.
+            Message: "An unexpected error in server occurred while creating product discount! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries.
+            Message: "An unexpected error in server occurred while creating product discount! Please try again later."
+        - **IntegrityError**: Handles data integrity issues.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for any other unexpected errors.
+            Message: "An unexpected error occurred while creating product discount! Please try again later."
+
+    Notes:
+        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+    """
         try:
             
             glo_message=""
@@ -2548,6 +2656,59 @@ class ManageProducts:
         
     def update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name="",discount_amount="",start_date="",end_date="",brand_id="",is_active="",delete=False):
 
+        """
+    Update an existing product discount for a brand with detailed exception handling.
+
+    This function attempts to update an existing product discount for a brand in the database. It fetches the discount
+    using the provided primary key (product_discount_brand_id_pk) and updates its attributes with the specified values.
+    The function handles various errors that might occur during the process, logging each error for further analysis.
+
+    Args:
+        request (Request): The request object containing the user information.
+        product_discount_brand_id_pk (int): The primary key (ID) of the product discount to be updated.
+        discount_name (str, optional): The new name of the discount. Defaults to an empty string.
+        discount_amount (float, optional): The new amount of the discount. Defaults to an empty string.
+        start_date (datetime, optional): The new start date of the discount. Defaults to an empty string.
+        end_date (datetime, optional): The new end date of the discount. Defaults to an empty string.
+        brand_id (int, optional): The primary key (ID) of the new brand to be associated with the discount. Defaults to an empty string.
+        is_active (bool, optional): Indicates if the discount is active. Defaults to an empty string.
+        delete (bool, optional): Indicates if the discount should be deleted. Defaults to False.
+
+    Returns:
+        tuple:
+            - bool: `True` if the discount was updated successfully, `False` otherwise.
+            - str: A message indicating the success or failure of the operation.
+
+    Example Usage:
+        success, message = update_product_discount_for_brand(
+            request,
+            product_discount_brand_id_pk=1,
+            discount_name="Winter Sale",
+            discount_amount=15.0,
+            start_date="2025-12-01T00:00:00Z",
+            end_date="2025-12-31T23:59:59Z",
+            brand_id=2,
+            is_active=True
+        )
+        print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues.
+            Message: "An unexpected error in Database occurred while updating product discount! Please try again later."
+        - **OperationalError**: Handles server-related issues such as connection problems.
+            Message: "An unexpected error in server occurred while updating product discount! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries.
+            Message: "An unexpected error in server occurred while updating product discount! Please try again later."
+        - **IntegrityError**: Handles data integrity issues.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for any other unexpected errors.
+            Message: "An unexpected error occurred while updating product discount! Please try again later."
+
+    Notes:
+        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+    """
+        
+        
         try:
             
             skipped_product = {}
@@ -2605,7 +2766,8 @@ class ManageProducts:
                 product_discount.end_date = end_date
             
             product_discount.save()
-
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
                 final_message =glo_message + ' already has active discounts. Were skipped'
             else:
@@ -2632,6 +2794,57 @@ class ManageProducts:
     
     def update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name="",discount_amount="",start_date="",end_date="",sub_category_id="",is_active="",delete=False):
 
+        """
+    Update an existing product discount for a sub-category with detailed exception handling.
+
+    This function attempts to update an existing product discount for a sub-category in the database. It fetches the discount
+    using the provided primary key (product_discount_sub_category_id_pk) and updates its attributes with the specified values.
+    The function handles various errors that might occur during the process, logging each error for further analysis.
+
+    Args:
+        request (Request): The request object containing the user information.
+        product_discount_sub_category_id_pk (int): The primary key (ID) of the product discount to be updated.
+        discount_name (str, optional): The new name of the discount. Defaults to an empty string.
+        discount_amount (float, optional): The new amount of the discount. Defaults to an empty string.
+        start_date (datetime, optional): The new start date of the discount. Defaults to an empty string.
+        end_date (datetime, optional): The new end date of the discount. Defaults to an empty string.
+        sub_category_id (int, optional): The primary key (ID) of the new sub-category to be associated with the discount. Defaults to an empty string.
+        is_active (bool, optional): Indicates if the discount is active. Defaults to an empty string.
+        delete (bool, optional): Indicates if the discount should be deleted. Defaults to False.
+
+    Returns:
+        tuple:
+            - bool: `True` if the discount was updated successfully, `False` otherwise.
+            - str: A message indicating the success or failure of the operation.
+
+    Example Usage:
+        success, message = update_product_discount_for_sub_category(
+            request,
+            product_discount_sub_category_id_pk=1,
+            discount_name="Spring Sale",
+            discount_amount=10.0,
+            start_date="2025-03-01T00:00:00Z",
+            end_date="2025-03-31T23:59:59Z",
+            sub_category_id=2,
+            is_active=True
+        )
+        print(message)
+
+    Exception Handling:
+        - **DatabaseError**: Catches general database-related issues.
+            Message: "An unexpected error in Database occurred while updating product discount! Please try again later."
+        - **OperationalError**: Handles server-related issues such as connection problems.
+            Message: "An unexpected error in server occurred while updating product discount! Please try again later."
+        - **ProgrammingError**: Catches programming errors such as invalid queries.
+            Message: "An unexpected error in server occurred while updating product discount! Please try again later."
+        - **IntegrityError**: Handles data integrity issues.
+            Message: "Same type exists in Database!"
+        - **Exception**: A catch-all for any other unexpected errors.
+            Message: "An unexpected error occurred while updating product discount! Please try again later."
+
+    Notes:
+        - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
+    """
         try:
             skipped_product = {}
             glo_message=""
@@ -2688,7 +2901,8 @@ class ManageProducts:
                 product_discount.end_date = end_date
             
             product_discount.save()
-
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
                 final_message =glo_message + ' already has active discounts. Were skipped'
             else:
@@ -2771,7 +2985,8 @@ class ManageProducts:
                 product_discount.end_date = end_date
 
             product_discount.save()
-
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
                 final_message =glo_message + ' already has active discounts. Were skipped'
             else:
@@ -2851,7 +3066,8 @@ class ManageProducts:
                 product_discount.end_date = end_date
             
             product_discount.save()
-
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
                 final_message =glo_message + ' already has active discounts. Were skipped'
             else:
