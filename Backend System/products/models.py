@@ -235,6 +235,7 @@ class Product_Discount(models.Model):
     discount_amount = models.DecimalField(null=False, blank=False, max_digits=10, decimal_places=2)
     start_date = models.DateTimeField(null=False, blank=False)
     end_date = models.DateTimeField(null=False, blank=False)
+    is_active = models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)

@@ -51,7 +51,7 @@ class Product_Images_Serializer(serializers.ModelSerializer):
         if obj.product_image:
             request = self.context.get('request')  # Ensure request context is available
             if request:
-                return request.build_absolute_uri(f"/{SERVER_API_URL}{settings.MEDIA_URL}{obj.brand_logo}")
+                return request.build_absolute_uri(f"/{SERVER_API_URL}{settings.MEDIA_URL}{obj.product_image}")
         return None
     
     class Meta:
