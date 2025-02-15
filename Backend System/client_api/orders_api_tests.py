@@ -40,6 +40,16 @@ class OrderAPITests(TestCase):
             created_at = now    
         )
 
+        self.address2 = CustomerAddress.objects.create(
+            customer_id=self.user2,
+            address_title = "Asylum",
+            address_line1 = 'House-69',
+            country = "USA",
+            city = "DK",
+            postal_code = '1216',
+            created_at = now    
+        )
+
         # Create test products
         self.product1 = Product.objects.create(
             product_name="Test Product 1",
@@ -79,7 +89,14 @@ class OrderAPITests(TestCase):
         self.cart_items1 = CartItems.objects.create(
             cart_id = self.cart1,
             product_sku = self.sku1,
-            quantity = 10,
+            quantity = 3,
+            created_at = now
+        )
+
+        self.cart_items2 = CartItems.objects.create(
+            cart_id = self.cart2,
+            product_sku = self.sku2,
+            quantity = 3,
             created_at = now
         )
 
@@ -88,7 +105,7 @@ class OrderAPITests(TestCase):
             discount_type = Coupon.DISCOUNT_TYPE_CHOICES[0][0],#percentage
             discount_percentage=30,
             maximum_discount_amount=100,
-            start_date = now + datetime.timedelta(days=1),
+            start_date = now,
             end_date = now + datetime.timedelta(days=10),
             customer_id = self.user1,
             created_at = now
@@ -97,8 +114,9 @@ class OrderAPITests(TestCase):
 
         self.coupon2 = Coupon.objects.create(
             coupon_code = 'UNIQUE2',
-            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[1][1],
+            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[1][1],#fixed
             discount_amount=50,
+            usage_limit=1,
             maximum_discount_amount=100,
             start_date = now + datetime.timedelta(days=-5),
             end_date = now + datetime.timedelta(days=20),
@@ -116,6 +134,16 @@ class OrderAPITests(TestCase):
             created_at = now
 
         )
+
+        self.order2 = Order.objects.create(
+            order_id = generate_order_id(self.user2.username,self.cart2.pk),
+            customer_id = self.user2,
+            order_date = now,
+            total_amount = 5000,
+            order_status = Order.ORDER_STATUS_CHOICES[0][0],#pending
+            created_at = now
+
+        )
         
         self.client = APIClient()
         
@@ -126,7 +154,35 @@ class OrderAPITests(TestCase):
     def test_create_order(self):
         #test for creating order
 
+        data = {
+            "shipping_address": {
+                "street": "123 Main St",
+                "city": "New York",
+                "state": "NY",
+                "zip_code": "10001"
+            },
+            "payment_mode": "credit_card",
+            'coupon_code':'UNIQUE1'
+            }
+        headers = self.get_auth_header(self.user1) 
+        self.client.credentials(**headers)
+        response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
+        print(response.data)
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+
+        #with save address
         # data = {
+        #     "use_saved_address":True,
+        #     "payment_mode": "credit_card",
+        #     'coupon_code':'UNIQUE2'
+        #     }
+        # headers = self.get_auth_header(self.user2) 
+        # self.client.credentials(**headers)
+        # response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
+        # self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+
+        # data = {
+        #     'save_address':True,
         #     "shipping_address": {
         #         "street": "123 Main St",
         #         "city": "New York",
@@ -139,31 +195,6 @@ class OrderAPITests(TestCase):
         # self.client.credentials(**headers)
         # response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
         # self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-
-        #with save address
-        # data = {
-        #     "use_saved_address":True,
-        #     "payment_mode": "credit_card",
-        #     }
-        # headers = self.get_auth_header(self.user1) 
-        # self.client.credentials(**headers)
-        # response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
-        # self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-
-        data = {
-            'save_address':True,
-            "shipping_address": {
-                "street": "123 Main St",
-                "city": "New York",
-                "state": "NY",
-                "zip_code": "10001"
-            },
-            "payment_mode": "credit_card"
-            }
-        headers = self.get_auth_header(self.user1) 
-        self.client.credentials(**headers)
-        response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
-        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
 
         
     

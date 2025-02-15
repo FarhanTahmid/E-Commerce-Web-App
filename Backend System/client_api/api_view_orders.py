@@ -121,7 +121,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 
                 if coupon:
                     if coupon.discount_type == 'percentage':
-                        discount_amount = total_amount * (coupon.discount_percentage / 100)
+                        discount_amount = float(total_amount) * float((coupon.discount_percentage / 100))
                         if coupon.maximum_discount_amount:
                             discount_amount = min(discount_amount, coupon.maximum_discount_amount)
                     elif coupon.discount_type == 'fixed':
