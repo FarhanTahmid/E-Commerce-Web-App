@@ -82,17 +82,26 @@ const AdminManagementAdminsOperation = () => {
         }
 
         try {
-            const response = await axios.post(`${API_BASE_URL}/add-or-update-position-for-admin/`, {
-                admin_user_name: admin_user_name,
-                position_pk: selectedPositionId
-            }, {
-                headers: {
-                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
-                    "Content-Type": "application/json",
-                }
-            });
-
-            setMessage(response.data.message);
+            {
+                adminPosition ? await axios.put(`${API_BASE_URL}/update-position-for-admin/`, {
+                    admin_user_name: admin_user_name,
+                    position_pk: selectedPositionId
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                        "Content-Type": "application/json",
+                    }
+                }) : await axios.post(`${API_BASE_URL}/add-position-for-admin/`, {
+                    admin_user_name: admin_user_name,
+                    position_pk: selectedPositionId
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                        "Content-Type": "application/json",
+                    }
+                })
+            }
+            setMessage("Admin position updated successfully!");
             setMessageType('success');
             setSelectedPositionId(''); // Reset the selected position
             fetchAdminPosition();
