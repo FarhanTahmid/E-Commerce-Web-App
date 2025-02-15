@@ -491,6 +491,7 @@ class FetchBusinessAdminPosition(APIView):
 
             name = self.request.query_params.get('name',"")
             pk = self.request.query_params.get('pk',"")
+            available = self.request.query_params.get('available',False)
 
             if name!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(name=name)
@@ -498,6 +499,9 @@ class FetchBusinessAdminPosition(APIView):
             elif pk!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(pk=pk)
                 fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+            elif available:
+                fetched_position,message = AdminManagement.fetch_admin_position(available=True)
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
             else:
                 fetched_position,message = AdminManagement.fetch_admin_position()
                 fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
