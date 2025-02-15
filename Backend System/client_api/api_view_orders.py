@@ -11,6 +11,8 @@ from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPaymen
 from customer.models import Coupon, CustomerAddress
 from system.models import Accounts
 from rest_framework.permissions import BasePermission
+from products.product_management import ManageProducts
+from products.models import *
 
 from orders.serializers import (
     OrderSerializer,
@@ -27,8 +29,24 @@ def generate_order_id(username, cart_pk):
 #PAY-CARD:ORDERDETAILs
 #PAY-KASH:ORDERDETAILs
 #PAY-CPN:PAYMENTMETHID:ORDERDETAILS
-def generate_payment_reference():
-    return f''
+#PAY-DIS:
+def generate_payment_reference(order_id,COD=False,CPN=False,DIS=False,CARD="",mobile_banking=""):
+    
+    message = ""
+
+    if COD:
+        message= f'PAY-COD:{order_id}'
+    elif CARD:
+        message=  f'PAY-CARD:{CARD.upper()}-{order_id}'
+    elif mobile_banking:
+        message=  f'PAY-{mobile_banking.upper()}:{order_id}'
+    
+    if CPN:
+        message+=  f';CPN:APPLIED'
+    if DIS:
+        message+=  f';DIS:APPLIED'
+
+    return message
 
 class CustomOrderPermission(BasePermission):
     def has_permission(self, request, view):
@@ -123,9 +141,11 @@ class OrderViewSet(viewsets.ModelViewSet):
                         )
 
                 # Calculate totals
+                total_amount_before_discount_and_coupon = float(cart.cart_total_amount)
                 total_amount = cart.cart_total_amount
                 discount_amount = 0
-                
+                coupon_discount_amount = 0
+
                 if coupon:
                     if coupon.discount_type == 'percentage':
                         discount_amount = float(total_amount) * float((coupon.discount_percentage / 100))
@@ -134,9 +154,24 @@ class OrderViewSet(viewsets.ModelViewSet):
                     elif coupon.discount_type == 'fixed':
                         discount_amount = coupon.discount_amount
                     
+                    coupon_discount_amount = float(discount_amount)
                     total_amount -= discount_amount
                     coupon.usage_limit -= 1
                     coupon.save()
+
+                #checking for discount
+                applied_discount = False
+                total_discount_amount = 0
+                for item in cart_items:
+                    product_id = item.product_sku.product_id
+                    active_discount,message = ManageProducts.fetch_product_discount(product_id=product_id.pk)
+                    if active_discount:
+                        applied_discount = True
+                        active_discount = active_discount[0]
+                        total_discount_amount += (item.quantity) * active_discount.discount_amount
+
+                total_amount -= total_discount_amount
+
 
                 # Create order
                 order = Order.objects.create(
@@ -164,18 +199,39 @@ class OrderViewSet(viewsets.ModelViewSet):
                 )
                 # Create payment record
                 payment_mode = serializer.validated_data['payment_mode']
+                payment_reference = ""
+                if payment_mode == 'cash_on_delivery' or payment_mode == 'Cash On Delivery':
+                    payment_reference = generate_payment_reference(order_id=order,COD=True,CPN=True if coupon_discount_amount>0 else False, DIS=True if applied_discount else False)
+                elif payment_mode == 'bkash' or payment_mode == 'rocket' or payment_mode == 'nagad' or payment_mode == 'wallet' or payment_mode=='net_banking' or payment_mode=='Net Banking':
+                    payment_reference = generate_payment_reference(order_id=order,mobile_banking=payment_mode,CPN=True if coupon_discount_amount>0 else False, DIS=True if applied_discount else False)
+                elif payment_mode == 'credit_card' or payment_mode == 'Credit Card' or payment_mode == 'debit_card' or payment_mode == 'Debit Card':
+                    payment_reference = generate_payment_reference(order_id=order,CARD=payment_mode,CPN=True if coupon_discount_amount>0 else False, DIS=True if applied_discount else False)
                 OrderPayment.objects.create(
                     order_id=order,
                     payment_mode=payment_mode,
                     payment_status='pending' if payment_mode == 'cash_on_delivery' else 'success',
                     payment_amount=total_amount,
-                    payment_reference=generate_payment_reference()
+                    payment_reference=payment_reference
                 )
                 # Mark cart as checked out
                 cart.cart_checkout_status = True
                 cart.save()
 
-                return Response(OrderSerializer(order,context={'request': request}).data, status=status.HTTP_201_CREATED)
+                order_serializer = OrderSerializer(order,context={'request': request}).data
+                response = {
+                    'order id':order_serializer['order_id'],
+                    'order date':order_serializer['order_date'],
+                    'total':total_amount_before_discount_and_coupon,
+                    'coupon': coupon_discount_amount,
+                    'discount':total_discount_amount,
+                    'Net total':order_serializer['total_amount'],
+                    'order status':order_serializer['order_status'],
+                    'shipping_address':order_serializer['shipping_address'],
+                    'payment details':order_serializer['payment_details'],
+
+                }
+
+                return Response(data=response, status=status.HTTP_201_CREATED)
 
         except Cart.DoesNotExist:
             return Response(

@@ -144,7 +144,6 @@ class ServerAPITestCases(APITestCase):
             discount_amount=10.00,
             start_date=self.now - datetime.timedelta(days=1),  # Started yesterday
             end_date=self.now + datetime.timedelta(days=10),    # Ends in 10 days
-            is_active=True,
             product_id_pk=1
         )
         self.active_discount.save()
@@ -846,7 +845,7 @@ class ServerAPITestCases(APITestCase):
         }
         response = self.client.post(f'/server_api/product/product-discounts/create/',data,format='json')
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-        self.assertEqual(response.data['message'],"Product discount created successfully. ")
+        self.assertEqual(response.data['message'],"Product discount created successfully.")
 
     def test_update_product_discount(self):
         """

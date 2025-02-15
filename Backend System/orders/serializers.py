@@ -10,6 +10,7 @@ from .models import (
 
 from customer.models import Accounts,CustomerAddress,Coupon
 from django.utils import timezone
+from products.product_management import ManageProducts
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_details = serializers.SerializerMethodField()
@@ -137,7 +138,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'shipping_address',
             'payment_details',
             'items',
-            'applied_coupon'
+            'applied_coupon',
         ]
         # read_only_fields = fields
 

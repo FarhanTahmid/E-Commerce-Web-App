@@ -2307,7 +2307,7 @@ class ManageProducts:
 
             if product_id!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                product_discount = Product_Discount.objects.filter(product_id__id=product.pk,start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-discount_amount')
+                product_discount = Product_Discount.objects.filter(product_id__id=product.pk,start_date__lte=timezone.now().date(),end_date__gte=timezone.now().date()).order_by('-discount_amount')
                 return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif product_discount_pk!= "":
                 product_discount = Product_Discount.objects.get(pk=product_discount_pk)
