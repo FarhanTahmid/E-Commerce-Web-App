@@ -138,7 +138,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     total_amount=total_amount,
                     order_status='pending'
                 )
-
+                print(order)
                 # Create order details
                 for item in cart_items:
                     OrderDetails.objects.create(

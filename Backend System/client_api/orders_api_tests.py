@@ -162,7 +162,8 @@ class OrderAPITests(TestCase):
                 "zip_code": "10001"
             },
             "payment_mode": "credit_card",
-            'coupon_code':'UNIQUE1'
+            'coupon_code':'UNIQUE1',
+            'save_address':True
             }
         headers = self.get_auth_header(self.user1) 
         self.client.credentials(**headers)
