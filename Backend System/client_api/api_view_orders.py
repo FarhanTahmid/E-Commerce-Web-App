@@ -23,6 +23,13 @@ from orders.serializers import (
 def generate_order_id(username, cart_pk):
     return f"#ORD-{username[:4]}-{cart_pk}-{uuid.uuid4().hex[:4].upper()}"
 
+#PAY-COD:ORDERDETAILS
+#PAY-CARD:ORDERDETAILs
+#PAY-KASH:ORDERDETAILs
+#PAY-CPN:PAYMENTMETHID:ORDERDETAILS
+def generate_payment_reference():
+    return f''
+
 class CustomOrderPermission(BasePermission):
     def has_permission(self, request, view):
         # Ensure the user is authenticated
@@ -138,7 +145,6 @@ class OrderViewSet(viewsets.ModelViewSet):
                     total_amount=total_amount,
                     order_status='pending'
                 )
-                print(order)
                 # Create order details
                 for item in cart_items:
                     OrderDetails.objects.create(
@@ -163,9 +169,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                     payment_mode=payment_mode,
                     payment_status='pending' if payment_mode == 'cash_on_delivery' else 'success',
                     payment_amount=total_amount,
-                    payment_reference=f'PAY-{order.order_id}'
+                    payment_reference=generate_payment_reference()
                 )
-
                 # Mark cart as checked out
                 cart.cart_checkout_status = True
                 cart.save()

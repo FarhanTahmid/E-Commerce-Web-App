@@ -2567,7 +2567,7 @@ class CreateProductDiscount(APIView):
             discount_amount = self.request.data.get('discount_amount',"")
             start_date = self.request.data.get('start_date',"")
             end_date = self.request.data.get('end_date',"")
-            is_active = self.request.data.get('is_active',False)
+            # is_active = self.request.data.get('is_active',False)
 
             #any one from here
             product_id = self.request.data.get('product_id',"")
@@ -2600,13 +2600,13 @@ class CreateProductDiscount(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
             
             if brand_id!="" and sub_category_id=="" and product_id=="" and category_id=="":
-                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"",brand_id,"","",is_active)
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"",brand_id,"","")
             elif sub_category_id!="" and brand_id=="" and product_id=="" and category_id=="":
-                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","",sub_category_id,"",is_active)
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","",sub_category_id,"")
             elif product_id!="" and brand_id=="" and sub_category_id=="" and category_id=="":
-                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id,"","","",is_active)
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id,"","","")
             elif category_id!="" and brand_id=="" and product_id=="" and sub_category_id=="":
-                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","","",category_id,is_active)
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","","",category_id)
             else:
                 return Response({
                     'error':"Must provide either one of product id or brand id or sub category id or category id, not more than one"
@@ -2663,7 +2663,7 @@ class UpdateProductDiscount(APIView):
             discount_amount = self.request.data.get('discount_amount',"")
             start_date = self.request.data.get('start_date',"")
             end_date = self.request.data.get('end_date',"")
-            is_active = self.request.data.get('is_active',"")
+            # is_active = self.request.data.get('is_active',"")
             delete = self.request.data.get('delete',False)
 
             start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S.%f")
@@ -2698,13 +2698,13 @@ class UpdateProductDiscount(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
             
             if product_discount_brand_id_pk!="" and product_discount_sub_category_id_pk=="" and product_discount_category_id_pk=="" and product_discount_product_id_pk=="":
-                updated,message = ManageProducts.update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name,discount_amount,start_date,end_date,brand_id,is_active,delete)
+                updated,message = ManageProducts.update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name,discount_amount,start_date,end_date,brand_id,False,delete)
             elif product_discount_sub_category_id_pk!="" and product_discount_brand_id_pk=="" and product_discount_category_id_pk=="" and product_discount_product_id_pk == "":
-                updated,message = ManageProducts.update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name,discount_amount,start_date,end_date,sub_category_id,is_active,delete)
+                updated,message = ManageProducts.update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name,discount_amount,start_date,end_date,sub_category_id,False,delete)
             elif product_discount_category_id_pk!="" and product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_product_id_pk=="":
-                updated,message = ManageProducts.update_product_discount_for_category(request,product_discount_category_id_pk,discount_name,discount_amount,start_date,end_date,category_id,is_active,delete)
+                updated,message = ManageProducts.update_product_discount_for_category(request,product_discount_category_id_pk,discount_name,discount_amount,start_date,end_date,category_id,False,delete)
             elif product_discount_product_id_pk!="" and  product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_category_id_pk=="":
-                updated, message = ManageProducts.update_product_discount_for_product(request,product_discount_product_id_pk,discount_name,discount_amount,start_date,end_date,product_id,is_active,delete)
+                updated, message = ManageProducts.update_product_discount_for_product(request,product_discount_product_id_pk,discount_name,discount_amount,start_date,end_date,product_id,False,delete)
            
             if updated:
                 return Response({

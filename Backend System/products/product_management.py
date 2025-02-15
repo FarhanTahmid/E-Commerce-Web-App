@@ -6,7 +6,7 @@ from e_commerce_app import settings
 import os
 from system.system_log import SystemLogs
 from django.utils import timezone
-from django.core.exceptions import ValidationError
+from datetime import datetime
 
 class ManageProducts:
     
@@ -2307,7 +2307,7 @@ class ManageProducts:
 
             if product_id!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                product_discount = Product_Discount.objects.filter(product_id__id=product.pk,is_active=True).order_by('-pk')
+                product_discount = Product_Discount.objects.filter(product_id__id=product.pk,start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-pk')
                 return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif product_discount_pk!= "":
                 product_discount = Product_Discount.objects.get(pk=product_discount_pk)
@@ -2329,19 +2329,19 @@ class ManageProducts:
                 product_discount = Product_Discount.objects.filter(discount_name=discount_name)
                 return product_discount, "Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif is_active == True:
-                product_discount = Product_Discount.objects.filter(is_active=True).order_by('-pk')
+                product_discount = Product_Discount.objects.filter(start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-pk')
                 return product_discount, "Active Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif brand_id!= "":
                 brand,message = ManageProducts.fetch_product_brand(pk=brand_id)
-                product_discount = Product_Discount.objects.filter(brand_id=brand,is_active=True).order_by('-pk')
+                product_discount = Product_Discount.objects.filter(brand_id=brand,start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-pk')
                 return product_discount,"Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif sub_category_pk!= "":
                 sub_category,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_pk)
-                product_discount = Product_Discount.objects.filter(sub_category_id=sub_category,is_active=True)
+                product_discount = Product_Discount.objects.filter(sub_category_id=sub_category,start_date__lte=timezone.now(),end_date__gte=timezone.now())
                 return product_discount,"Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif category_pk!= "":
                 category,message = ManageProducts.fetch_product_categories(product_category_pk=category_pk)
-                product_discount=Product_Discount.objects.filter(category_id=category,is_active=True)
+                product_discount=Product_Discount.objects.filter(category_id=category,start_date__lte=timezone.now(),end_date__gte=timezone.now())
                 return product_discount,"Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif product_id_pk_all:
                 product_discount = Product_Discount.objects.filter(product_id_pk__gt=0)
@@ -2381,7 +2381,7 @@ class ManageProducts:
             if product_id!= "":
                 #only of active discount
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                for p in Product_Discount.objects.filter(product_id__id=product.pk,is_active=True).order_by('-pk'):
+                for p in Product_Discount.objects.filter(product_id__id=product.pk,start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-pk'):
                     existing_list += p.existing_discounts
                 return existing_list, "Fetched successfully"
             elif product_id_pk!= "":
@@ -2417,14 +2417,25 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching exisiting product discount! Please try again later.")
         
-    def check_product_discount_entry_applicability(product_discount_pk,product_id):
+    def check_product_discount_entry_applicability(product_discount_pk,product_id,amount,start_date,end_date):
 
         try:
-            all_active_product_discount = Product_Discount.objects.filter(is_active=True).exclude(id=product_discount_pk)
-            for active_product_discount in all_active_product_discount:
-                if active_product_discount.product_id.filter(id=product_id).exists():
-                    return False
-            return True
+            print(start_date)
+            print(end_date)
+            for p in Product_Discount.objects.all():
+                print(p.pk)
+                print(p.discount_amount)
+                print(p.start_date)
+                print(p.end_date)
+
+            is_conflict = Product_Discount.objects.filter(product_id__id=product_id,start_date__gt=start_date,end_date__lt=end_date,discount_amount__lte=amount).exclude(id=product_discount_pk)
+            print(is_conflict)
+            if is_conflict.exists():
+                for discount in is_conflict:
+                    discount.product_id.remove(product_id)  # Remove product from ManyToManyField
+                    discount.save() 
+                return "Conflict"
+            return "No Conflict"
                 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -2498,9 +2509,10 @@ class ManageProducts:
         - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
     """
         try:
-            
+
             glo_message=""
             skipped_product = {}
+            discount_amount = float(discount_amount)
             if product_id!="":
                 #product list
                 products,message = ManageProducts.fetch_product(product_pk=product_id)#single product
@@ -2512,10 +2524,11 @@ class ManageProducts:
                 if not isinstance(current_data, list):
                     current_data = [] if not current_data else [current_data]
                 
-                if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,products.pk):
+                flag = ManageProducts.check_product_discount_entry_applicability(product_discount.pk,products.pk,discount_amount,start_date,end_date)
+                if flag == "Conflict" or flag == "No Conflict":
                     product_discount.product_id.add(products)
                     product_discount.save()
-                else:
+                if flag=="Conflict":
                     glo_message+=f"{products.product_name}, "
                     skipped_product={
                         'Product':products.product_name,
@@ -2536,8 +2549,8 @@ class ManageProducts:
             
             elif brand_id!="":
                 brand,message = ManageProducts.fetch_product_brand(pk=brand_id)
-                if Product_Discount.objects.filter(brand_id=brand,is_active=True).exists():
-                    return False, "Brand already has existing active discount"
+                if Product_Discount.objects.filter(brand_id=brand,start_date__gte=start_date,end_date__lte=end_date).exists():
+                    return False, "Brand already has existing active discount in that interval"
                 products,message = ManageProducts.fetch_product(product_brand_pk=brand.pk)#multiple products
                 #adding the products
                 product_discount = Product_Discount.objects.create(brand_id=brand,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
@@ -2548,10 +2561,11 @@ class ManageProducts:
                     current_data = [] if not current_data else [current_data]
 
                 for p in products:
-                    if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
+                    flag = ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,discount_amount,start_date,end_date)
+                    if flag=="Conflict" or flag=="No Conflict":
                         product_discount.product_id.add(p)
                         product_discount.save()
-                    else:
+                    if flag=="Conflict":
                         glo_message+=f"{p.product_name}, "
                         skipped_product={
                         'Product':p.product_name,
@@ -2572,8 +2586,8 @@ class ManageProducts:
 
             elif sub_category_id!="":
                 sub_category,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_id)
-                if Product_Discount.objects.filter(sub_category_id=sub_category,is_active=True).exists():
-                    return False, "Sub category already has existing active discount"
+                if Product_Discount.objects.filter(sub_category_id=sub_category,start_date__gte=start_date,end_date__lte=end_date).exists():
+                    return False, "Sub category already has existing active discount in that interval"
                 products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[sub_category.pk])#multiple products
                 #adding the products
                 product_discount = Product_Discount.objects.create(sub_category_id=sub_category,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
@@ -2584,10 +2598,11 @@ class ManageProducts:
                     current_data = [] if not current_data else [current_data]
 
                 for p in products:
-                    if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
+                    flag = ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,discount_amount,start_date,end_date)
+                    if flag=="Conflict" or flag=="No Conflict":
                         product_discount.product_id.add(p)
                         product_discount.save()
-                    else:
+                    if flag == "Conflict":
                         glo_message+=f"{p.product_name}, "
                         skipped_product={
                         'Product':p.product_name,
@@ -2609,8 +2624,8 @@ class ManageProducts:
             elif category_id!="":
                 category,message = ManageProducts.fetch_product_categories(product_category_pk=category_id)
 
-                if Product_Discount.objects.filter(category_id=category,is_active=True).exists():
-                    return False, "Category already has existing active discount"
+                if Product_Discount.objects.filter(category_id=category,start_date__gte=start_date,end_date__lte=end_date).exists():
+                    return False, "Category already has existing active discount in that interval"
                 products,message = ManageProducts.fetch_product(product_category_pk_list=[category.pk])#multiple products
                 #adding the products
                 product_discount = Product_Discount.objects.create(category_id=category,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
@@ -2622,10 +2637,11 @@ class ManageProducts:
 
 
                 for p in products:
-                    if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
+                    flag= ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,discount_amount,start_date,end_date)
+                    if flag=="Conflict" or flag=="No Conflict":
                         product_discount.product_id.add(p)
                         product_discount.save()
-                    else:
+                    if flag=="Conflict":
                         glo_message+=f"{p.product_name}, "
                         skipped_product={
                         'Product':p.product_name,
@@ -2646,7 +2662,7 @@ class ManageProducts:
             else:
                 return False,"No paramters passed"
             if glo_message!="":
-                final_message =glo_message + ' already has active discounts. Were skipped'
+                final_message =glo_message + ' already had active discounts. Were updated to this discount'
             else:
                 final_message = ""
             return True,f"Product discount created successfully. {final_message}"
@@ -2667,7 +2683,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")
         
-    def update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name="",discount_amount="",start_date="",end_date="",brand_id="",is_active="",delete=False):
+    def update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name,discount_amount,start_date,end_date,brand_id="",is_active=False,delete=False):
 
         """
     Update an existing product discount for a brand with detailed exception handling.
@@ -2733,17 +2749,17 @@ class ManageProducts:
                 product_discount.delete()
                 return True, "Deleted Successfully"
             
-            if is_active != "":
-                product_discount.is_active = is_active
-            product_discount.save()
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
             
             if product_discount.brand_id:
 
                 if brand_id!= "":
                     new_brand, message = ManageProducts.fetch_product_brand(pk=brand_id)
                     if new_brand != product_discount.brand_id:
-                        if Product_Discount.objects.filter(brand_id=new_brand,is_active=True).exists():
-                            return False, "Selected brand already has active discount"
+                        if Product_Discount.objects.filter(brand_id=new_brand,start_date__gte=start_date,end_date__lte=end_date).exists():
+                            return False, "Selected brand already has active discount in that interval"
                         product_discount.brand_id = new_brand
                         product_discount.product_id.clear()
                         product_discount.existing_discounts = {}
@@ -2755,10 +2771,11 @@ class ManageProducts:
 
                         new_products,message = ManageProducts.fetch_product(product_brand_pk=new_brand.pk)
                         for p in new_products:
-                            if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
+                            flag= ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,discount_amount,start_date,end_date)
+                            if flag=="Conflict" or flag=="No Conflict":
                                 product_discount.add(p)
                                 product_discount.save()
-                            else:
+                            if flag=="Conflict":
                                 skipped_product={
                                 'Product':p.product_name,
                                 'id':p.pk
@@ -2782,7 +2799,7 @@ class ManageProducts:
             SystemLogs.updated_by(request,product_discount)
             SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
-                final_message =glo_message + ' already has active discounts. Were skipped'
+                final_message =glo_message + ' already had active discounts. Were updated to this discount'
             else:
                 final_message = ""
 
@@ -2805,7 +2822,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
     
-    def update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name="",discount_amount="",start_date="",end_date="",sub_category_id="",is_active="",delete=False):
+    def update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name,discount_amount,start_date,end_date,sub_category_id="",is_active=False,delete=False):
 
         """
     Update an existing product discount for a sub-category with detailed exception handling.
@@ -2868,17 +2885,17 @@ class ManageProducts:
                 product_discount.delete()
                 return True, "Deleted Successfully"
             
-            if is_active != "":
-                product_discount.is_active = is_active
-            product_discount.save()
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
 
             if product_discount.sub_category_id:
 
                 if sub_category_id!="":
                     new_sub_category, message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_id)
                     if new_sub_category != product_discount.sub_category_id:
-                        if Product_Discount.objects.filter(sub_category_id=new_sub_category,is_active=True).exists():
-                            return False,"Sub Category already has an active discount"
+                        if Product_Discount.objects.filter(sub_category_id=new_sub_category,start_date__gte=start_date,end_date__lte=end_date).exists():
+                            return False,"Sub Category already has an active discount in that interval"
                         product_discount.sub_category_id = new_sub_category
                         product_discount.product_id.clear()
                         product_discount.existing_discounts = {}
@@ -2890,10 +2907,11 @@ class ManageProducts:
 
                         new_products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[new_sub_category.pk])
                         for p in new_products:
-                            if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
+                            flag= ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,discount_amount,start_date,end_date)
+                            if flag=="Conflict" or flag == "No Conflict":
                                 product_discount.add(p)
                                 product_discount.save()
-                            else:
+                            if flag=="Conflict":
                                 skipped_product={
                                 'Product':p.product_name,
                                 'id':p.pk
@@ -2917,7 +2935,7 @@ class ManageProducts:
             SystemLogs.updated_by(request,product_discount)
             SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
-                final_message =glo_message + ' already has active discounts. Were skipped'
+                final_message =glo_message + ' already had active discounts. Were updated to this discount'
             else:
                 final_message = ""
             return True, f"Product Discount Updated. {final_message}"
@@ -2939,7 +2957,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
         
-    def update_product_discount_for_category(request,product_discount_category_id_pk,discount_name="",discount_amount="",start_date="",end_date="",category_id="",is_active="",delete=False):
+    def update_product_discount_for_category(request,product_discount_category_id_pk,discount_name,discount_amount,start_date,end_date,category_id="",is_active=False,delete=False):
 
         try:
             skipped_product = {}
@@ -2951,17 +2969,17 @@ class ManageProducts:
                 product_discount.delete()
                 return True,"Deleted Successfully"
             
-            if is_active != "":
-                product_discount.is_active = is_active
-            product_discount.save()
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
 
             if product_discount.category_id:
 
                 if category_id!= "":
                     new_category, message = ManageProducts.fetch_product_categories(product_category_pk=category_id)
                     if new_category != product_discount.category_id:
-                        if Product_Discount.objects.filter(category_id=new_category,is_active=True).exists():
-                            return False,"Cateogry already has active discount"
+                        if Product_Discount.objects.filter(category_id=new_category,start_date__gte=start_date,end_date__lte=end_date).exists():
+                            return False,"Cateogry already has active discount in that interval"
                         product_discount.category_id = new_category
                         product_discount.product_id.clear()
                         product_discount.existing_discounts = {}
@@ -2973,10 +2991,11 @@ class ManageProducts:
 
                         new_products,message = ManageProducts.fetch_product(product_category_pk_list=[new_category.pk])
                         for p in new_products:
-                            if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk):
+                            flag= ManageProducts.check_product_discount_entry_applicability(product_discount.pk,p.pk,discount_amount,start_date,end_date)
+                            if flag=="Conflict" or flag=="No Conflict":
                                 product_discount.add(p)
                                 product_discount.save()
-                            else:
+                            if flag=="Conflict":
                                 skipped_product={
                                 'Product':p.product_name,
                                 'id':p.pk
@@ -3001,7 +3020,7 @@ class ManageProducts:
             SystemLogs.updated_by(request,product_discount)
             SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
-                final_message =glo_message + ' already has active discounts. Were skipped'
+                final_message =glo_message + ' already had active discounts. Were updated to this discount'
             else:
                 final_message = ""
             return True, f"Product Discount Updated. {final_message}"
@@ -3023,7 +3042,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
         
-    def update_product_discount_for_product(request,product_discount_product_id_pk,discount_name="",discount_amount="",start_date="",end_date="",product_id="",is_active="",delete=False):
+    def update_product_discount_for_product(request,product_discount_product_id_pk,discount_name,discount_amount,start_date,end_date,product_id="",is_active=False,delete=False):
 
         try:
             skipped_product = {}
@@ -3035,9 +3054,10 @@ class ManageProducts:
                 product_discount.delete()
                 return True, "Deleted Successfully"
             
-            if is_active != "":
-                product_discount.is_active = is_active
-            product_discount.save()
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
+
             if product_id!= "":
                 
                 try:
@@ -3055,10 +3075,11 @@ class ManageProducts:
                     if not isinstance(current_data, list):
                         current_data = [] if not current_data else [current_data]
 
-                    if ManageProducts.check_product_discount_entry_applicability(product_discount.pk,new_product.pk):
+                    flag= ManageProducts.check_product_discount_entry_applicability(product_discount.pk,new_product.pk,discount_amount,start_date,end_date)
+                    if flag=="Conflict" or flag=="No Conflict":
                         product_discount.product_id.add(new_product)
                         product_discount.save()
-                    else:
+                    if flag=="Conflict":
                         skipped_product={
                             'Product':new_product.product_name,
                             'id':new_product.pk
@@ -3082,7 +3103,7 @@ class ManageProducts:
             SystemLogs.updated_by(request,product_discount)
             SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
             if glo_message!="":
-                final_message =glo_message + ' already has active discounts. Were skipped'
+                final_message =glo_message + ' already had active discounts. Were updated to this discount'
             else:
                 final_message = ""
             return True, f"Product Discount Updated. {final_message}"

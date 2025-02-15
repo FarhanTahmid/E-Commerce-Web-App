@@ -855,10 +855,8 @@ class AdminManagement:
                 for p in all_business_admin_user:
                     if p != business_admin_user and p.admin_email == admin_email:
                         return False, "This email is already taken"
-                business_admin_user.admin_user_name = admin_email.split('@')[0]
                 business_admin_user.admin_email = admin_email
                 user.email = admin_email
-                user.username = admin_email.split('@')[0]
             if admin_avatar != "":
                 if business_admin_user.admin_avatar:
                     path = settings.MEDIA_ROOT+str(business_admin_user.admin_avatar)
