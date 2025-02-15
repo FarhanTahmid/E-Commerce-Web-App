@@ -76,7 +76,7 @@ const Menus = () => {
         },
         {
             id: 2,
-            name: "Admin Management",
+            name: "admin-management",
             path: "#",
             icon: 'feather-users',
             dropdownMenu: [
@@ -90,6 +90,12 @@ const Menus = () => {
                     id: 2,
                     name: "Positions",
                     path: "/admin-management/positions",
+                    subdropdownMenu: false
+                },
+                {
+                    id: 3,
+                    name: "Role Permissions",
+                    path: "/admin-management/role-permissions",
                     subdropdownMenu: false
                 }
             ]

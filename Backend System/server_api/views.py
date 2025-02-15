@@ -2467,7 +2467,7 @@ class FetchProductDiscount(APIView):
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
             elif discount_name!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
-                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
             elif is_active != False:
                 product_discount,message = ManageProducts.fetch_product_discount(is_active=True)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)

@@ -95,6 +95,8 @@ import ProductSKUTable from "@/components/products/sku/ProductSKUTable";
 import ProductImageCreate from "@/components/products/image/ProductImageCreate";
 import ProductImage from "../pages/product-image";
 import ProductImageUpdate from "@/components/products/image/ProductImageUpdate";
+import AdminManagementPermissions from "../pages/admin-management-permissions";
+import AdminManagementPermissionsUpdate from "@/components/admin-management/permissions/AdminManagementPermissionsUpdate";
 
 
 const parseJwt = (token) => {
@@ -342,6 +344,14 @@ export const router = createBrowserRouter([
             {
                 path: "/admin-management/positions/:id",
                 element: <AdminManagementPositionsUpdate />
+            },
+            {
+                path: "/admin-management/role-permissions",
+                element: <AdminManagementPermissions />
+            },
+            {
+                path: "/admin-management/role-permissions/:id",
+                element: <AdminManagementPermissionsUpdate />
             },
             {
                 path: "/admin-management/admins",
