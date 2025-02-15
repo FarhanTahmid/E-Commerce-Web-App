@@ -61,7 +61,8 @@ class AdminManagement:
                 return AdminPositions.objects.get(pk=pk),"Admin position fetched successfully!"
             elif available:
                 role,message = AdminManagement.fetch_admin_position(name=OWNER)
-                if role:
+                user_role =AdminUserRole.objects.filter(role=role).exists()
+                if user_role:
                     return AdminPositions.objects.all().exclude(name=OWNER),"Admin positions fetched successfully!"
                 else:
                     return AdminPositions.objects.all(),"Admin positions fetched successfully!"

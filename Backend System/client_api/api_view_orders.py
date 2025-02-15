@@ -152,12 +152,10 @@ class OrderViewSet(viewsets.ModelViewSet):
                     item.product_sku.save()
 
                 # Create shipping address
-                order_address = OrderShippingAddress.objects.create(
+                OrderShippingAddress.objects.create(
                     order_id=order,
                     **address_data
                 )
-                order_address.save()
-                print(order_address.address_line1)
                 # Create payment record
                 payment_mode = serializer.validated_data['payment_mode']
                 OrderPayment.objects.create(
