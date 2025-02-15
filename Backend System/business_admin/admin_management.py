@@ -6,10 +6,12 @@ from e_commerce_app import settings
 from business_admin.models import *
 import os
 
+OWNER = 'Owner'
+
 class AdminManagement:
 
     #admin position
-    def fetch_admin_position(pk="",name=""):
+    def fetch_admin_position(pk="",name="",available=False):
 
         """
         Fetch admin positions based on various optional parameters with detailed exception handling.
@@ -57,6 +59,12 @@ class AdminManagement:
                 return AdminPositions.objects.get(name=name), "Admin position fetched successfully!"
             elif pk!="":
                 return AdminPositions.objects.get(pk=pk),"Admin position fetched successfully!"
+            elif available:
+                role,message = AdminManagement.fetch_admin_position(name=OWNER)
+                if role:
+                    return AdminPositions.objects.all().exclude(name=OWNER),"Admin positions fetched successfully!"
+                else:
+                    return AdminPositions.objects.all(),"Admin positions fetched successfully!"
             else:
                 admin_postions = AdminPositions.objects.all()
                 return admin_postions,"All Admin positions fetched successfully!" if len(admin_postions)>0 else "No Admin postions found"
