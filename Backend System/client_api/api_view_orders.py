@@ -10,6 +10,7 @@ import uuid
 from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems
 from customer.models import Coupon, CustomerAddress
 from system.models import Accounts
+from rest_framework.permissions import BasePermission
 
 from orders.serializers import (
     OrderSerializer,
@@ -19,14 +20,17 @@ from orders.serializers import (
     AddressSerializer
 )
 
-def generate_order_id(username, order_pk):
-    return f"#ORD-{username[:4]}-{order_pk}-{uuid.uuid4().hex[:4].upper()}"
+def generate_order_id(username, cart_pk):
+    return f"#ORD-{username[:4]}-{cart_pk}-{uuid.uuid4().hex[:4].upper()}"
 
-class CustomOrderPermission:
+class CustomOrderPermission(BasePermission):
+    def has_permission(self, request, view):
+        # Ensure the user is authenticated
+        return request.user.is_authenticated
+
     def has_object_permission(self, request, view, obj):
-        if request.user.is_authenticated:
-            return obj.customer_id == request.user
-        return False
+        # Ensure the user can only access their own orders
+        return obj.customer_id == request.user
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -41,7 +45,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     def create_order(self, request):
         serializer = OrderCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        
+
         try:
             with transaction.atomic():
                 # Get user's cart
@@ -70,6 +74,14 @@ class OrderViewSet(viewsets.ModelViewSet):
                     try:
                         address = CustomerAddress.objects.get(customer_id=request.user)
                         address_data = AddressSerializer(address).data
+                        #excluding address title for OrderShippmentModel
+                        address_data = {
+                            "address_line1": address_data["address_line1"],
+                            "address_line2": address_data["address_line2"],
+                            "country": address_data["country"],
+                            "city": address_data["city"],
+                            "postal_code": address_data["postal_code"],
+                        }
                     except CustomerAddress.DoesNotExist:
                         return Response(
                             {'error': 'No saved address found'},
@@ -109,7 +121,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 
                 if coupon:
                     if coupon.discount_type == 'percentage':
-                        discount_amount = total_amount * (coupon.discount_percentage / 100)
+                        discount_amount = float(total_amount) * float((coupon.discount_percentage / 100))
                         if coupon.maximum_discount_amount:
                             discount_amount = min(discount_amount, coupon.maximum_discount_amount)
                     elif coupon.discount_type == 'fixed':
@@ -126,7 +138,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     total_amount=total_amount,
                     order_status='pending'
                 )
-
+                print(order)
                 # Create order details
                 for item in cart_items:
                     OrderDetails.objects.create(

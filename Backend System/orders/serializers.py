@@ -122,9 +122,9 @@ class CouponSerializer(serializers.ModelSerializer):
         return 0
 
 class OrderSerializer(serializers.ModelSerializer):
-    shipping_address = OrderShippingAddressSerializer(read_only=True)
-    payment_details = OrderPaymentSerializer(read_only=True)
-    items = OrderDetailsSerializer(many=True, read_only=True)
+    shipping_address = OrderShippingAddressSerializer()
+    payment_details = OrderPaymentSerializer()
+    items = OrderDetailsSerializer(many=True)
     applied_coupon = serializers.SerializerMethodField()
 
     class Meta:
@@ -141,6 +141,30 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def get_items(self,obj):
+
+        try:
+            items = OrderDetails.objects.filter(order_id=obj)
+            return OrderDetailsSerializer(items,many=True).data
+        except:
+            None
+
+    def get_shipping_address(self, obj):
+
+        try:  
+            shipping_address = OrderShippingAddress.objects.get(order_id=obj)
+            return OrderShippingAddressSerializer(shipping_address).data
+        except:
+            return None
+        
+    def get_payment_details(self,obj):
+         
+         try:
+            payment_details = OrderPayment.objects.get(order_id=obj)
+            return OrderPaymentSerializer(payment_details).data
+         except:
+            None
+    
     def get_applied_coupon(self, obj):
         try:
             payment = OrderPayment.objects.get(order_id=obj)

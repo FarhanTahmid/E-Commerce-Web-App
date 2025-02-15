@@ -25,6 +25,7 @@ class TestManageProducts(TestCase):
         self.category_makeup = Product_Category.objects.create(category_name="Makeup", description="Products for makeup", created_at=now)
         self.category_haircare = Product_Category.objects.create(category_name="Haircare", description="Products for haircare", created_at=now)
         self.category_fragrance = Product_Category.objects.create(category_name="Fragrance", description="Products for fragrance", created_at=now)
+        self.category_fragrance2 = Product_Category.objects.create(category_name="Fragrance2", description="Products for fragrance2", created_at=now)
         
         # Create sub-categories
         self.sub_category1 = Product_Sub_Category.objects.create(sub_category_name="Moisturizers", description="Products to moisturize skin", created_at=now)
@@ -32,6 +33,7 @@ class TestManageProducts(TestCase):
         self.sub_category3 = Product_Sub_Category.objects.create(sub_category_name="Shampoos", description="Products to clean hair", created_at=now)
         self.sub_category4 = Product_Sub_Category.objects.create(sub_category_name="Perfumes", description="Fragrance products", created_at=now)
         self.sub_category5 = Product_Sub_Category.objects.create(sub_category_name="Lipsticks", description="Lip makeup products", created_at=now)
+        self.sub_category6 = Product_Sub_Category.objects.create(sub_category_name="Lipsticks6", description="Lip makeup products6", created_at=now)
         
         # Assign sub-categories to categories
         self.sub_category1.category_id.set([self.category_skincare])
@@ -39,6 +41,7 @@ class TestManageProducts(TestCase):
         self.sub_category3.category_id.set([self.category_haircare])
         self.sub_category4.category_id.set([self.category_fragrance])
         self.sub_category5.category_id.set([self.category_makeup])
+        self.sub_category6.category_id.set([self.category_fragrance2])
 
         #creating product brand
         #self.brand_logo = TestManageProducts.generate_test_image('white',1)
@@ -46,6 +49,9 @@ class TestManageProducts(TestCase):
                                                     brand_established_year= 1909,is_own_brand=False,created_at=now)
         self.brand2 = Product_Brands.objects.create(brand_name="Dove", brand_country="USA",brand_description="Loreal Paris",
                                                     brand_established_year= 2000,is_own_brand=True,created_at=now)
+        self.brand3 = Product_Brands.objects.create(brand_name="Dove11", brand_country="USA11",brand_description="Loreal Paris111",
+                                                    brand_established_year= 2005,is_own_brand=True,created_at=now)
+    
         #creating product flavours
         self.product_flavour1 = Product_Flavours.objects.create(product_flavour_name="Vanilla", created_at=now)
         self.product_flavour2 = Product_Flavours.objects.create(product_flavour_name="Strawberry", created_at=now)
@@ -82,6 +88,12 @@ class TestManageProducts(TestCase):
                                             product_ingredients="Wax, Pigment", product_usage_direction="Apply on lips", created_at=now)
         self.product5.product_category.set([self.category_makeup])
         self.product5.product_sub_category.set([self.sub_category5])
+
+        self.product6 = Product.objects.create(product_name="Loreal Lipstick52", product_brand=self.brand3,
+                                            product_description="A lipstick by Lorea5252l", product_summary="Matte lipstick25252",
+                                            product_ingredients="Wax, Pigment25252", product_usage_direction="Apply on lips2525", created_at=now)
+        self.product6.product_category.set([self.category_fragrance2])
+        self.product6.product_sub_category.set([self.sub_category6])
         
 
         #creating product sku
@@ -96,7 +108,8 @@ class TestManageProducts(TestCase):
             discount_amount=10.00,
             start_date=now - datetime.timedelta(days=1),  # Started yesterday
             end_date=now + datetime.timedelta(days=10),    # Ends in 10 days
-            is_active=True
+            is_active=True,
+            product_id_pk=1
         )
         self.active_discount.save()
         self.active_discount.product_id.add(self.product1)
@@ -107,7 +120,8 @@ class TestManageProducts(TestCase):
             discount_name="Inactive Discount",
             discount_amount=5.00,
             start_date=now - datetime.timedelta(days=10),  # Started 10 days ago
-            end_date=now - datetime.timedelta(days=1)      # Ended yesterday
+            end_date=now - datetime.timedelta(days=1),      # Ended yesterday
+            product_id_pk=2
         )
         self.inactive_discount.save()
         self.inactive_discount.product_id.add(self.product2)
@@ -118,7 +132,8 @@ class TestManageProducts(TestCase):
             discount_name="Future Discount",
             discount_amount=15.00,
             start_date=now + datetime.timedelta(days=1),  # Starts tomorrow
-            end_date=now + datetime.timedelta(days=10)    # Ends in 10 days
+            end_date=now + datetime.timedelta(days=10),    # Ends in 10 days
+            brand_id_pk = 1
         )
         self.future_discount.save()
         self.future_discount.product_id.add(self.product3)
@@ -165,7 +180,7 @@ class TestManageProducts(TestCase):
         """
         product_categories, message = ManageProducts.fetch_product_categories()
         self.assertIsNotNone(product_categories, "Product categories should not be None.")
-        self.assertEqual(product_categories.count(), 4, "The function did not return all product categories.")
+        self.assertEqual(product_categories.count(), 5, "The function did not return all product categories.")
         self.assertEqual(message, "Fetched all product categories successfully!", "Success message is incorrect.")
 
     def test_fetch_a_product_category(self):
@@ -686,8 +701,8 @@ class TestManageProducts(TestCase):
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
 
-        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",500,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product1.pk,"","","",True)
-        self.assertTrue(success,"Product discount should be created successfully")
+        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",400,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product1.pk,"","","",True)
+        self.assertFalse(success,"Product discount should not be created successfully")
         print(message)
 
         success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",500,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product3.pk,"","","",True)
@@ -699,34 +714,52 @@ class TestManageProducts(TestCase):
         self.assertTrue(success,"Product discount should be created successfully")
         print(message)
 
-        #category
-        success,message = ManageProducts.create_product_discount(request,"POP",800,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
+        success,message = ManageProducts.create_product_discount(request,"POP",900,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"",self.brand1.pk,"","",True)
+        self.assertFalse(success,"Product discount should not be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
+        self.assertFalse(success,"Product discount should be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
+        self.assertFalse(success,"Product discount should not be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","",self.sub_category1.pk,"",True)
+        self.assertFalse(success,"Product discount should be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","",self.sub_category6.pk,"",True)
         self.assertTrue(success,"Product discount should be created successfully")
         print(message)
 
+    def test_update_product_discount(self):
+        """
+        Test for updating product discount
+        """
+        now = timezone.now()
+        request = self.factory.post('/product/product_discount/update/')
+        request.user = self._create_mock_dev_user()
+        #request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.update_product_discount_for_product(request,self.active_discount.product_id_pk,"zz",40,"","",self.product5.pk,True)
+        self.assertTrue(success,"Product discount should be updated successfully")
+        print(message)
 
-    # def test_update_product_discount(self):
-    #     """
-    #     Test for updating product discount
-    #     """
-    #     now = timezone.now()
-    #     request = self.factory.post('/product/product_discount/update/')
-    #     request.user = self._create_mock_dev_user()
-    #     #request.user = self._create_mock_businessadmin_user()
-    #     success,message = ManageProducts.update_product_discount(request,self.inactive_discount.pk,self.product1.pk,"XRAZY OFFer",800,now-datetime.timedelta(days=100),now + datetime.timedelta(days=10))
-    #     self.assertTrue(success,"Product discount should be updated successfully")
-    #     self.assertEqual(message,"Product Discount updated")
+        # success,message = ManageProducts.update_product_discount_for_category(request,self.future_discount.category_id_pk,";;",8,"","",self.category_haircare.pk,True)
+        # self.assertTrue(success,"Product discount should be updated successfully")
+        # print(message)
 
-    # def test_delete_product_discount(self):
-    #     """
-    #     Test for deleting product discount
-    #     """
-    #     request = self.factory.post('/product/product_discount/create/')
-    #     request.user = self._create_mock_dev_user()
-    #     #request.user = self._create_mock_businessadmin_user()
-    #     success,message = ManageProducts.delete_product_discount(request,self.inactive_discount.pk)
-    #     self.assertTrue(success,"Product discount should be deleted successfully")
-    #     self.assertEqual(message,"Product discount deleted successfully")
+        # success,message = ManageProducts.update_product_discount_for_sub_category(request,self.future_discount.sub_category_id_pk,"[]",4,"","",self.sub_category4.pk,False)
+        # self.assertTrue(success,"Product discount should be updated successfully")
+        # print(message)
+
+        success,message = ManageProducts.update_product_discount_for_brand(request,self.future_discount.brand_id_pk,";;",7,"","",self.brand3.pk,True)
+        self.assertTrue(success,"Product discount should be updated successfully")
+        print(message)
+
+
+
 
 
 

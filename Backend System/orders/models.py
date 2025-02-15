@@ -65,7 +65,7 @@ class OrderDetails(models.Model):
         verbose_name (str): A human-readable name for the model (singular).
         verbose_name_plural (str): A human-readable name for the model (plural).
     """
-    order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False)
+    order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False,related_name="items")
     product_sku = models.ForeignKey(Product_SKU, on_delete=models.CASCADE, null=False, blank=False)
     quantity = models.PositiveIntegerField(null=False, blank=False)
     units = models.PositiveIntegerField(null=False, blank=False, default=1)
@@ -97,7 +97,7 @@ class OrderShippingAddress(models.Model):
         verbose_name (str): A human-readable name for the model (singular).
         verbose_name_plural (str): A human-readable name for the model (plural).
     """
-    order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False)
+    order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False,related_name="shipping_address")
     address_line1 = models.CharField(max_length=200, null=True, blank=True)
     address_line2 = models.CharField(max_length=200, null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
@@ -147,7 +147,7 @@ class OrderPayment(models.Model):
         ('failed', 'Failed'),
     ]
     
-    order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False)
+    order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False,related_name="payment_details")
     payment_mode = models.CharField(max_length=50, choices=PAYMENT_MODE_CHOICES, null=False, blank=False)
     payment_status = models.CharField(max_length=50, choices=PAYMENT_STATUS, default='pending', null=False, blank=False)
     payment_date = models.DateTimeField(auto_now_add=True)

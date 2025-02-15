@@ -36,8 +36,8 @@ class Coupon(models.Model):
     discount_type = models.CharField(max_length=20,choices=DISCOUNT_TYPE_CHOICES,blank=True,verbose_name="Discount Type")
     discount_percentage=models.PositiveIntegerField(
         validators=[MinValueValidator(1),MaxValueValidator(100)],
-        verbose_name="Discount Percentage")
-    discount_amount = models.DecimalField(max_digits=10,decimal_places=2,verbose_name="Discount Amount")
+        verbose_name="Discount Percentage",null=True,blank=True)
+    discount_amount = models.DecimalField(max_digits=10,decimal_places=2,null=True,blank=True,verbose_name="Discount Amount")
     maximum_discount_amount=models.DecimalField(max_digits=10,decimal_places=2,verbose_name="Maximum Discount Amount")
     start_date=models.DateTimeField(verbose_name="Start Date")
     end_date=models.DateTimeField(verbose_name="End Date")
