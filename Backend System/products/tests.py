@@ -696,67 +696,69 @@ class TestManageProducts(TestCase):
         """
         Test create product discount
         """
-        now = timezone.now()
+        from datetime import datetime
+        now = datetime.now().date()
+        import datetime
         request = self.factory.post('/product/product_discount/create/')
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
 
-        # success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",400,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product1.pk,"","","")
-        # print(message)
-        # self.assertTrue(success,"Product discount should be created successfully")
+        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",400,now+datetime.timedelta(days=-10),now+datetime.timedelta(days=-5),self.product1.pk,"","","")
+        print(message)
+        self.assertTrue(success,"Product discount should be created successfully")
 
-        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",500,now-datetime.timedelta(days=1),now+datetime.timedelta(days=10),self.product1.pk,"","","")
+        success,message = ManageProducts.create_product_discount(request,"Dhamak offer 3",5,now-datetime.timedelta(days=1),now+datetime.timedelta(days=10),self.product1.pk,"","","")
         self.assertTrue(success,"Product discount should be created successfully")
         print(message)
 
-        # # #using brand
-        # success,message = ManageProducts.create_product_discount(request,"POP",800,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"",self.brand1.pk,"","",True)
-        # self.assertTrue(success,"Product discount should be created successfully")
+        # #using brand
+        success,message = ManageProducts.create_product_discount(request,"POP",800,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"",self.brand1.pk,"","")
+        self.assertTrue(success,"Product discount should be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",900,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"",self.brand1.pk,"","")
+        self.assertTrue(success,"Product discount should not be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk)
+        self.assertTrue(success,"Product discount should be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk)
+        self.assertTrue(success,"Product discount should be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","",self.sub_category1.pk,"")
+        self.assertTrue(success,"Product discount should be created successfully")
+        print(message)
+
+        success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","",self.sub_category6.pk,"",True)
+        self.assertTrue(success,"Product discount should be created successfully")
+        print(message)
+
+    def test_update_product_discount(self):
+        """
+        Test for updating product discount
+        """
+        now = timezone.now()
+        request = self.factory.post('/product/product_discount/update/')
+        request.user = self._create_mock_dev_user()
+        #request.user = self._create_mock_businessadmin_user()
+        success,message = ManageProducts.update_product_discount_for_product(request,self.active_discount.product_id_pk,"zz",40,"","",self.product5.pk)
+        self.assertTrue(success,"Product discount should be updated successfully")
+        print(message)
+
+        # success,message = ManageProducts.update_product_discount_for_category(request,self.future_discount.category_id_pk,";;",8,"","",self.category_haircare.pk)
+        # self.assertTrue(success,"Product discount should be updated successfully")
         # print(message)
 
-        # success,message = ManageProducts.create_product_discount(request,"POP",900,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"",self.brand1.pk,"","",True)
-        # self.assertFalse(success,"Product discount should not be created successfully")
+        # success,message = ManageProducts.update_product_discount_for_sub_category(request,self.future_discount.sub_category_id_pk,"[]",4,"","",self.sub_category4.pk)
+        # self.assertTrue(success,"Product discount should be updated successfully")
         # print(message)
 
-        # success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
-        # self.assertTrue(success,"Product discount should be created successfully")
-        # print(message)
-
-        # success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","","",self.category_makeup.pk,True)
-        # self.assertFalse(success,"Product discount should not be created successfully")
-        # print(message)
-
-        # success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","",self.sub_category1.pk,"",True)
-        # self.assertTrue(success,"Product discount should be created successfully")
-        # print(message)
-
-        # success,message = ManageProducts.create_product_discount(request,"POP",1000,now+datetime.timedelta(days=5),now+ datetime.timedelta(days=6),"","",self.sub_category6.pk,"",True)
-        # self.assertTrue(success,"Product discount should be created successfully")
-        # print(message)
-
-    # def test_update_product_discount(self):
-    #     """
-    #     Test for updating product discount
-    #     """
-    #     now = timezone.now()
-    #     request = self.factory.post('/product/product_discount/update/')
-    #     request.user = self._create_mock_dev_user()
-    #     #request.user = self._create_mock_businessadmin_user()
-    #     success,message = ManageProducts.update_product_discount_for_product(request,self.active_discount.product_id_pk,"zz",40,"","",self.product5.pk,True)
-    #     self.assertTrue(success,"Product discount should be updated successfully")
-    #     print(message)
-
-    #     # success,message = ManageProducts.update_product_discount_for_category(request,self.future_discount.category_id_pk,";;",8,"","",self.category_haircare.pk,True)
-    #     # self.assertTrue(success,"Product discount should be updated successfully")
-    #     # print(message)
-
-    #     # success,message = ManageProducts.update_product_discount_for_sub_category(request,self.future_discount.sub_category_id_pk,"[]",4,"","",self.sub_category4.pk,False)
-    #     # self.assertTrue(success,"Product discount should be updated successfully")
-    #     # print(message)
-
-    #     success,message = ManageProducts.update_product_discount_for_brand(request,self.future_discount.brand_id_pk,";;",7,"","",self.brand3.pk,True)
-    #     self.assertTrue(success,"Product discount should be updated successfully")
-    #     print(message)
+        success,message = ManageProducts.update_product_discount_for_brand(request,self.future_discount.brand_id_pk,";;",7,"","",self.brand3.pk)
+        self.assertTrue(success,"Product discount should be updated successfully")
+        print(message)
 
 
 

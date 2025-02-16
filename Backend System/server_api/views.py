@@ -224,7 +224,6 @@ class UpdateBusinessAdminUser(APIView):
         try:
             admin_user_name = admin_user_name
             admin_full_name = self.request.data.get('admin_full_name',"")
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
             admin_email = self.request.data.get('admin_email',"")
             #can none
             admin_contact_no = self.request.data.get('admin_contact_no',"")
@@ -243,7 +242,7 @@ class UpdateBusinessAdminUser(APIView):
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,
+            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_user_name,admin_full_name,
                                                                                 admin_email,admin_contact_no,admin_avatar,old_password,password,is_superuser,is_staff_user)
             if admin_updated:
                 return Response({
@@ -285,7 +284,6 @@ class UpdateBusinessAdminUserPassword(APIView):
         try:
 
             admin_user_name = admin_user_name
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
             old_password = self.request.data.get('old_password',"")
             new_password = self.request.data.get('new_password',"")
             new_password_confirm = self.request.data.get('new_password_confirm',"")
@@ -298,7 +296,7 @@ class UpdateBusinessAdminUserPassword(APIView):
                     'error':"Please provide old password"
                 },status=status.HTTP_400_BAD_REQUEST)
             if new_password == new_password_confirm:
-                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
+                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_user_name,old_password,new_password)
                 if password_update:
                     return Response({
                         'message':message

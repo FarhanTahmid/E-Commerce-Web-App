@@ -233,7 +233,6 @@ class Product_Discount(models.Model):
     category_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
     discount_name = models.CharField(null=False, blank=False, max_length=100)
     discount_amount = models.DecimalField(null=False, blank=False, max_digits=10, decimal_places=2)
-    existing_discounts = models.JSONField(blank=True, null=True)
     start_date = models.DateField(null=False, blank=False)
     end_date = models.DateField(null=False, blank=False)
     is_active = models.BooleanField(default=False)

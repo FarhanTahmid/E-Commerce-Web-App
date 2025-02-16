@@ -144,6 +144,16 @@ class OrderAPITests(TestCase):
             created_at = now
 
         )
+
+        self.product_discount1 = Product_Discount.objects.create(discount_name="PPP",discount_amount=10,
+                                                                start_date=now,end_date=now+datetime.timedelta(days=1),created_at=now)
+        self.product_discount1.product_id.add(self.product1)
+        self.product_discount1.save()
+
+        self.product_discount2 = Product_Discount.objects.create(discount_name="PPP",discount_amount=80,
+                                                                start_date=now,end_date=now+datetime.timedelta(days=1),created_at=now)
+        self.product_discount2.product_id.add(self.product1)
+        self.product_discount2.save()
         
         self.client = APIClient()
         
@@ -161,7 +171,7 @@ class OrderAPITests(TestCase):
                 "state": "NY",
                 "zip_code": "10001"
             },
-            "payment_mode": "credit_card",
+            "payment_mode": "net_banking",
             'coupon_code':'UNIQUE1',
             'save_address':True
             }
@@ -172,30 +182,16 @@ class OrderAPITests(TestCase):
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
 
         #with save address
-        # data = {
-        #     "use_saved_address":True,
-        #     "payment_mode": "credit_card",
-        #     'coupon_code':'UNIQUE2'
-        #     }
-        # headers = self.get_auth_header(self.user2) 
-        # self.client.credentials(**headers)
-        # response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
-        # self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-
-        # data = {
-        #     'save_address':True,
-        #     "shipping_address": {
-        #         "street": "123 Main St",
-        #         "city": "New York",
-        #         "state": "NY",
-        #         "zip_code": "10001"
-        #     },
-        #     "payment_mode": "credit_card"
-        #     }
-        # headers = self.get_auth_header(self.user1) 
-        # self.client.credentials(**headers)
-        # response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
-        # self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        data = {
+            "use_saved_address":True,
+            "payment_mode": "credit_card",
+            'coupon_code':'UNIQUE2'
+            }
+        headers = self.get_auth_header(self.user2) 
+        self.client.credentials(**headers)
+        response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
+        print(response.data)
 
         
     

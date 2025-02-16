@@ -774,7 +774,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while creating admin user! Please try again later.")
 
-    def update_business_admin_user(request,admin_unique_id,admin_full_name,admin_email,
+    def update_business_admin_user(request,admin_username,admin_full_name,admin_email,
                                    admin_contact_no="",admin_avatar="",old_password="",
                                    password="",is_superuser=False,is_staff_user=False):
         
@@ -832,7 +832,7 @@ class AdminManagement:
         """
         try:
             #getting the admin user
-            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_username)
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             user = Accounts.objects.get(username=business_admin_user.admin_user_name)
             if user.is_staff == False and is_staff_user == True:
@@ -887,7 +887,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while updating admin user! Please try again later.")
         
-    def update_business_admin_user_password(request,admin_unique_id,old_password,new_password):
+    def update_business_admin_user_password(request,admin_user_name,old_password,new_password):
 
         """
         Update the password of an existing business admin user with detailed exception handling.
@@ -931,7 +931,7 @@ class AdminManagement:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
         try:
-            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+            business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
             user = Accounts.objects.get(username = business_admin_user.admin_user_name)
             if user.check_password(old_password):
                 user.set_password(new_password)
