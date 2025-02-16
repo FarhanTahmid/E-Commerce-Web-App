@@ -1,8 +1,10 @@
 import Cookies from 'js-cookie';
 import React, { useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 const TabSecurity = () => {
+    const navigate = useNavigate();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -56,6 +58,33 @@ const TabSecurity = () => {
             setMessage('Error changing password. Please try again later.');
             setMessageType('error');
             console.error('Error changing password:', error);
+        }
+    }
+
+    const handleSubmitDeletion = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch(`${API_BASE_URL}delete/${userName}/`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                },
+            });
+            if (!response.ok) {
+                setMessage('Error deleting account. Please try again later.');
+                setMessageType('error');
+                return;
+            }
+            setMessage('Account deleted successfully');
+            setMessageType('success');
+            Cookies.remove('accessToken');
+            Cookies.remove('username');
+            Cookies.remove('refreshToken');
+            navigate('/authentication/login/minimal');
+        } catch (error) {
+            setMessage('Error deleting account. Please try again later.');
+            setMessageType('error');
+            console.error('Error deleting account:', error);
         }
     }
 
@@ -140,17 +169,20 @@ const TabSecurity = () => {
                 <div className="card-body">
                     <h6 className="fw-bold">Delete Account</h6>
                     <p className="fs-11 text-muted">Once you delete your account, there is no going back. Please be certain.</p>
-                    <div className="my-4 py-2">
-                        <div className="mt-3">
-                            <div className="custom-control custom-checkbox">
-                                <input type="checkbox" className="custom-control-input" id="acDeleteDeactive" />
-                                <label className="custom-control-label c-pointer" htmlFor="acDeleteDeactive">I confirm my account deletation.</label>
+                    <form className="mt-4" onSubmit={handleSubmitDeletion}>
+
+                        <div className="my-4 py-2">
+                            <div className="mt-3">
+                                <div className="custom-control custom-checkbox">
+                                    <input type="checkbox" className="custom-control-input" id="acDeleteDeactive" required />
+                                    <label className="custom-control-label c-pointer" htmlFor="acDeleteDeactive">I confirm my account deletation.</label>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="d-sm-flex gap-2">
-                        <a href="#" className="btn btn-danger" data-action-target="#acSecctingsActionMessage">Delete Account</a>
-                    </div>
+                        <div className="d-sm-flex gap-2">
+                            <button type="submit" className="btn btn-danger">Delete Account</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

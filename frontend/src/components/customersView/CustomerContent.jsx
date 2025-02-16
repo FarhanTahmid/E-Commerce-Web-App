@@ -8,6 +8,7 @@ import TabConnections from './TabConnections'
 import TabSecurity from './TabSecurity'
 import Profile from '../widgetsList/Profile'
 import CustomerSocalFlower from './CustomerSocalFlower'
+import TabProfilePicture from './TabProfilePicture'
 
 const CustomerContent = () => {
     return (
@@ -24,7 +25,7 @@ const CustomerContent = () => {
                             <li className="nav-item flex-fill border-top" role="presentation">
                                 <a href="#" className="nav-link active" data-bs-toggle="tab" data-bs-target="#overviewTab" role="tab">Overview</a>
                             </li>
-                            <li className="nav-item flex-fill border-top" role="presentation">
+                            {/* <li className="nav-item flex-fill border-top" role="presentation">
                                 <a href="#" className="nav-link" data-bs-toggle="tab" data-bs-target="#billingTab" role="tab">Billing</a>
                             </li>
                             <li className="nav-item flex-fill border-top" role="presentation">
@@ -35,6 +36,9 @@ const CustomerContent = () => {
                             </li>
                             <li className="nav-item flex-fill border-top" role="presentation">
                                 <a href="#" className="nav-link" data-bs-toggle="tab" data-bs-target="#connectionTab" role="tab">Connection</a>
+                            </li> */}
+                            <li className="nav-item flex-fill border-top" role="presentation">
+                                <a href="#" className="nav-link" data-bs-toggle="tab" data-bs-target="#profilePictureTab" role="tab">Profile Avatar</a>
                             </li>
                             <li className="nav-item flex-fill border-top" role="presentation">
                                 <a href="#" className="nav-link" data-bs-toggle="tab" data-bs-target="#securityTab" role="tab">Security</a>
@@ -43,12 +47,13 @@ const CustomerContent = () => {
                     </div>
                     <div className="tab-content">
                         <TabOverviewContent />
-                        <div className="tab-pane fade" id="billingTab" role="tabpanel">
+                        {/* <div className="tab-pane fade" id="billingTab" role="tabpanel">
                             <TabBillingContent billingHistoryshow={true} />
                         </div>
                         <TabActivityContent />
                         <TabNotificationsContent />
-                        <TabConnections />
+                        <TabConnections /> */}
+                        <TabProfilePicture />
                         <TabSecurity />
                     </div>
                 </div>

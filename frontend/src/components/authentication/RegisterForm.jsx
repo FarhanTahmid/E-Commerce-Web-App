@@ -176,7 +176,7 @@ const RegisterForm = ({ path }) => {
 
                 <div className="form-group">
                     <label>Avatar</label>
-                    <input type="file" name="admin_avatar" accept="image/png, image/jpg, image/jpeg" onChange={handleChange} className="form-control" />
+                    <input type="file" name="admin_avatar" accept="image/png, image/jpg, image/jpeg" onChange={handleChange} className="form-control" required />
                 </div>
 
                 <button type="submit" className="btn btn-primary mt-3" disabled={loading}>
