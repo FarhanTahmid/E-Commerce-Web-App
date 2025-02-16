@@ -1,5 +1,5 @@
 from django.db import models
-from customer.models import Accounts
+from customer.models import Accounts,Coupon
 from products.models import Product_SKU
 from business_admin.models import BusinessAdminUser
 
@@ -148,6 +148,7 @@ class OrderPayment(models.Model):
     ]
     
     order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False,related_name="payment_details")
+    coupon_applied = models.ForeignKey(Coupon,on_delete=models.CASCADE,related_name='coupon',null=True,blank=True)
     payment_mode = models.CharField(max_length=50, choices=PAYMENT_MODE_CHOICES, null=False, blank=False)
     payment_status = models.CharField(max_length=50, choices=PAYMENT_STATUS, default='pending', null=False, blank=False)
     payment_date = models.DateTimeField(auto_now_add=True)

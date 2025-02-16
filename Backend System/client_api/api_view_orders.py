@@ -208,6 +208,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     payment_reference = generate_payment_reference(order_id=order,CARD=payment_mode,CPN=True if coupon_discount_amount>0 else False, DIS=True if applied_discount else False)
                 OrderPayment.objects.create(
                     order_id=order,
+                    coupon_applied = coupon,
                     payment_mode=payment_mode,
                     payment_status='pending' if payment_mode == 'cash_on_delivery' else 'success',
                     payment_amount=total_amount,
@@ -222,7 +223,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     'order id':order_serializer['order_id'],
                     'order date':order_serializer['order_date'],
                     'total':total_amount_before_discount_and_coupon,
-                    'coupon': coupon_discount_amount,
+                    'coupon amount': coupon_discount_amount,
                     'discount':total_discount_amount,
                     'Net total':order_serializer['total_amount'],
                     'order status':order_serializer['order_status'],
@@ -269,6 +270,12 @@ class OrderViewSet(viewsets.ModelViewSet):
                     payment = OrderPayment.objects.get(order_id=order)
                     if payment.payment_status == 'success':
                         payment.payment_status = 'refunded'
+                        payment.save()
+
+                    #restore coupon if used
+                    if payment.coupon_applied:
+                        payment.coupon_applied.usage_limit+=1
+                        payment.coupon_applied.save()
                         payment.save()
 
                     return Response(

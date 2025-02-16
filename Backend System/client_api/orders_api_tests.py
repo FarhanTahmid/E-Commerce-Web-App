@@ -193,6 +193,10 @@ class OrderAPITests(TestCase):
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
         print(response.data)
 
+    def test_cancel_order(self):
+
+
+        pass
         
     
     

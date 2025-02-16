@@ -63,16 +63,22 @@ class OrderShippingAddressSerializer(serializers.ModelSerializer):
         ]
 
 class OrderPaymentSerializer(serializers.ModelSerializer):
+    coupon_applied = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderPayment
         fields = [
             'payment_mode',
+            'coupon_applied',
             'payment_status',
             'payment_amount',
             'payment_reference',
             'payment_date'
         ]
         read_only_fields = fields
+
+    def get_coupon_applied(self,obj):
+        return obj.coupon_applied.coupon_code if obj.coupon_applied else None
 
 class OrderDetailsSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product_sku.product_id.product_name')
