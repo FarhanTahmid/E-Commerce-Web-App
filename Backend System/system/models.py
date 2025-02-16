@@ -304,3 +304,22 @@ class ErrorLogs(models.Model):
 
     def __str__(self):
         return f"{self.timestamp} - {self.error_type}"
+    
+class Notification(models.Model):
+    
+    to = models.ManyToManyField(Accounts,related_name="notifications")
+    title = models.CharField(max_length=2000,null=False,blank=False)
+    description = models.TextField(null=False,blank=False)
+    link = models.CharField(max_length=2000,null=False,blank=False)
+    read = models.BooleanField(default=False)
+
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Notification"
+        verbose_name_plural = "Notifications"
+
+    def __str__(self):
+        return f"Title:{self.title} - Created By:{self.updated_by} - Created At{self.created_at}"

@@ -22,6 +22,8 @@ from orders.serializers import (
     AddressSerializer
 )
 
+CANCELLATION_TIME = 2
+
 def generate_order_id(username, cart_pk):
     return f"#ORD-{username[:4]}-{cart_pk}-{uuid.uuid4().hex[:4].upper()}"
 
@@ -252,7 +254,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         time_since_order = timezone.now() - order.order_date
-        cancellation_window = timedelta(hours=2)
+        cancellation_window = timedelta(hours=CANCELLATION_TIME)
 
         try:
             with transaction.atomic():
