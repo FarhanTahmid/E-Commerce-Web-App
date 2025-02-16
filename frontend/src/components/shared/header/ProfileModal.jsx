@@ -131,7 +131,7 @@ const ProfileModal = () => {
                     </div>
                 </div>
                 <div className="dropdown-divider"></div> */}
-                <a href="#" className="dropdown-item">
+                <a href="/profile/details" className="dropdown-item">
                     <i><FiUser /></i>
                     <span>Profile Details</span>
                 </a>
@@ -147,10 +147,10 @@ const ProfileModal = () => {
                     <i><FiBell /></i>
                     <span>Notifications</span>
                 </a> */}
-                <a href="#" className="dropdown-item">
+                {/* <a href="#" className="dropdown-item">
                     <i><FiSettings /></i>
                     <span>Account Settings</span>
-                </a>
+                </a> */}
                 <div className="dropdown-divider"></div>
                 <a href="#" className="dropdown-item" onClick={handleLogout}>
                     <i><FiLogOut /></i>

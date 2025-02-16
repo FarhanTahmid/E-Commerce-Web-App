@@ -48,6 +48,9 @@ const AdminManagementAdminsOperation = () => {
             const response = await axios.get(`${API_BASE_URL}/fetch-positions/`, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                },
+                params: {
+                    available: "True"
                 }
             });
 

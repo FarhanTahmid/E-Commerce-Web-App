@@ -311,8 +311,8 @@ const ProductCategoryCreate = () => {
 
                                     <hr className="border-dashed" />
                                     <div className="d-flex gap-3">
-                                        <button type="button" className="btn btn-primary" onClick={handleAddSubCategory}>Add Sub Category</button>
-                                        <button type="submit" className="btn btn-success">Submit Sub Categories</button>
+                                        <button type="button" className="btn btn-primary" onClick={handleAddSubCategory}>Add More</button>
+                                        <button type="submit" className="btn btn-success">Create Sub-Categories</button>
                                     </div>
                                 </div>
                             </div>

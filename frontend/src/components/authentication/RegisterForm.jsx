@@ -137,25 +137,25 @@ const RegisterForm = ({ path }) => {
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label>Full Name</label>
-                    <input type="text" name="admin_full_name" maxLength="50" value={adminFullName} onChange={handleChange} className="form-control" />
+                    <input type="text" name="admin_full_name" maxLength="50" value={adminFullName} onChange={handleChange} className="form-control" required />
                     {fieldErrors.adminFullName && <small className="text-danger">{fieldErrors.adminFullName}</small>}
                 </div>
 
                 <div className="form-group">
                     <label>Email</label>
-                    <input type="email" name="admin_email" value={adminEmail} onChange={handleChange} className="form-control" />
+                    <input type="email" name="admin_email" value={adminEmail} onChange={handleChange} className="form-control" required />
                     {fieldErrors.adminEmail && <small className="text-danger">{fieldErrors.adminEmail}</small>}
                 </div>
 
                 <div className="form-group">
                     <label>Contact Number</label>
-                    <input type="text" name="admin_contact_no" value={adminContactNo} onChange={handleChange} className="form-control" />
+                    <input type="text" name="admin_contact_no" value={adminContactNo} onChange={handleChange} className="form-control" required />
                 </div>
 
                 <div className="form-group">
                     <label>Password</label>
                     <div className="input-group">
-                        <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={handleChange} className="form-control" />
+                        <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={handleChange} className="form-control" required />
                         <span className="input-group-text" onClick={() => setShowPassword(!showPassword)}>
                             {showPassword ? <FiEyeOff /> : <FiEye />}
                         </span>
@@ -166,7 +166,7 @@ const RegisterForm = ({ path }) => {
                 <div className="form-group">
                     <label>Confirm Password</label>
                     <div className="input-group">
-                        <input type={showConfirmPassword ? "text" : "password"} name="confirm_password" value={confirmPassword} onChange={handleChange} className="form-control" />
+                        <input type={showConfirmPassword ? "text" : "password"} name="confirm_password" value={confirmPassword} onChange={handleChange} className="form-control" required />
                         <span className="input-group-text" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                             {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
                         </span>
@@ -176,7 +176,7 @@ const RegisterForm = ({ path }) => {
 
                 <div className="form-group">
                     <label>Avatar</label>
-                    <input type="file" name="admin_avatar" accept="image/*" onChange={handleChange} className="form-control" />
+                    <input type="file" name="admin_avatar" accept="image/png, image/jpg, image/jpeg" onChange={handleChange} className="form-control" />
                 </div>
 
                 <button type="submit" className="btn btn-primary mt-3" disabled={loading}>

@@ -14,8 +14,8 @@ const CustomerContent = () => {
         <>
             <div className="col-xxl-4 col-xl-6">
                 <Profile />
-                <CustomerSocalMedia />
-                <CustomerSocalFlower />
+                {/* <CustomerSocalMedia /> */}
+                {/* <CustomerSocalFlower /> */}
             </div>
             <div className="col-xxl-8 col-xl-6">
                 <div className="card border-top-0">

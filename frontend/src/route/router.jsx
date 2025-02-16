@@ -202,7 +202,7 @@ export const router = createBrowserRouter([
                 element: <CustomersList />
             },
             {
-                path: "/customers/view",
+                path: "/profile/details",
                 element: <CustomersView />
             },
             {

@@ -1,13 +1,67 @@
-import React from 'react'
-import topTost from '@/utils/topTost';
+import Cookies from 'js-cookie';
+import React, { useState } from 'react'
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const TabSecurity = () => {
-    const handleClick = () => {
-        topTost()
-    };
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/';
+
+    const userName = Cookies.get('username');
+
+    const closeMessage = () => {
+        setMessage('');
+        setMessageType('');
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            setMessage('Passwords do not match');
+            setMessageType('error');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}update-password/${userName}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                },
+                body: JSON.stringify({
+                    old_password: currentPassword,
+                    new_password: newPassword,
+                    new_password_confirm: confirmPassword,
+                }),
+            });
+            if (!response.ok) {
+                setMessage('Error changing password. Please try again later.');
+                setMessageType('error');
+                return;
+            }
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            setMessage('Password changed successfully');
+            setMessageType('success');
+        } catch (error) {
+            setMessage('Error changing password. Please try again later.');
+            setMessageType('error');
+            console.error('Error changing password:', error);
+        }
+    }
+
     return (
         <div className="tab-pane fade p-4" id="securityTab" role="tabpanel">
-            <SecurityFeature
+            {/* <SecurityFeature
                 title="Two-factor Authentication"
                 description="Two-factor authentication is an enhanced security measure. Once enabled, you'll be required to give two types of identification when you log into Google Authentication and SMS are Supported."
                 label="Enable 2FA Verification"
@@ -34,35 +88,68 @@ const TabSecurity = () => {
                 label="Enable Login Verification"
                 checkboxId="loginVerification"
                 isChecked={true}
-            />
+            /> */}
+            {message && (
+                <div className={`alert alert-${messageType === 'success' ? 'success' : 'danger'} alert-dismissible fade show`} role="alert">
+                    {message}
+                    <button type="button" className="btn-close" onClick={closeMessage}></button>
+                </div>
+            )}
+            <form className="mt-4" onSubmit={handleSubmit}>
+                <div className="mb-4">
+                    <label htmlFor="currentPassword" className="form-label">Current Password</label>
+                    <div className="input-group">
+                        <input type={showOldPassword ? "text" : "password"} className="form-control" id="currentPassword" placeholder="Enter your current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
+                        <span className="input-group-text" onClick={() => setShowOldPassword(!showOldPassword)}>
+                            {showOldPassword ? <FiEyeOff /> : <FiEye />}
+                        </span>
+                    </div>
+                </div>
+                <div className="mb-4">
+                    <label htmlFor="newPassword" className="form-label">New Password</label>
+                    <div className="input-group">
+                        <input type={showPassword ? "text" : "password"} className="form-control" id="newPassword" placeholder="Enter your new password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+                        <span className="input-group-text" onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                        </span>
+                    </div>
+                </div>
+                <div className="mb-4">
+                    <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+                    <div className="input-group">
+                        <input type={showConfirmPassword ? "text" : "password"} className="form-control" id="confirmPassword" placeholder="Confirm your new password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                        <span className="input-group-text" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                            {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                        </span>
+                    </div>
+                </div>
+                <button type="submit" className="btn btn-primary">Change Password</button>
+            </form>
             <hr className="my-5" />
             <div className="alert alert-dismissible mb-4 p-4 d-flex alert-soft-danger-message" role="alert">
                 <div className="me-4 d-none d-md-block">
                     <i className="feather feather-alert-triangle text-danger fs-1"></i>
                 </div>
                 <div>
-                    <p className="fw-bold mb-0 text-truncate-1-line">You Are Delete or Deactivating Your Account</p>
-                    <p className="text-truncate-3-line mt-2 mb-4">Two-factor authentication adds an additional layer of security to your account by requiring more than just a password to log in.</p>
-                    <a href="#" className="btn btn-sm btn-danger d-inline-block">Learn more</a>
+                    <p className="fw-bold mb-0 text-truncate-1-line">You Are Deleting Your Account</p>
+                    <p className="text-truncate-3-line mt-2 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
                     <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             </div>
             <div className="card mt-5">
                 <div className="card-body">
                     <h6 className="fw-bold">Delete Account</h6>
-                    <p className="fs-11 text-muted">Go to the Data & Privacy section of your profile Account. Scroll to "Your data & privacy options." Delete your Profile Account. Follow the instructions to delete your account:</p>
+                    <p className="fs-11 text-muted">Once you delete your account, there is no going back. Please be certain.</p>
                     <div className="my-4 py-2">
-                        <input type="password" className="form-control" placeholder="Enter your password" />
                         <div className="mt-3">
                             <div className="custom-control custom-checkbox">
                                 <input type="checkbox" className="custom-control-input" id="acDeleteDeactive" />
-                                <label className="custom-control-label c-pointer" htmlFor="acDeleteDeactive">I confirm my account deletations or deactivation.</label>
+                                <label className="custom-control-label c-pointer" htmlFor="acDeleteDeactive">I confirm my account deletation.</label>
                             </div>
                         </div>
                     </div>
                     <div className="d-sm-flex gap-2">
                         <a href="#" className="btn btn-danger" data-action-target="#acSecctingsActionMessage">Delete Account</a>
-                        <a href="#" className="btn btn-warning mt-2 mt-sm-0" onClick={handleClick}>Deactiveted Account</a>
                     </div>
                 </div>
             </div>

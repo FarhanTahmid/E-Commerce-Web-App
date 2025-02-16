@@ -1,164 +1,191 @@
-import React from 'react'
-import { FiAlertTriangle } from 'react-icons/fi'
-import { projectsData } from '@/utils/fackData/projectsData'
-import ImageGroup from '@/components/shared/ImageGroup'
-import HorizontalProgress from '@/components/shared/HorizontalProgress';
+import React, { useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
+import { set } from 'date-fns';
 
-const informationData = [
-    { label: 'Full Name', value: 'Alexandra Della' },
-    { label: 'Surname', value: 'Della' },
-    { label: 'Company', value: 'Theme Ocean' },
-    { label: 'Date of Birth', value: '26 May, 2000' },
-    { label: 'Mobile Number', value: '+01 (375) 5896 3214' },
-    { label: 'Email Address', value: 'alex.della@outlook.com' },
-    { label: 'Location', value: 'California, United States' },
-    { label: 'Joining Date', value: '20 Dec, 2023' },
-    { label: 'Country', value: 'United States' },
-    { label: 'Communication', value: 'Email, Phone' },
-    { label: 'Allow Changes', value: 'YES' },
-    { label: 'Website', value: 'https://themeforest.net/user/theme_ocean' },
-];
+
 const TabOverviewContent = () => {
+    const [userInfo, setUserInfo] = useState(null);
+    const [position, setPosition] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+
+    const username = Cookies.get('username');
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/';
+
+    useEffect(() => {
+        fetchUserInfo();
+    }, []);
+
+    useEffect(() => {
+        if (userInfo && userInfo.admin_position) {
+            fetchPosition(userInfo.admin_position);
+        }
+    }, [userInfo]);  // This runs whenever userInfo changes
+
+    const fetchUserInfo = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}admin/fetch-all/?admin_user_name=${username}`, {
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.admin_users) {
+                setUserInfo(data.admin_users);  // Triggers useEffect to fetch position
+            }
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+        }
+    };
+
+    const fetchPosition = async (adminPositionId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}admin-position/fetch-positions/`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.admin_positions && Array.isArray(data.admin_positions)) {
+                const positionData = data.admin_positions.find(pos => pos.id === adminPositionId);
+                if (positionData) {
+                    setPosition(positionData.name);
+                } else {
+                    console.warn("Position not found for admin_position:", adminPositionId);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching position:', error);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    };
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setUserInfo(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+    const handleSave = async () => {
+        if (!userInfo.admin_email || !userInfo.admin_contact_no) {
+            setMessage('All fields are required.');
+            setMessageType('error');
+            return;
+        }
+        const updatedFormData = {
+            admin_email: userInfo.admin_email,
+            admin_contact_no: userInfo.admin_contact_no,
+        };
+
+        try {
+            const response = await fetch(`${API_BASE_URL}update/${userInfo.admin_user_name}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                },
+                body: JSON.stringify(updatedFormData)
+            });
+
+            const responseData = await response.json();
+
+            if (response.ok) {
+                setUserInfo({ ...userInfo, ...updatedFormData });
+                setIsEditing(false);
+                setMessage('Profile updated successfully!');
+                setMessageType('success');
+            } else {
+                setMessage(responseData.error || 'Failed to update profile.');
+                setMessageType('error');
+            }
+        } catch (error) {
+            setMessage('Error updating profile. Please try again.');
+            setMessageType('error');
+        }
+    };
+
+    const closeMessage = () => {
+        setMessage('');
+        setMessageType('');
+    };
+
+    if (!userInfo) return <p>Loading...</p>;
+
     return (
-        <div
-            className="tab-pane fade show active p-4"
-            id="overviewTab"
-            role="tabpanel"
-        >
-            <div className="about-section mb-5">
-                <div className="mb-4 d-flex align-items-center justify-content-between">
-                    <h5 className="fw-bold mb-0">Profile About:</h5>
-                    <a href="#" className="btn btn-sm btn-light-brand">
-                        Updates
-                    </a>
+        <div className="tab-pane fade show active p-4" id="overviewTab" role="tabpanel">
+            {message && (
+                <div className={`alert alert-${messageType === 'success' ? 'success' : 'danger'} alert-dismissible fade show`} role="alert">
+                    {message}
+                    <button type="button" className="btn-close" onClick={closeMessage}></button>
                 </div>
-                <p>
-                    John Doe is a frontend developer with over 5 years of experience creating
-                    high-quality, user-friendly websites and web applications. He has a strong
-                    understanding of web development technologies and a keen eye for design.
-                </p>
-                <p>
-                    John is proficient in languages such as HTML, CSS, and JavaScript, and is
-                    experienced in using popular frontend frameworks such as React and
-                    Angular. He is also well-versed in user experience design and uses his
-                    knowledge to create engaging and intuitive user interfaces.
-                </p>
-                <p>
-                    Throughout his career, John has worked on a wide range of projects for
-                    clients in various industries, including e-commerce, healthcare, and
-                    education. He takes a collaborative approach to development and enjoys
-                    working closely with clients and other developers to bring their ideas to
-                    life.
-                </p>
-            </div>
+            )}
             <div className="profile-details mb-5">
                 <div className="mb-4 d-flex align-items-center justify-content-between">
                     <h5 className="fw-bold mb-0">Profile Details:</h5>
-                    <a href="#" className="btn btn-sm btn-light-brand">
-                        Edit Profile
-                    </a>
+                    <button className="btn btn-sm btn-light-brand" onClick={() => setIsEditing(!isEditing)}>
+                        {isEditing ? 'Cancel' : 'Edit Profile'}
+                    </button>
                 </div>
-                {informationData.map((item, index) => (
-                    <div key={index}  className={`row g-0 ${index === informationData.length - 1 ? 'mb-0' : 'mb-4'}`}>
-                        <div className="col-sm-6 text-muted">{item.label}:</div>
-                        <div className="col-sm-6 fw-semibold">{item.value}</div>
+                <div className="row g-0 mb-4">
+                    <div className="col-sm-6 text-muted">Full Name:</div>
+                    <div className="col-sm-6 fw-semibold">{userInfo.admin_full_name}</div>
+                </div>
+                <div className="row g-0 mb-4">
+                    <div className="col-sm-6 text-muted">Username:</div>
+                    <div className="col-sm-6 fw-semibold">{userInfo.admin_user_name}</div>
+                </div>
+                <div className="row g-0 mb-4">
+                    <div className="col-sm-6 text-muted">Position:</div>
+                    <div className="col-sm-6 fw-semibold">{position || "Not Assigned"}</div>
+                </div>
+                <div className="row g-0 mb-4">
+                    <div className="col-sm-6 text-muted">Email Address:</div>
+                    <div className="col-sm-6 fw-semibold">
+                        {isEditing ? (
+                            <input
+                                className='form-label'
+                                name="admin_email"
+                                value={userInfo.admin_email}
+                                onChange={handleInputChange}
+                            />
+                        ) : (
+                            userInfo.admin_email
+                        )}
                     </div>
-                ))}
-            </div>
-            <div
-                className="alert alert-dismissible mb-4 p-4 d-flex alert-soft-warning-message profile-overview-alert"
-                role="alert"
-            >
-                <div className="me-4 d-none d-md-block">
-                    <FiAlertTriangle className='fs-1' />
                 </div>
-                <div>
-                    <p className="fw-bold mb-1 text-truncate-1-line">
-                        Your profile has not been updated yet!!!
-                    </p>
-                    <p className="fs-10 fw-medium text-uppercase text-truncate-1-line">
-                        Last Update: <strong>26 Dec, 2023</strong>
-                    </p>
-                    <a
-                        href="#"
-                        className="btn btn-sm bg-soft-warning text-warning d-inline-block"
-                    >
-                        Update Now
-                    </a>
-                    <button
-                        type="button"
-                        className="btn-close"
-                        data-bs-dismiss="alert"
-                        aria-label="Close"
-                    />
+                <div className="row g-0 mb-4">
+                    <div className="col-sm-6 text-muted">Contact No:</div>
+                    <div className="col-sm-6 fw-semibold">
+                        {isEditing ? (
+                            <input
+                                className='form-label'
+                                name="admin_contact_no"
+                                value={userInfo.admin_contact_no}
+                                onChange={handleInputChange}
+                            />
+                        ) : (
+                            userInfo.admin_contact_no
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className="project-section">
-                <div className="mb-4 d-flex align-items-center justify-content-between">
-                    <h5 className="fw-bold mb-0">Projects Details:</h5>
-                    <a href="#" className="btn btn-sm btn-light-brand">
-                        View Alls
-                    </a>
+                <div className="row g-0 mb-4">
+                    <div className="col-sm-6 text-muted">Joining Date:</div>
+                    <div className="col-sm-6 fw-semibold">{formatDate(userInfo.admin_account_created_at)}</div>
                 </div>
-                <div className="row">
-                    {
-                        projectsData.runningProjects.slice(0, 2).map(({ id, progress, project_logo, project_category, project_name, status, team_members, progress_color, badge_color }) => (
-                            <div key={id} className="col-xxl-6 col-xl-12 col-md-6">
-                                <div className="border border-dashed border-gray-5 rounded mb-4 md-lg-0">
-                                    <div className="p-4">
-                                        <div className="d-sm-flex align-items-center">
-                                            <div className="wd-50 ht-50 p-2 bg-gray-200 rounded-2">
-                                                <img
-                                                    src={project_logo}
-                                                    className="img-fluid"
-                                                    alt=""
-                                                />
-                                            </div>
-                                            <div className="ms-0 mt-4 ms-sm-3 mt-sm-0">
-                                                <a href="#" className="d-block">
-                                                    {project_name}
-                                                </a>
-                                                <div className="fs-12 d-block text-muted">{project_category}</div>
-                                            </div>
-                                        </div>
-                                        <div className="my-4 text-muted text-truncate-2-line">
-                                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Molestias
-                                            dolorem necessitatibus temporibus nemo commodi eaque dignissimos
-                                            itaque unde hic, sed rerum doloribus possimus minima nobis porro
-                                            facilis voluptatum atque asperiores perspiciatis saepe laboriosam
-                                            rem cupiditate libero sit.
-                                        </div>
-                                        <div className="d-flex align-items-center justify-content-between">
-                                            <div className="img-group lh-0 ms-3">
-                                                <ImageGroup data={team_members} avatarStyle={"bg-soft-primary"} />
-                                            </div>
-                                            <div className={`badge ${badge_color}`}>
-                                                {status}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="px-4 py-3 border-top border-top-dashed border-gray-5 d-flex justify-content-between gap-2">
-                                        <div className="w-75 d-none d-md-block">
-                                            <small className="mb-1 fs-11 fw-medium text-uppercase text-muted d-flex align-items-center justify-content-between">
-                                                <span>Progress</span>
-                                                <span>{progress}%</span>
-                                            </small>
-                                            <HorizontalProgress progress={progress} barColor={progress_color} />
-                                        </div>
-                                        <span className="mx-2 text-gray-400 d-none d-md-block">|</span>
-                                        <a href="#" className="fs-12 fw-bold">
-                                            View →
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    }
-                </div>
+                {isEditing && <button className="btn btn-primary" onClick={handleSave}>Save</button>}
             </div>
         </div>
+    );
+};
 
-    )
-}
-
-export default TabOverviewContent
+export default TabOverviewContent;
