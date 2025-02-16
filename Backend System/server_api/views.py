@@ -223,9 +223,9 @@ class UpdateBusinessAdminUser(APIView):
 
         try:
             admin_user_name = admin_user_name
+            #can none
             admin_full_name = self.request.data.get('admin_full_name',"")
             admin_email = self.request.data.get('admin_email',"")
-            #can none
             admin_contact_no = self.request.data.get('admin_contact_no',"")
             admin_avatar = self.request.data.get('admin_avatar',"")
             old_password = self.request.data.get('old_password',"")
@@ -233,8 +233,7 @@ class UpdateBusinessAdminUser(APIView):
             is_superuser = self.request.data.get('is_superuser',False)
             is_staff_user = self.request.data.get('is_staff_user',False)
             missing_fields = []
-            # if admin_full_name == "":
-            #     missing_fields.append("Admin full name")
+
             if missing_fields:
                 return Response(
                     {

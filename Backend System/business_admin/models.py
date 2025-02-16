@@ -55,21 +55,11 @@ class BusinessAdminUser(models.Model):
     
     def save(self, *args, **kwargs):
         #if newly created only then
-        if not self.pk or self._is_admin_related_field_updated():
+        if not self.pk and not self.admin_unique_id:
             self.generate_and_save_unique_id()
         
         super(BusinessAdminUser, self).save(*args, **kwargs)
     
-    def _is_admin_related_field_updated(self):
-        """Check if fields affecting admin unique id generation have been updated."""
-        if not self.pk:
-            return False
-
-        # Get the current state from the database
-        current = BusinessAdminUser.objects.get(pk=self.pk)
-        return (
-            current.admin_full_name != self.admin_full_name 
-        )
 
 
 # Permission Model
