@@ -9,10 +9,10 @@ from datetime import timedelta
 import uuid
 from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems
 from customer.models import Coupon, CustomerAddress
-from system.models import Accounts
 from rest_framework.permissions import BasePermission
 from products.product_management import ManageProducts
 from products.models import *
+from system.manage_system import SystemManagement
 
 from orders.serializers import (
     OrderSerializer,
@@ -234,6 +234,13 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 }
 
+                SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed")
+                notification = SystemManagement.create_notification(request,title="Your Order has been placed",user_names=[request.user.username])
+                if notification[0]:
+                    print(notification[1])
+                else:
+                    print("notification creation failed")
+                #send email to specific admin and notification
                 return Response(data=response, status=status.HTTP_201_CREATED)
 
         except Cart.DoesNotExist:

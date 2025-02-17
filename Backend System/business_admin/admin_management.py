@@ -4,6 +4,7 @@ from system.models import *
 from system.system_log import SystemLogs
 from e_commerce_app import settings
 from business_admin.models import *
+from system.manage_system import SystemManagement
 import os
 
 OWNER = 'Owner'
@@ -719,6 +720,10 @@ class AdminManagement:
         Notes:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
+
+        SUBJECT = "Admin Account Created"
+        BODY = "Welcome Admin, ....."
+
         try:
             #fetching all to check if this user
             all_admins,message = AdminManagement.fetch_business_admin_user()
@@ -755,6 +760,7 @@ class AdminManagement:
             if admin_avatar != "":
                 business_admin.admin_avatar = admin_avatar
             business_admin.save()
+            SystemManagement.send_email(subject=SUBJECT,body=BODY,emails_to=[admin_email])
             return True, "Business Admin created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

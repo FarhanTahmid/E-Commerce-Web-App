@@ -2,6 +2,8 @@ from .models import *
 from django.utils import timezone
 from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingError
 from .system_log import SystemLogs
+from django.core.mail import EmailMultiAlternatives
+from e_commerce_app import settings
 
 class SystemManagement:
     
@@ -111,3 +113,43 @@ class SystemManagement:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating notifications! Please try again later.")
+        
+    def send_email(subject,body,emails_to=[],files=[],cc="",bcc="",request=None):
+
+        try:
+
+            email_from = settings.EMAIL_HOST_USER
+            send_email = EmailMultiAlternatives(
+                from_email=email_from,
+                to=emails_to,
+                body=body,
+                subject=subject,
+            )
+            if files:
+                send_email.attachments = files
+            if cc:
+                send_email.cc = cc
+            if bcc:
+                send_email.bcc = bcc
+            send_email.send()
+
+            if request:
+                SystemLogs.admin_activites(request,f"Email sent, by {request.user.username} at {timezone.now()}")
+            else:
+                SystemLogs.admin_activites(request,f"Email sent, by system at {timezone.now()}")
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while sending email! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while sending email! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while sending email! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while sending email! Please try again later.")
