@@ -3148,12 +3148,12 @@ class FetchDeliveryTime(APIView):
                 delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
             else:
                 delivery_time,message = OrderManagement.fetch_delivery_time()
-                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True)
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True).data
             
             if delivery_time:
                 return Response({
                     'message':message,
-                    'delivery_time_data':delivery_time_data.data
+                    'delivery_time_data':delivery_time_data
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
@@ -3192,7 +3192,7 @@ class CreateDeliveryTime(APIView):
         try:
 
             delivery_name = self.request.data.get('delivery_name',"")
-            estimated_time = self.request.data.get('delivery_name',"")
+            estimated_time = self.request.data.get('estimated_time',"")
 
             if delivery_name == "":
                 return Response({

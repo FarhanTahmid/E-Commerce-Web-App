@@ -77,12 +77,13 @@ const TabOverviewContent = () => {
         }));
     };
     const handleSave = async () => {
-        if (!userInfo.admin_email || !userInfo.admin_contact_no) {
+        if (!userInfo.admin_full_name || !userInfo.admin_email || !userInfo.admin_contact_no) {
             setMessage('All fields are required.');
             setMessageType('error');
             return;
         }
         const updatedFormData = {
+            admin_full_name: userInfo.admin_full_name,
             admin_email: userInfo.admin_email,
             admin_contact_no: userInfo.admin_contact_no,
         };
@@ -104,6 +105,7 @@ const TabOverviewContent = () => {
                 setIsEditing(false);
                 setMessage('Profile updated successfully!');
                 setMessageType('success');
+                window.location.reload();
             } else {
                 setMessage(responseData.error || 'Failed to update profile.');
                 setMessageType('error');
@@ -138,7 +140,18 @@ const TabOverviewContent = () => {
                 </div>
                 <div className="row g-0 mb-4">
                     <div className="col-sm-6 text-muted">Full Name:</div>
-                    <div className="col-sm-6 fw-semibold">{userInfo.admin_full_name}</div>
+                    <div className="col-sm-6 fw-semibold">
+                        {isEditing ? (
+                            <input
+                                className='form-label'
+                                name="admin_full_name"
+                                value={userInfo.admin_full_name}
+                                onChange={handleInputChange}
+                            />
+                        ) : (
+                            userInfo.admin_full_name
+                        )}
+                    </div>
                 </div>
                 <div className="row g-0 mb-4">
                     <div className="col-sm-6 text-muted">Username:</div>
