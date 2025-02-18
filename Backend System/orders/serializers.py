@@ -213,7 +213,7 @@ class OrderCancelSerializer(serializers.Serializer):
 class CouponApplySerializer(serializers.Serializer):
     coupon_code = serializers.CharField(required=True)
 
-class DeliveryTimeSerializer(serializers.Serializer):
+class DeliveryTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model= DeliveryTime
         fields = '__all__'
