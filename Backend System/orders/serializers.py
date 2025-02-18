@@ -5,7 +5,8 @@ from .models import (
     OrderShippingAddress,
     OrderPayment,
     Cart,
-    CartItems
+    CartItems,
+    DeliveryTime
 )
 
 from customer.models import Accounts,CustomerAddress,Coupon
@@ -63,16 +64,22 @@ class OrderShippingAddressSerializer(serializers.ModelSerializer):
         ]
 
 class OrderPaymentSerializer(serializers.ModelSerializer):
+    coupon_applied = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderPayment
         fields = [
             'payment_mode',
+            'coupon_applied',
             'payment_status',
             'payment_amount',
             'payment_reference',
             'payment_date'
         ]
         read_only_fields = fields
+
+    def get_coupon_applied(self,obj):
+        return obj.coupon_applied.coupon_code if obj.coupon_applied else None
 
 class OrderDetailsSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product_sku.product_id.product_name')
@@ -127,6 +134,7 @@ class OrderSerializer(serializers.ModelSerializer):
     payment_details = serializers.SerializerMethodField()
     items = serializers.SerializerMethodField()
     applied_coupon = serializers.SerializerMethodField()
+    delivery_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -139,8 +147,16 @@ class OrderSerializer(serializers.ModelSerializer):
             'payment_details',
             'items',
             'applied_coupon',
+            'delivery_time'
         ]
         # read_only_fields = fields
+    
+    def get_delivery_time(self,obj):
+        try:
+            order = Order.objects.get(order_id = obj)
+            return f"{order.delivery_time.delivery_name} - {order.delivery_time.estimated_delivery_time}"
+        except:
+            return None
 
     def get_items(self,obj):
 
@@ -183,6 +199,7 @@ class OrderCreateSerializer(serializers.Serializer):
         required=True
     )
     coupon_code = serializers.CharField(required=False, allow_blank=True)
+    delivery_time = serializers.IntegerField(required=True)
 
     def validate(self, data):
         if not data.get('use_saved_address') and not data.get('shipping_address'):
@@ -195,3 +212,8 @@ class OrderCancelSerializer(serializers.Serializer):
 
 class CouponApplySerializer(serializers.Serializer):
     coupon_code = serializers.CharField(required=True)
+
+class DeliveryTimeSerializer(serializers.Serializer):
+    class Meta:
+        model= DeliveryTime
+        fields = '__all__'

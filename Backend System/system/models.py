@@ -304,3 +304,36 @@ class ErrorLogs(models.Model):
 
     def __str__(self):
         return f"{self.timestamp} - {self.error_type}"
+    
+class Notification(models.Model):
+    
+    title = models.CharField(max_length=2000,null=False,blank=False)
+    description = models.TextField(null=True,blank=True)
+    link = models.CharField(max_length=2000,null=True,blank=True)
+
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Notification"
+        verbose_name_plural = "Notifications"
+
+    def __str__(self):
+        return f"Title:{self.title} - Created By:{self.updated_by} - Created At{self.created_at}"
+    
+class NotificationTo(models.Model):
+
+    to = models.ForeignKey(Accounts,on_delete=models.CASCADE,related_name='notification_to')
+    notification = models.ForeignKey(Notification,on_delete=models.CASCADE,related_name='notification')
+    read = models.BooleanField(default=False)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Notification To"
+        verbose_name_plural = "Notifications To"
+
+    def __str__(self):
+        return f"Created By:{self.updated_by} - Created At {self.created_at}"

@@ -9,10 +9,11 @@ from datetime import timedelta
 import uuid
 from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems
 from customer.models import Coupon, CustomerAddress
-from system.models import Accounts
 from rest_framework.permissions import BasePermission
 from products.product_management import ManageProducts
 from products.models import *
+from system.manage_system import SystemManagement
+from orders.order_management import OrderManagement
 
 from orders.serializers import (
     OrderSerializer,
@@ -21,6 +22,8 @@ from orders.serializers import (
     CouponApplySerializer,
     AddressSerializer
 )
+
+CANCELLATION_TIME = 2
 
 def generate_order_id(username, cart_pk):
     return f"#ORD-{username[:4]}-{cart_pk}-{uuid.uuid4().hex[:4].upper()}"
@@ -159,7 +162,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     coupon.usage_limit -= 1
                     coupon.save()
 
-                #checking for discount
+                #checking for discount on product
                 applied_discount = False
                 total_discount_amount = 0
                 for item in cart_items:
@@ -172,13 +175,17 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 total_amount -= total_discount_amount
 
+                #getting delivery time
+                delivery_time_pk = serializer.validated_data.get('delivery_time')
+                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_time_pk)
 
                 # Create order
                 order = Order.objects.create(
                     order_id=order_id,
                     customer_id=request.user,
                     total_amount=total_amount,
-                    order_status='pending'
+                    order_status='pending',
+                    delivery_time = delivery_time
                 )
                 # Create order details
                 for item in cart_items:
@@ -208,6 +215,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     payment_reference = generate_payment_reference(order_id=order,CARD=payment_mode,CPN=True if coupon_discount_amount>0 else False, DIS=True if applied_discount else False)
                 OrderPayment.objects.create(
                     order_id=order,
+                    coupon_applied = coupon,
                     payment_mode=payment_mode,
                     payment_status='pending' if payment_mode == 'cash_on_delivery' else 'success',
                     payment_amount=total_amount,
@@ -222,15 +230,23 @@ class OrderViewSet(viewsets.ModelViewSet):
                     'order id':order_serializer['order_id'],
                     'order date':order_serializer['order_date'],
                     'total':total_amount_before_discount_and_coupon,
-                    'coupon': coupon_discount_amount,
+                    'coupon amount': coupon_discount_amount,
                     'discount':total_discount_amount,
                     'Net total':order_serializer['total_amount'],
                     'order status':order_serializer['order_status'],
                     'shipping_address':order_serializer['shipping_address'],
+                    'delivery_time':order_serializer['delivery_time'],
                     'payment details':order_serializer['payment_details'],
 
                 }
 
+                SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed")
+                notification = SystemManagement.create_notification(request,title="Your Order has been placed",user_names=[request.user.username])
+                if notification[0]:
+                    print(notification[1])
+                else:
+                    print("notification creation failed")
+                #send email to specific admin and notification
                 return Response(data=response, status=status.HTTP_201_CREATED)
 
         except Cart.DoesNotExist:
@@ -251,7 +267,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         time_since_order = timezone.now() - order.order_date
-        cancellation_window = timedelta(hours=2)
+        cancellation_window = timedelta(hours=CANCELLATION_TIME)
 
         try:
             with transaction.atomic():
@@ -269,6 +285,12 @@ class OrderViewSet(viewsets.ModelViewSet):
                     payment = OrderPayment.objects.get(order_id=order)
                     if payment.payment_status == 'success':
                         payment.payment_status = 'refunded'
+                        payment.save()
+
+                    #restore coupon if used
+                    if payment.coupon_applied:
+                        payment.coupon_applied.usage_limit+=1
+                        payment.coupon_applied.save()
                         payment.save()
 
                     return Response(
