@@ -190,16 +190,17 @@ class OrderAPITests(TestCase):
         self.assertEqual(response.status_code,status.HTTP_201_CREATED)
 
         #with save address
-        # data = {
-        #     "use_saved_address":True,
-        #     "payment_mode": "credit_card",
-        #     'coupon_code':'UNIQUE2'
-        #     }
-        # headers = self.get_auth_header(self.user2) 
-        # self.client.credentials(**headers)
-        # response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
-        # self.assertEqual(response.status_code,status.HTTP_201_CREATED)
-        # print(response.data)
+        data = {
+            "use_saved_address":True,
+            "payment_mode": "credit_card",
+            'coupon_code':'UNIQUE2',
+            'delivery_time':self.delivery1.pk
+            }
+        headers = self.get_auth_header(self.user2) 
+        self.client.credentials(**headers)
+        response = self.client.post('/client_api/customer-order/checkout/',data=data,format='json',headers=headers)
+        print(response.data)
+        self.assertEqual(response.status_code,status.HTTP_201_CREATED)
 
     def test_cancel_order(self):
 

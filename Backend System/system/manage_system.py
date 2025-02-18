@@ -73,7 +73,7 @@ class SystemManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching notifications! Please try again later.")
 
 
-    def create_notification(request,title,user_names=[],description="",link=""):
+    def create_notification(title,user_names=[],description="",link="",request=None):
 
         try:
             if len(user_names) == 0:
@@ -93,8 +93,9 @@ class SystemManagement:
                 notification_to = NotificationTo.objects.create(to=user_,notification=notification)
                 notification_to.save()
                 
-                SystemLogs.updated_by(request,notification_to)
-                SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
+                if request:
+                    SystemLogs.updated_by(request,notification_to)
+                    SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
             
             return True, "Nofication created successfully"
 

@@ -154,9 +154,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                     if coupon.discount_type == 'percentage':
                         discount_amount = float(total_amount) * float((coupon.discount_percentage / 100))
                         if coupon.maximum_discount_amount:
-                            discount_amount = min(discount_amount, coupon.maximum_discount_amount)
+                            discount_amount = float(min(discount_amount, coupon.maximum_discount_amount))
                     elif coupon.discount_type == 'fixed':
-                        discount_amount = coupon.discount_amount
+                        discount_amount = float(coupon.discount_amount)
                     
                     coupon_discount_amount = discount_amount
                     total_amount -= discount_amount
@@ -179,7 +179,12 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 #getting delivery time
                 delivery_time_pk = serializer.validated_data.get('delivery_time')
-                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_time_pk)
+                if delivery_time_pk:
+                    delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_time_pk)
+                else:
+                    return Response({
+                        'error':"Invalid Delivery Time or Not provided"
+                    },status=status.HTTP_400_BAD_REQUEST)
 
                 # Create order
                 order = Order.objects.create(
@@ -243,7 +248,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 }
 
                 SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed")
-                notification = SystemManagement.create_notification(request,title="Your Order has been placed",user_names=[request.user.username])
+                notification = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
                 if notification[0]:
                     print(notification[1])
                 else:
