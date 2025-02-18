@@ -215,3 +215,19 @@ class CartItems(models.Model):
 
     def __str__(self):
         return str(self.pk)
+    
+class DeliveryTime(models.Model):
+
+    delivery_name = models.CharField(max_length=1000,null=False,blank=False)
+    estimated_delivery_time = models.CharField(max_length=1000,null=False,blank=False)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Delivery Time"
+
+    def __str__(self):
+        return str(self.delivery_name)
+
+

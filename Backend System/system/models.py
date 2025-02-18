@@ -336,4 +336,4 @@ class NotificationTo(models.Model):
         verbose_name_plural = "Notifications To"
 
     def __str__(self):
-        return f"Created By:{self.updated_by} - Created At{self.created_at}"
+        return f"Created By:{self.updated_by} - Created At {self.created_at}"

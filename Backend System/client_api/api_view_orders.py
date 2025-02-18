@@ -161,7 +161,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     coupon.usage_limit -= 1
                     coupon.save()
 
-                #checking for discount
+                #checking for discount on product
                 applied_discount = False
                 total_discount_amount = 0
                 for item in cart_items:
