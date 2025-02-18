@@ -21,6 +21,8 @@ from system.permissions import IsAdminWithPermission
 from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
 from datetime import datetime
+from orders.serializers import DeliveryTimeSerializer
+from orders.order_management import OrderManagement
 
 REFRESH_RATE = '50/m'
 SERVER_API_URL = 'server_api'
@@ -3096,6 +3098,197 @@ class DeleteBusinessAdminRolePermission(APIView):
             
             admin_position_pk = admin_position_pk
             deleted,message = AdminManagement.delete_admin_role_permission(request,admin_position_pk)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class FetchDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+
+        try:
+            delivery_pk = self.request.query_params.get('delivery_pk',"")
+            delivery_name = self.request.query_params.get('delivery_name',"")
+
+            if delivery_pk!="":
+                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_pk)
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
+            elif delivery_name!="":
+                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_name=delivery_name)
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
+            else:
+                delivery_time,message = OrderManagement.fetch_delivery_time()
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True)
+            
+            if delivery_time:
+                return Response({
+                    'message':message,
+                    'delivery_time_data':delivery_time_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CreateDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            delivery_name = self.request.data.get('delivery_name',"")
+            estimated_time = self.request.data.get('delivery_name',"")
+
+            if delivery_name == "":
+                return Response({
+                    'error': 'Delivery Name Required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            if estimated_time == "":
+                return Response({
+                    'error': 'Delivery Time is required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            created,message = OrderManagement.create_delivery_time(request,delivery_name,estimated_time)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,delivery_time_pk,format=None):
+
+        try:
+            delivery_time_pk=delivery_time_pk
+            delivery_name = self.request.data.get('delivery_name',"")
+            estimated_time = self.request.data.get('estimated_time',"")
+
+            updated,message = OrderManagement.update_delivery_time(request,delivery_time_pk,delivery_name,estimated_time)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {'message':message}
+                ,status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class DeleteDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,delivery_time_pk,format=None):
+
+        try:
+            delivery_time_pk=delivery_time_pk
+            deleted,message = OrderManagement.delete_delivery_time(request,delivery_time_pk)
             if deleted:
                 return Response({
                     'message':message
