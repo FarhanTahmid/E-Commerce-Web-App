@@ -40,6 +40,11 @@ urlpatterns = [                                                                 
     path('business-admin/admin-role-permission/create/',views.CreateBusinessAdminRolePermission.as_view(),name='create_business_admin_role_permissions'),
     path('business-admin/admin-role-permission/update/<int:admin_position_pk>/',views.UpdateBusinessAdminRolePermission.as_view(),name='update_business_admin_role_permissions'),
     path('business-admin/admin-role-permission/delete/<int:admin_position_pk>/',views.DeleteBusinessAdminRolePermission.as_view(),name='delete_business_admin_role_permissions'),
+    #discount type
+    path('business-admin/delivery-time/fetch/',views.FetchDeliveryTime.as_view(),name="fetch_delivery_time"),#pass parameters /?delivery_pk= OR delivery_name= OR none to fech all
+    path('business-admin/delivery-time/create/',views.CreateDeliveryTime.as_view(),name="create_delivery_time"),
+    path('business-admin/delivery-time/update/<int:delivery_time_pk>/',views.UpdateDeliveryTime.as_view(),name="update_delivery_time"),
+    path('business-admin/delivery-time/delete/<int:delivery_time_pk>/',views.DeleteDeliveryTime.as_view(),name="delete_delivery_time"),
 
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
@@ -90,6 +95,7 @@ urlpatterns = [                                                                 
     path('product/product-discounts/fetch-product-discount/',views.FetchProductDiscount.as_view(),name='fetch_product_discounts'),#pass parameters either /?product_id= OR discount_name= OR is_active= OR product_discount_pk OR brand_id= OR sub_category_pk OR category_pk OR product_id_pk= OR brand_id_pk= OR sub_category_id_pk= OR category_id_pk= OR  product_id_pk_all= OR brand_id_pk_all= OR sub_category_id_pk_all= OR category_id_pk_all= OR none to fetch all
     path('product/product-discounts/create/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
     path('product/product-discounts/update/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
+
 
     re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
