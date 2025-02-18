@@ -13,6 +13,7 @@ from rest_framework.permissions import BasePermission
 from products.product_management import ManageProducts
 from products.models import *
 from system.manage_system import SystemManagement
+from orders.order_management import OrderManagement
 
 from orders.serializers import (
     OrderSerializer,
@@ -174,13 +175,17 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 total_amount -= total_discount_amount
 
+                #getting delivery time
+                delivery_time_pk = serializer.validated_data.get('delivery_time')
+                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_time_pk)
 
                 # Create order
                 order = Order.objects.create(
                     order_id=order_id,
                     customer_id=request.user,
                     total_amount=total_amount,
-                    order_status='pending'
+                    order_status='pending',
+                    delivery_time = delivery_time
                 )
                 # Create order details
                 for item in cart_items:
@@ -230,6 +235,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     'Net total':order_serializer['total_amount'],
                     'order status':order_serializer['order_status'],
                     'shipping_address':order_serializer['shipping_address'],
+                    'delivery_time':order_serializer['delivery_time'],
                     'payment details':order_serializer['payment_details'],
 
                 }

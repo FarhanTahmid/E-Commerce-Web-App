@@ -133,6 +133,7 @@ class OrderSerializer(serializers.ModelSerializer):
     payment_details = serializers.SerializerMethodField()
     items = serializers.SerializerMethodField()
     applied_coupon = serializers.SerializerMethodField()
+    delivery_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -145,8 +146,16 @@ class OrderSerializer(serializers.ModelSerializer):
             'payment_details',
             'items',
             'applied_coupon',
+            'delivery_time'
         ]
         # read_only_fields = fields
+    
+    def get_delivery_time(self,obj):
+        try:
+            order = Order.objects.get(order_id = obj)
+            return f"{order.delivery_time.delivery_name} - {order.delivery_time.estimated_delivery_time}"
+        except:
+            return None
 
     def get_items(self,obj):
 
@@ -189,6 +198,7 @@ class OrderCreateSerializer(serializers.Serializer):
         required=True
     )
     coupon_code = serializers.CharField(required=False, allow_blank=True)
+    delivery_time = serializers.IntegerField(required=True)
 
     def validate(self, data):
         if not data.get('use_saved_address') and not data.get('shipping_address'):

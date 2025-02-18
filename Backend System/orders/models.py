@@ -3,6 +3,19 @@ from customer.models import Accounts,Coupon
 from products.models import Product_SKU
 from business_admin.models import BusinessAdminUser
 
+class DeliveryTime(models.Model):
+
+    delivery_name = models.CharField(max_length=1000,null=False,blank=False)
+    estimated_delivery_time = models.CharField(max_length=1000,null=False,blank=False)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Delivery Time"
+
+    def __str__(self):
+        return str(self.delivery_name)
 
 class Order(models.Model):
     """
@@ -34,6 +47,7 @@ class Order(models.Model):
     order_id = models.CharField(max_length=100, unique=True, null=False, blank=False)
     customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, null=False, blank=False)
     order_date = models.DateTimeField(auto_now_add=True)
+    delivery_time = models.ForeignKey(DeliveryTime,on_delete=models.CASCADE,related_name='delivery_time')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending', null=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -215,19 +229,5 @@ class CartItems(models.Model):
 
     def __str__(self):
         return str(self.pk)
-    
-class DeliveryTime(models.Model):
-
-    delivery_name = models.CharField(max_length=1000,null=False,blank=False)
-    estimated_delivery_time = models.CharField(max_length=1000,null=False,blank=False)
-    created_at=models.DateTimeField(auto_now_add=True)
-    updated_at=models.DateTimeField(auto_now=True)
-    updated_by = models.JSONField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Delivery Time"
-
-    def __str__(self):
-        return str(self.delivery_name)
 
 
