@@ -97,6 +97,9 @@ import ProductImage from "../pages/product-image";
 import ProductImageUpdate from "@/components/products/image/ProductImageUpdate";
 import AdminManagementPermissions from "../pages/admin-management-permissions";
 import AdminManagementPermissionsUpdate from "@/components/admin-management/permissions/AdminManagementPermissionsUpdate";
+import ProductDeliveryTime from "../pages/product-delivery-time";
+import ProductDeliveryTimeCreate from "@/components/products/deliveryTime/ProductDeliveryTimeCreate";
+import ProductDeliveryTimeUpdate from "@/components/products/deliveryTime/ProductDeliveryTimeUpdate";
 
 
 const parseJwt = (token) => {
@@ -332,6 +335,18 @@ export const router = createBrowserRouter([
             {
                 path: "/products/flavour/:id",
                 element: <ProductFlavourUpdate />
+            },
+            {
+                path: "/products/delivery-time",
+                element: <ProductDeliveryTime />
+            },
+            {
+                path: "/products/delivery-time/create",
+                element: <ProductDeliveryTimeCreate />
+            },
+            {
+                path: "/products/delivery-time/:id",
+                element: <ProductDeliveryTimeUpdate />
             },
             {
                 path: "/admin-management/positions",
