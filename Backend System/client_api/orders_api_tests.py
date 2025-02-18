@@ -81,7 +81,7 @@ class OrderAPITests(TestCase):
 
         self.cart1 = Cart.objects.create(
             customer_id = self.user1,
-            cart_total_amount=1000,
+            cart_total_amount=300,
             created_at = now
         )
 
@@ -157,7 +157,7 @@ class OrderAPITests(TestCase):
         self.product_discount1.product_id.add(self.product1)
         self.product_discount1.save()
 
-        self.product_discount2 = Product_Discount.objects.create(discount_name="PPP",discount_amount=80,
+        self.product_discount2 = Product_Discount.objects.create(discount_name="PPP",discount_amount=30,
                                                                 start_date=now,end_date=now+datetime.timedelta(days=1),created_at=now)
         self.product_discount2.product_id.add(self.product1)
         self.product_discount2.save()

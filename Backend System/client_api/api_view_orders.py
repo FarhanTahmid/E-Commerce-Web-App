@@ -14,6 +14,7 @@ from products.product_management import ManageProducts
 from products.models import *
 from system.manage_system import SystemManagement
 from orders.order_management import OrderManagement
+from decimal import Decimal
 
 from orders.serializers import (
     OrderSerializer,
@@ -145,7 +146,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 # Calculate totals
                 total_amount_before_discount_and_coupon = float(cart.cart_total_amount)
-                total_amount = cart.cart_total_amount
+                total_amount = float(cart.cart_total_amount)
                 discount_amount = 0
                 coupon_discount_amount = 0
 
@@ -157,7 +158,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     elif coupon.discount_type == 'fixed':
                         discount_amount = coupon.discount_amount
                     
-                    coupon_discount_amount = float(discount_amount)
+                    coupon_discount_amount = discount_amount
                     total_amount -= discount_amount
                     coupon.usage_limit -= 1
                     coupon.save()
@@ -170,8 +171,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                     active_discount,message = ManageProducts.fetch_product_discount(product_id=product_id.pk)
                     if active_discount:
                         applied_discount = True
+                        product_price = item.product_sku.product_price
                         active_discount = active_discount[0]
-                        total_discount_amount += (item.quantity) * active_discount.discount_amount
+                        total_discount_amount += (item.quantity) * float(product_price * ((active_discount.discount_amount)/100))
 
                 total_amount -= total_discount_amount
 
