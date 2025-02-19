@@ -482,7 +482,7 @@ class GetBusinessAdminAvatar(APIView):
 
 class FetchBusinessAdminPosition(APIView):
 
-    # authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated,HasPermission]
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
@@ -681,7 +681,7 @@ class DeleteBusinessAdminPosition(APIView):
 
 #business admin permission
 class FetchBusinessAdminPermission(APIView):
-    # authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated,HasPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
@@ -737,7 +737,7 @@ class FetchBusinessAdminPermission(APIView):
             )    
 
 class CreateBusinessAdminPermission(APIView):
-    #authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated,HasPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
