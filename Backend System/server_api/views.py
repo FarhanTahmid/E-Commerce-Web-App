@@ -542,12 +542,12 @@ class CreateBusinessAdminPosition(APIView):
     """Permissions"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    required_permissions = [
-        AdminPermissions.CREATE,
-        AdminPermissions.VIEW
-    ] 
-    def get_permissions(self):
-        return [IsAdminWithPermission(self.required_permissions)]
+    # required_permissions = [
+    #     AdminPermissions.CREATE,
+    #     AdminPermissions.VIEW
+    # ] 
+    # def get_permissions(self):
+    #     return [IsAdminWithPermission(self.required_permissions)]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
@@ -681,8 +681,8 @@ class DeleteBusinessAdminPosition(APIView):
 
 #business admin permission
 class FetchBusinessAdminPermission(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated,IsAdminWithPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
@@ -733,8 +733,8 @@ class FetchBusinessAdminPermission(APIView):
             )    
 
 class CreateBusinessAdminPermission(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    #authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated,IsAdminWithPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
