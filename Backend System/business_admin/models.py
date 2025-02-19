@@ -105,6 +105,7 @@ class AdminUserRole(models.Model):
     user = models.OneToOneField(Accounts, on_delete=models.CASCADE, related_name='admin_role')
     role = models.ForeignKey(AdminPositions, on_delete=models.CASCADE, related_name='users',null=True,blank=True)
     updated_by = models.JSONField(blank=True, null=True)
+    extra_permissions = models.ManyToManyField(AdminPermissions, blank=True, related_name='extra_user_permissions')
 
     def __str__(self):
         return f"{self.user.email} - {self.role.name}"

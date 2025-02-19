@@ -17,7 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
 from business_admin import serializers
-from system.permissions import IsAdminWithPermission
+from system.permissions import HasPermission
 from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
 from datetime import datetime
@@ -428,7 +428,7 @@ class FetchBusinessAdminUsers(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class FetchBusinessAdminAvatar(APIView):
+class GetBusinessAdminAvatar(APIView):
     
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -483,7 +483,7 @@ class FetchBusinessAdminAvatar(APIView):
 class FetchBusinessAdminPosition(APIView):
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,HasPermission]
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
@@ -542,12 +542,12 @@ class CreateBusinessAdminPosition(APIView):
     """Permissions"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    required_permissions = [
-        AdminPermissions.CREATE,
-        AdminPermissions.VIEW
-    ] 
-    def get_permissions(self):
-        return [IsAdminWithPermission(self.required_permissions)]
+    # required_permissions = [
+    #     AdminPermissions.CREATE,
+    #     AdminPermissions.VIEW
+    # ] 
+    # def get_permissions(self):
+    #     return [IsAdminWithPermission(self.required_permissions)]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
@@ -682,13 +682,14 @@ class DeleteBusinessAdminPosition(APIView):
 #business admin permission
 class FetchBusinessAdminPermission(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,HasPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             permission_pk = self.request.query_params.get('permission_pk',"")
             permission_name = self.request.query_params.get('permission_name',"")
+            exclude = self.request.query_params.get('exclude',False)
 
             if permission_pk != "":
                 admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
@@ -696,6 +697,9 @@ class FetchBusinessAdminPermission(APIView):
             elif permission_name!= "":
                 admin_permission,message = AdminManagement.fetch_admin_permissions(permission_name=permission_name)
                 admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+            elif exclude:
+                admin_permission,message = AdminManagement.fetch_admin_permissions(exclude=True)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
             else:
                 admin_permission,message = AdminManagement.fetch_admin_permissions()
                 admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
@@ -734,7 +738,7 @@ class FetchBusinessAdminPermission(APIView):
 
 class CreateBusinessAdminPermission(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,HasPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
@@ -873,7 +877,7 @@ class DeleteBusinessAdminPermission(APIView):
             ) 
 
 #product categories
-class FetchProductCategoryView(APIView):
+class FetchProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -917,7 +921,7 @@ class FetchProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class FetchProductCategoryWithPkView(APIView):
+class FetchProductCategoryWithPk(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -958,7 +962,7 @@ class FetchProductCategoryWithPkView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class CreateProductCategoryView(APIView):
+class CreateProductCategory(APIView):
    
     
     authentication_classes = [JWTAuthentication]
@@ -1017,7 +1021,7 @@ class CreateProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class UpdateProductCategoryView(APIView):
+class UpdateProductCategory(APIView):
 
     
     authentication_classes = [JWTAuthentication]
@@ -1072,7 +1076,7 @@ class UpdateProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class DeleteProductCategoryView(APIView):
+class DeleteProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1114,7 +1118,7 @@ class DeleteProductCategoryView(APIView):
             )
         
 #product sub categories
-class FetchProductSubCategoryView(APIView):
+class FetchProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1155,7 +1159,7 @@ class FetchProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class CreateProductSubCategoryView(APIView):
+class CreateProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1209,7 +1213,7 @@ class CreateProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class UpdateProductSubCategoryView(APIView):
+class UpdateProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1268,7 +1272,7 @@ class UpdateProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class DeleteProductSubCategoryView(APIView):
+class DeleteProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1780,7 +1784,7 @@ class FetchProduct(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class FetchProductWithSKUAndDiscounts(APIView):
+class FetchProductDetails(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -2796,6 +2800,8 @@ class AddPositionForAdmin(APIView):
     def post(self,request,format=None):
         try:
             admin_user_name = self.request.data.get('admin_user_name',"")
+            extra_permissions_pk_list = self.request.data.get('extra_permissions_pk_list',[])
+
             if admin_user_name == "":
                 return Response({
                     'error':"User name needed for position"
@@ -2807,7 +2813,8 @@ class AddPositionForAdmin(APIView):
                     'error':"Postion needed"
                 },status=status.HTTP_400_BAD_REQUEST)
             
-            added,message = AdminManagement.add_user_admin_position(request,admin_user_name,position_pk)
+            
+            added,message = AdminManagement.add_user_admin_position(request,admin_user_name,position_pk,extra_permissions_pk_list)
             if added:
                 return Response({
                     'message':message,
@@ -2848,6 +2855,7 @@ class UpdatePositionForAdmin(APIView):
     def put(self,request,format=None):
         try:
             admin_user_name = self.request.data.get('admin_user_name',"")
+            extra_permissions_pk_list = self.request.data.get('extra_permissions_pk_list',[])
             if admin_user_name == "":
                 return Response({
                     'error':"User name needed for position"
@@ -2856,7 +2864,7 @@ class UpdatePositionForAdmin(APIView):
             position_pk = self.request.data.get('position_pk',"")
 
             
-            updated,message = AdminManagement.update_user_admin_position(request,admin_user_name,position_pk)
+            updated,message = AdminManagement.update_user_admin_position(request,admin_user_name,position_pk,extra_permissions_pk_list)
             if updated:
                 return Response({
                     'message':message,

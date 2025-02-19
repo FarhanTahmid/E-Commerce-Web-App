@@ -15,7 +15,7 @@ urlpatterns = [                                                                 
     path('business-admin/logout/',views.LogOutBusinessAdminUser.as_view(),name='logout_business_admin_user'),
     path('business-admin/update-password/<str:admin_user_name>/',views.UpdateBusinessAdminUserPassword.as_view(),name='update_business_admin_user_password'),
     path('business-admin/delete/<str:admin_user_name>/',views.DeleteBusinessAdminUser.as_view(),name='delete_business_admin_user'),
-    path('business-admin/avatar/<str:admin_user_name>/',views.FetchBusinessAdminAvatar.as_view(),name='fetch_business_admin_user_avatar'),#pass parameter /?admin_user_name= to fetch avatar
+    path('business-admin/avatar/<str:admin_user_name>/',views.GetBusinessAdminAvatar.as_view(),name='fetch_business_admin_user_avatar'),#pass parameter /?admin_user_name= to fetch avatar
 
     #business admin postion
     path('business-admin/admin-position/fetch-positions/',views.FetchBusinessAdminPosition.as_view(),name='fetch_business_admin_position'),#pass parameters /?name= OR pk= OR none to retrieve all
@@ -47,18 +47,18 @@ urlpatterns = [                                                                 
     path('business-admin/delivery-time/delete/<int:delivery_time_pk>/',views.DeleteDeliveryTime.as_view(),name="delete_delivery_time"),
 
     #product categories CRUD
-    path('product/categories/create/', views.CreateProductCategoryView.as_view(), name='create_product_categories'),
-    path('product/categories/fetch-all/',views.FetchProductCategoryView.as_view(),name='fetch_all_product_categories'),#pass parameters /?pk = OR no paramter to fetch all
-    path('product/categories/<int:pk>/',views.FetchProductCategoryWithPkView.as_view(),name='fetch_a_product_category'),#works same as fetch_all with pk as parameter, option or additional to use
-    path('product/categories/update/<int:pk>/',views.UpdateProductCategoryView.as_view(),name='update_product_categories'),
-    path('product/categories/delete/<int:pk>/',views.DeleteProductCategoryView.as_view(),name='delete_product_categories'),
+    path('product/categories/create/', views.CreateProductCategory.as_view(), name='create_product_categories'),
+    path('product/categories/fetch-all/',views.FetchProductCategory.as_view(),name='fetch_all_product_categories'),#pass parameters /?pk = OR no paramter to fetch all
+    path('product/categories/<int:pk>/',views.FetchProductCategoryWithPk.as_view(),name='fetch_a_product_category'),#works same as fetch_all with pk as parameter, option or additional to use
+    path('product/categories/update/<int:pk>/',views.UpdateProductCategory.as_view(),name='update_product_categories'),
+    path('product/categories/delete/<int:pk>/',views.DeleteProductCategory.as_view(),name='delete_product_categories'),
 
 
     #product sub categories CRUD
-    path('product/sub-categories/fetch-all-product-sub-categories-for-a-category/<int:pk>/', views.FetchProductSubCategoryView.as_view(), name='fetch_all_product_sub_categories_for_a_category'),
-    path('product/sub-categories/create/<int:product_category_pk>/',views.CreateProductSubCategoryView.as_view(),name='create_product_sub_categories'),
-    path('product/sub-categories/update/<int:product_sub_category_pk>/',views.UpdateProductSubCategoryView.as_view(),name='update_product_sub_categories'),
-    path('product/sub-categories/delete/<int:product_sub_category_pk>/',views.DeleteProductSubCategoryView.as_view(),name='delete_product_sub_categories'),
+    path('product/sub-categories/fetch-all-product-sub-categories-for-a-category/<int:pk>/', views.FetchProductSubCategory.as_view(), name='fetch_all_product_sub_categories_for_a_category'),
+    path('product/sub-categories/create/<int:product_category_pk>/',views.CreateProductSubCategory.as_view(),name='create_product_sub_categories'),
+    path('product/sub-categories/update/<int:product_sub_category_pk>/',views.UpdateProductSubCategory.as_view(),name='update_product_sub_categories'),
+    path('product/sub-categories/delete/<int:product_sub_category_pk>/',views.DeleteProductSubCategory.as_view(),name='delete_product_sub_categories'),
 
     #product brand
     path('product/product-brand/fetch-product-brands/',views.FetchProductBrands.as_view(),name='fetch_product_brands'),#pass parameters /?pk= OR /?brand_name= OR no parameter to fetch all
@@ -74,7 +74,7 @@ urlpatterns = [                                                                 
 
     #product
     path('product/fetch-product/',views.FetchProduct.as_view(),name='fetch_product'),#pass parameters /?pk= OR product_name= OR product_brand_pk= OR product_category_pk_list OR product_sub_category_pk_list Or no paramter to fetch all
-    path('product/fetch-product-details/',views.FetchProductWithSKUAndDiscounts.as_view(),name="fetch_product_with_details"),#MUST pass paramter, /?product_pk= OR product_brand_pk= OR product_category_pk= OR product_sub_category_pk =
+    path('product/fetch-product-details/',views.FetchProductDetails.as_view(),name="fetch_product_with_details"),#MUST pass paramter, /?product_pk= OR product_brand_pk= OR product_category_pk= OR product_sub_category_pk =
     path('product/create/',views.CreateProduct.as_view(),name='create_product'),
     path('product/update/<int:product_pk>/',views.UpdateProduct.as_view(),name='update_product'),
     path('product/delete/<int:product_pk>/',views.DeleteProduct.as_view(),name='delete_product'),
