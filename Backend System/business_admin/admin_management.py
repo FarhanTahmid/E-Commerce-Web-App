@@ -6,6 +6,7 @@ from e_commerce_app import settings
 from business_admin.models import *
 from system.manage_system import SystemManagement
 import os
+from django.db.models import Q
 
 OWNER = 'Owner'
 
@@ -294,7 +295,7 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin position! Please try again later.")
         
     #admin permissions
-    def fetch_admin_permissions(permission_pk="",permission_name=""):
+    def fetch_admin_permissions(permission_pk="",permission_name="",exclude=False):
 
         """
     Fetch admin permissions based on various optional parameters with detailed exception handling.
@@ -348,6 +349,9 @@ class AdminManagement:
             elif permission_pk!="":
                 permission =  AdminPermissions.objects.get(pk=permission_pk)
                 return permission,"Permission fetched successfully"
+            elif exclude:
+                permission = AdminPositions.objects.exclude(Q(name="view") | Q(name="create") | Q(name="delete") | Q(name="update"))
+                return permission,"All permissions fetched successfully" if len(permission)>0 else "No permissions found"
             else:
                 permission = AdminPermissions.objects.all()
                 return permission, "All permissions fetched successfully" if len(permission)>0 else "No permissions found"
@@ -1163,7 +1167,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin position! Please try again later.")
         
-    def add_user_admin_position(request,admin_user_name,admin_position_pk):
+    def add_user_admin_position(request,admin_user_name,admin_position_pk,extra_permissions_pk_list=[]):
 
         """
     Assigns an admin position to a user and creates an admin role entry.
@@ -1237,6 +1241,14 @@ class AdminManagement:
 
             admin_user_role = AdminUserRole.objects.create(user = user,role = admin_position)
             admin_user_role.save()
+            if len(extra_permissions_pk_list)>0:
+                permissions_list = []
+                for p in extra_permissions_pk_list:
+                    permission,message = AdminManagement.fetch_admin_permissions(permission_pk=p)
+                    permissions_list.append(permission)
+                admin_user_role.extra_permissions.add(*permissions_list)
+                admin_user_role.save()
+
             SystemLogs.updated_by(request,admin_user_role)
             SystemLogs.admin_activites(request,f"Admin user role added, {admin_user_role.user.username}",message="Admin user role added")
 
@@ -1259,7 +1271,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while adding admin position! Please try again later.")
     
-    def update_user_admin_position(request,admin_user_name,admin_position_pk=""):
+    def update_user_admin_position(request,admin_user_name,admin_position_pk="",extra_permissions_pk_list=[]):
 
         """
     Updates or removes an admin user's assigned position.
@@ -1346,6 +1358,14 @@ class AdminManagement:
                 SystemLogs.updated_by(request,business_admin)
                 SystemLogs.admin_activites(request,f"Admin position updated, {business_admin.admin_user_name}",message="Admin position updated")
             
+            elif len(extra_permissions_pk_list)>0:
+                new_extra_permissions = []
+                for p in extra_permissions_pk_list:
+                    permission,message = AdminManagement.fetch_admin_permissions(permission_pk=p)
+                    new_extra_permissions.append(permission)
+                admin_user_role.extra_permissions.clear()
+                admin_user_role.extra_permissions.add(*new_extra_permissions)
+                admin_user_role.save()
 
             return True, "Successfully updated"
 
@@ -1415,6 +1435,7 @@ class AdminManagement:
             user = Accounts.objects.get(username = admin_user_name)
             admin_user_role = AdminUserRole.objects.get(user = user)
             admin_user_role.role = None
+            admin_user_role.extra_permissions.clear()
             admin_user_role.save()
             SystemLogs.updated_by(request,admin_user_role)
             SystemLogs.admin_activites(request,f"Admin user role removed, {admin_user_role.user.username}",message="Admin user role removed")

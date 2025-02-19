@@ -1,7 +1,8 @@
 from rest_framework.permissions import BasePermission
 from django.core.exceptions import ObjectDoesNotExist
-from business_admin.models import *
 from django.urls import get_resolver,URLResolver, URLPattern
+from business_admin.admin_management import AdminManagement
+from business_admin.models import AdminRolePermission
 import re
 
 ACTION_KEYWORDS = {
@@ -34,56 +35,72 @@ def extract_views_from_urlpatterns(urlpatterns, base_path=""):
                     if keyword.lower() in view_class_name.lower():
                         permissions.add(f"{perm_action}_{resource_name_snake}")
 
-                # Always add "view" permission by default
-                # permissions.add(f"view_{resource_name_snake}")
 
                 api_views[view_class_name] = list(permissions)
 
     return api_views
 
-class IsAdminWithPermission(BasePermission):
+class HasPermission(BasePermission):
     """
     Custom permission to check if the user has ANY of the required permissions.
     """
-    # def __init__(self, required_permissions=None):
-    #     self.required_permissions = required_permissions or []
 
     def has_permission(self, request, view):
 
-        # if request.user.is_superuser:
-        #     return True
+        if request.user.is_superuser:
+            return True
         
-        # if request.user.is_admin:
-        #     try:
-                # Get the user's role
+        if request.user.is_admin:
+            try:
+                #Get the user's role
 
-                # user_role = request.user.admin_role.role
-                # if not user_role:
-                #     return False
+                #admin user role instance
+                user_role = request.user.admin_role.role #Manager/Owner/Staff
+                if not user_role:
+                    return False
 
-                # Check if the role has ANY of the required permissions
-                # if self.required_permissions:
-                #     return AdminRolePermission.objects.filter(
-                #         role = user_role,
-                #         permission__permission_name__in=self.required_permissions
-                #     ).exists()
-
+                #Check if the role has ANY of the required permissions
                 api_permission_mapping = extract_views_from_urlpatterns(get_resolver().url_patterns)
-                print(api_permission_mapping)
                 required_permission_name = api_permission_mapping.get(view.__class__.__name__, None)
                 if not required_permission_name:
                     return False
-                permission, created = AdminPermissions.objects.get_or_create(permission_name=required_permission_name[0])
-                if created:
-                    print(f"New permission '{required_permission_name}' saved in AdminPermissions.")
-                # has_permission = (
-                #     AdminRolePermission.objects.filter(role=user_role, permission__permission_name=required_permission_name).exists()
-                #     # or extra_permissions.filter(permission_name=required_permission_name).exists()
-                # )
+                
+                required_permission_name=required_permission_name[0]
+                admin_role_permissions = AdminRolePermission.objects.filter(role=user_role)
+                for p in admin_role_permissions:
+                    if p.permission.permission_name.lower() in required_permission_name:
+                        return True
 
-                return True
+                admin_user_role = request.user.admin_role.extra_permissions.all()
+                if admin_user_role:
 
-        #     except ObjectDoesNotExist:
-        #         return False
-        # else:
-        #     return False
+                    for p in admin_user_role:
+                        if p.permission_name == required_permission_name:
+                            return True
+                
+                return False
+
+            except ObjectDoesNotExist:
+                return False
+        else:
+            return False
+
+def create_permissions(sender, **kwargs):
+    from business_admin.models import AdminPermissions
+    """Create permissions based on extracted API views."""
+    from django.db.utils import OperationalError, ProgrammingError
+
+    try:
+        api_permission_mapping = extract_views_from_urlpatterns(get_resolver().url_patterns)
+
+        for permissions in api_permission_mapping.values():
+            for permission_name in permissions:
+                obj, created = AdminPermissions.objects.get_or_create(permission_name=permission_name)
+        
+        AdminPermissions.objects.get_or_create(permission_name='view')
+        AdminPermissions.objects.get_or_create(permission_name='create')
+        AdminPermissions.objects.get_or_create(permission_name='update')
+        AdminPermissions.objects.get_or_create(permission_name='delete')
+
+    except (OperationalError, ProgrammingError):
+        print("Skipping permission creation (DB not ready).")
