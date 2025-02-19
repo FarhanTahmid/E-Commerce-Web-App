@@ -142,24 +142,24 @@ const ProductDeliveryTimeUpdate = () => {
                         <div className="px-4 py-4 row justify-content-between">
                             <div className="col-xl-6">
                                 <div className="form-group mb-3 mt-3">
-                                    <label htmlFor="flavourName" className="form-label">Flavour Name</label>
+                                    <label htmlFor="deliveryName" className="form-label">Delivery Name</label>
                                     <input
                                         type="text"
                                         className="form-control mb-2"
-                                        id="flavourName"
-                                        placeholder="Flavour Name"
+                                        id="deliveryName"
+                                        placeholder="Delivery Name (e.g. Inside Dhaka)"
                                         value={deliveryName}
                                         onChange={(e) => setDeliveryName(e.target.value)}
                                         required
                                     />
                                 </div>
                                 <div className="form-group mb-3 mt-3">
-                                    <label htmlFor="flavourName" className="form-label">Flavour Name</label>
+                                    <label htmlFor="estimatedTime" className="form-label">Estimated Time</label>
                                     <input
                                         type="text"
                                         className="form-control mb-2"
-                                        id="flavourName"
-                                        placeholder="Flavour Name"
+                                        id="estimatedTime"
+                                        placeholder="Estimated Time (e.g. 1-2 days)"
                                         value={estimatedTime}
                                         onChange={(e) => setEstimatedTime(e.target.value)}
                                         required

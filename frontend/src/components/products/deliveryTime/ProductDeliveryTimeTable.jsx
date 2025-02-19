@@ -25,6 +25,7 @@ const ProductDeliveryTimeTable = () => {
                     "Content-Type": "application/json"
                 }
             });
+
             console.log(response.data);
 
             if (response.data && response.data.delivery_time_data) {
@@ -106,7 +107,7 @@ const ProductDeliveryTimeTable = () => {
                                                             </td>
                                                             <td className="truncate-text">
                                                                 <Link to={`/products/delivery-time/${delivery.id}`} className="fw-normal">
-                                                                    {delivery.estimated_time}
+                                                                    {delivery.estimated_delivery_time}
                                                                 </Link>
                                                             </td>
                                                         </tr>
