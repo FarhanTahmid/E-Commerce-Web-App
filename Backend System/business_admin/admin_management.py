@@ -353,7 +353,7 @@ class AdminManagement:
                 permission = AdminPositions.objects.exclude(Q(name="view") | Q(name="create") | Q(name="delete") | Q(name="update"))
                 return permission,"All permissions fetched successfully" if len(permission)>0 else "No permissions found"
             else:
-                permission = AdminPermissions.objects.all()
+                permission = AdminPermissions.objects.filter(Q(name="view") | Q(name="create") | Q(name="delete") | Q(name="update"))
                 return permission, "All permissions fetched successfully" if len(permission)>0 else "No permissions found"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
