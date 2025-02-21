@@ -4,6 +4,7 @@ from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingE
 from .system_log import SystemLogs
 from django.core.mail import EmailMultiAlternatives
 from e_commerce_app import settings
+from business_admin.models import AdminPermissions
 
 class SystemManagement:
     
@@ -154,3 +155,30 @@ class SystemManagement:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while sending email! Please try again later.")
+        
+    def register_all_page_permissions(request,permission_page_name_list = []):
+
+        try:
+            for p in permission_page_name_list:
+                AdminPermissions.objects.get_or_create(permission_name=p.lower())
+
+            #this permissions are for the Admin Roles - Manager, Owner... Default permissions to role
+            AdminPermissions.objects.get_or_create(permission_name='view')
+            AdminPermissions.objects.get_or_create(permission_name='change')
+
+            return True, "Created Successfully"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while register permission pages! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while register permission pages! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while register permission pages! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while register permission pages! Please try again later.")

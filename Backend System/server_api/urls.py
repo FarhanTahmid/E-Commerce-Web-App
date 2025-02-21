@@ -7,6 +7,10 @@ app_name='server_api'
 
 urlpatterns = [                                                                                                       #NOTE: FOR FRONTEND DEV TO CONNECT APIS
 
+    #system
+    path('system/register-permissions/',views.RegisterPermissionsPages.as_view(),name='register_permissions'),
+    path('system/has-permissions/',views.CheckPermission.as_view(),name='has_permissions'),
+
     #business admin
     path('business-admin/admin/fetch-all/',views.FetchBusinessAdminUsers.as_view(),name='fetch_all_business_admin_user'),#pass parameters /?admin_user_name= OR admin_unique_id= OR admin_email= OR none to retrieve all
     path('business-admin/signup/',views.SignupBusinessAdminUser.as_view(),name='create_business_admin_user'),
