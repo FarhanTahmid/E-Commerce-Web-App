@@ -157,108 +157,8 @@ export const router = createBrowserRouter([
                 element: <Analytics />
             },
             {
-                path: "/reports/sales",
-                element: <ReportsSales />
-            },
-            {
-                path: "/reports/leads",
-                element: <ReportsLeads />
-            },
-            {
-                path: "/reports/project",
-                element: <ReportsProject />
-            },
-            {
-                path: "/reports/timesheets",
-                element: <ReportsTimesheets />
-            },
-            {
-                path: "/proposal/list",
-                element: <Proposalist />
-            },
-            {
-                path: "/proposal/view",
-                element: <ProposalView />
-            },
-            {
-                path: "/proposal/edit",
-                element: <ProposalEdit />
-            },
-            {
-                path: "/proposal/create",
-                element: <ProposalCreate />
-            },
-            {
-                path: "/payment/list",
-                element: <PaymentList />
-            },
-            {
-                path: "/payment/view",
-                element: <PaymentView />
-            },
-            {
-                path: "/payment/create",
-                element: <PaymentCreate />
-            },
-            {
-                path: "/customers/list",
-                element: <CustomersList />
-            },
-            {
                 path: "/profile/details",
                 element: <CustomersView />
-            },
-            {
-                path: "/customers/create",
-                element: <CustomersCreate />
-            },
-            {
-                path: "/leads/list",
-                element: <LeadsList />
-            },
-            {
-                path: "/leads/view",
-                element: <LeadsView />
-            },
-            {
-                path: "/leads/create",
-                element: <LeadsCreate />
-            },
-            {
-                path: "/projects/list",
-                element: <ProjectsList />
-            },
-            {
-                path: "/projects/view",
-                element: <ProjectsView />
-            },
-            {
-                path: "/projects/create",
-                element: <ProjectsCreate />
-            },
-            {
-                path: "/widgets/lists",
-                element: <WidgetsLists />
-            },
-            {
-                path: "/widgets/tables",
-                element: <WidgetsTables />
-            },
-            {
-                path: "/widgets/charts",
-                element: <WidgetsCharts />
-            },
-            {
-                path: "/widgets/statistics",
-                element: <WidgetsStatistics />
-            },
-            {
-                path: "/widgets/miscellaneous",
-                element: <WidgetsMiscellaneous />
-            },
-            {
-                path: "/help/knowledgebase",
-                element: <HelpKnowledgebase />
             },
             {
                 path: "/products",
@@ -379,7 +279,110 @@ export const router = createBrowserRouter([
             {
                 path: "/403",
                 element: <AccessError />
-            }
+            },
+
+
+            // Not Used
+            {
+                path: "/reports/sales",
+                element: <ReportsSales />
+            },
+            {
+                path: "/reports/leads",
+                element: <ReportsLeads />
+            },
+            {
+                path: "/reports/project",
+                element: <ReportsProject />
+            },
+            {
+                path: "/reports/timesheets",
+                element: <ReportsTimesheets />
+            },
+            {
+                path: "/proposal/list",
+                element: <Proposalist />
+            },
+            {
+                path: "/proposal/view",
+                element: <ProposalView />
+            },
+            {
+                path: "/proposal/edit",
+                element: <ProposalEdit />
+            },
+            {
+                path: "/proposal/create",
+                element: <ProposalCreate />
+            },
+            {
+                path: "/payment/list",
+                element: <PaymentList />
+            },
+            {
+                path: "/payment/view",
+                element: <PaymentView />
+            },
+            {
+                path: "/payment/create",
+                element: <PaymentCreate />
+            },
+            {
+                path: "/customers/list",
+                element: <CustomersList />
+            },
+            {
+                path: "/customers/create",
+                element: <CustomersCreate />
+            },
+            {
+                path: "/leads/list",
+                element: <LeadsList />
+            },
+            {
+                path: "/leads/view",
+                element: <LeadsView />
+            },
+            {
+                path: "/leads/create",
+                element: <LeadsCreate />
+            },
+            {
+                path: "/projects/list",
+                element: <ProjectsList />
+            },
+            {
+                path: "/projects/view",
+                element: <ProjectsView />
+            },
+            {
+                path: "/projects/create",
+                element: <ProjectsCreate />
+            },
+            {
+                path: "/widgets/lists",
+                element: <WidgetsLists />
+            },
+            {
+                path: "/widgets/tables",
+                element: <WidgetsTables />
+            },
+            {
+                path: "/widgets/charts",
+                element: <WidgetsCharts />
+            },
+            {
+                path: "/widgets/statistics",
+                element: <WidgetsStatistics />
+            },
+            {
+                path: "/widgets/miscellaneous",
+                element: <WidgetsMiscellaneous />
+            },
+            {
+                path: "/help/knowledgebase",
+                element: <HelpKnowledgebase />
+            },
 
         ],
         errorElement: <ErrorBoundary /> // Use error boundary for 403 handling
@@ -489,7 +492,7 @@ export const router = createBrowserRouter([
                 element: <ResetMinimal />
             },
             {
-                path: "/authentication/404/minimal",
+                path: "/404",
                 element: <ErrorMinimal />
             },
             {

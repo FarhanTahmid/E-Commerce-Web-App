@@ -11,12 +11,15 @@ const subscriptionsList = ["Plan", "Billings", "Referrals", "Payments", "Stateme
 const ProfileModal = () => {
     const [avatar, setAvatar] = useState("/images/avatar/default.jpg"); // Default avatar
     const admin_user_name = Cookies.get("username");
+    const [userInfo, setUserInfo] = useState({});
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/'
 
     useEffect(() => {
+
         const accessToken = Cookies.get('accessToken'); // Ensure accessToken is available
         if (!accessToken || !admin_user_name) return; // Exit if no token or admin_user_name
 
-        axios.get(`http://127.0.0.1:8000/server_api/business-admin/avatar/${admin_user_name}`, {
+        axios.get(`${API_BASE_URL}avatar/${admin_user_name}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -34,6 +37,27 @@ const ProfileModal = () => {
             });
 
     }, [admin_user_name]);
+    useEffect(() => {
+        fetchUserInfo();
+    }, []);
+
+    const fetchUserInfo = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}admin/fetch-all/?admin_user_name=${admin_user_name}`, {
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.admin_users) {
+                setUserInfo(data.admin_users);  // Triggers useEffect to fetch position
+            }
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+        }
+    };
 
     const handleLogout = async () => {
         const refreshToken = Cookies.get("refreshToken");
@@ -75,14 +99,11 @@ const ProfileModal = () => {
             <div className="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                 <div className="dropdown-header">
                     <div className="d-flex align-items-center">
-                        <div style={{ width: '40px', height: '40px' }} className="w-8 h-8 d-flex align-items-center justify-content-center rounded-circle bg-light me-3 overflow-hidden">
-                            <img src={avatar} alt="user-image" className="rounded-circle border" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
                         <div>
-                            <h6 className="text-dark mb-0">
-                                Alexandra Della {/* <span className="badge bg-soft-success text-success ms-1">PRO</span> */}
+                            <h6 className="text-dark mb-0 fw-small">
+                                {userInfo.admin_full_name} {/* <span className="badge bg-soft-success text-success ms-1">PRO</span> */}
                             </h6>
-                            <span className="fs-12 fw-medium text-muted">alex.della@outlook.com</span>
+                            <span className="fs-12 fw-medium text-muted">{userInfo.admin_email}</span>
                         </div>
                     </div>
                 </div>
