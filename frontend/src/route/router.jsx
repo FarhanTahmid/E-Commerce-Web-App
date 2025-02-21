@@ -100,6 +100,7 @@ import AdminManagementPermissionsUpdate from "@/components/admin-management/perm
 import ProductDeliveryTime from "../pages/product-delivery-time";
 import ProductDeliveryTimeCreate from "@/components/products/deliveryTime/ProductDeliveryTimeCreate";
 import ProductDeliveryTimeUpdate from "@/components/products/deliveryTime/ProductDeliveryTimeUpdate";
+import RequirePermission from "@/components/RequirePermission";
 
 
 const parseJwt = (token) => {
@@ -202,15 +203,15 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/products/category",
-                element: <ProductCategory />
+                element: <RequirePermission pageName="view_product_category"><ProductCategory /></RequirePermission>,
             },
             {
                 path: "/products/category/create",
-                element: <ProductCategoryCreate />
+                element: <RequirePermission pageName="change_product_category_create"><ProductCategoryCreate /></RequirePermission>,
             },
             {
                 path: "/products/category/:id",
-                element: <ProductCategoryUpdate />
+                element: <RequirePermission pageName="change_product_category_update_delete"><ProductCategoryUpdate /></RequirePermission>,
             },
             {
                 path: "/products/brand",

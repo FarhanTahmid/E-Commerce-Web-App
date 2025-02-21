@@ -1,4 +1,4 @@
-import { router } from "./router"; // Import your router config
+import { router } from "../src/route/router"; // Import your router config
 
 const extractRoutes = (routes) => {
     let allRoutes = [];
@@ -6,7 +6,7 @@ const extractRoutes = (routes) => {
     const traverseRoutes = (routes) => {
         routes.forEach((route) => {
             if (route.element?.props?.pageName) {
-                allRoutes.push({ path: route.path, pageName: route.element.props.pageName });
+                allRoutes.push(route.element.props.pageName);
             }
             if (route.children) {
                 traverseRoutes(route.children);

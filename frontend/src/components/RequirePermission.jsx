@@ -23,19 +23,20 @@ const RequirePermission = ({ children, pageName }) => {
             }
 
             try {
-                const response = await fetch("http://127.0.0.1:8000/api/get-user-permissions/", {
+                const response = await fetch("http://127.0.0.1:8000/server_api/system/has-permissions/", {
                     method: "POST",
                     headers: {
+                        "Authorization": `Bearer ${Cookies.get("accessToken")}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ username }),
+                    body: JSON.stringify({ user_name: username, permission_page_name: pageName }),
                 });
 
                 const data = await response.json();
-                userPermissionsCache = data.permissions || [];
-
-                setHasPermission(userPermissionsCache.includes(pageName));
-                if (!userPermissionsCache.includes(pageName)) navigate("/403");
+                console.log(data);
+                userPermissionsCache = data.hasPermissions;
+                if (!userPermissionsCache) navigate("/403");
+                setHasPermission(userPermissionsCache);
             } catch (error) {
                 console.error("Error fetching permissions:", error);
                 navigate("/403");
