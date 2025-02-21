@@ -17,17 +17,112 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
 from business_admin import serializers
-from system.permissions import HasPermission
 from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
 from datetime import datetime
 from orders.serializers import DeliveryTimeSerializer
 from orders.order_management import OrderManagement
+from system.manage_system import SystemManagement
+from system.permissions import has_permission
 
 REFRESH_RATE = '50/m'
 SERVER_API_URL = 'server_api'
 
 # Create your views here.
+
+#system
+class RegisterPermissionsPages(APIView):
+
+    permission_classes = [AllowAny]
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+
+            permission_names_list = self.request.data.get('permission_names_list',[])
+
+            created,message = SystemManagement.register_all_page_permissions(request,permission_names_list)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CheckPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    #PASS PERMISSION PAGE NAME AS 
+    # view_..... OR change_....  (.... == page name)
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+
+            user_name = self.request.data.get('user_name',"")
+            permission_page_name = self.request.data.get('permission_page_name',"")
+
+            if user_name=="":
+                return Response({
+                    'error':"User Name required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            permission = has_permission(request,user_name,permission_page_name)
+            if permission:
+                return Response({
+                    'hasPermissions':permission
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'hasPermissions':permission
+                },status=status.HTTP_403_FORBIDDEN)
+
+        except JSONDecodeError as e:
+                return Response(
+                    {'error': 'Invalid JSON format'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 #business admin
 class SignupBusinessAdminUser(APIView):
@@ -966,7 +1061,7 @@ class CreateProductCategory(APIView):
    
     
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,HasPermission]
+    permission_classes = [IsAuthenticated]
     
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self, request, format=None):
@@ -1025,7 +1120,7 @@ class UpdateProductCategory(APIView):
 
     
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,HasPermission]
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self, request,pk, format=None):
@@ -1079,7 +1174,7 @@ class UpdateProductCategory(APIView):
 class DeleteProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,HasPermission]
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,pk,format=None):
