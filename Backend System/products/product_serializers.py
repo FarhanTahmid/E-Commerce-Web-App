@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from e_commerce_app import settings
+from .product_management import ManageProducts
 
 SERVER_API_URL = 'server_api'
 
@@ -68,5 +69,37 @@ class Product_Serializer(serializers.ModelSerializer):
         model = Product
         fields= '__all__'
 
+class Product_Detail_Serializer(serializers.ModelSerializer):
 
+    product_sku = serializers.SerializerMethodField()
+    product_discount = serializers.SerializerMethodField()
+    product_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields='__all__'
+
+    def get_product_sku(self,obj):
+        try:
+            product = Product.objects.get(id=obj.pk)
+            skus,message = ManageProducts.fetch_product_sku(product_id=product.pk)
+            return skus
+        except:
+            return None
+        
+    def get_product_discount(self,obj):
+        try:
+            product = Product.objects.get(id=obj.pk)
+            discounts,message = ManageProducts.fetch_product_discount(product_id=product.pk)
+            return discounts[0]
+        except:
+            return None
+        
+    def get_product_images(self,obj):
+        try:
+            product = Product.objects.get(id=obj.pk)
+            images,message = ManageProducts.fetch_product_image(product_pk=product.pk)
+            return images
+        except:
+            return None
     

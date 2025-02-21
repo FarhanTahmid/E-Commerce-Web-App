@@ -483,7 +483,7 @@ class GetBusinessAdminAvatar(APIView):
 class FetchBusinessAdminPosition(APIView):
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,HasPermission]
+    permission_classes = [IsAuthenticated]
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
@@ -682,7 +682,7 @@ class DeleteBusinessAdminPosition(APIView):
 #business admin permission
 class FetchBusinessAdminPermission(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,HasPermission]
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
@@ -738,7 +738,7 @@ class FetchBusinessAdminPermission(APIView):
 
 class CreateBusinessAdminPermission(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,HasPermission]
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
@@ -966,7 +966,7 @@ class CreateProductCategory(APIView):
    
     
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,HasPermission]
     
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self, request, format=None):
@@ -1025,7 +1025,7 @@ class UpdateProductCategory(APIView):
 
     
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,HasPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self, request,pk, format=None):
@@ -1079,7 +1079,7 @@ class UpdateProductCategory(APIView):
 class DeleteProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,HasPermission]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,pk,format=None):
