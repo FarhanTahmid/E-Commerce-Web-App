@@ -10,7 +10,7 @@ app_name='client_api'
 router=DefaultRouter()
 router.register(r'customer-cart',UserCartViewSet,basename='customer_cart')
 router.register(r'customer-order',OrderViewSet,basename='customer_order')
-router.register(r'products',ProductViewSet,basename='products')
+router.register(r'fetch',FetchViewSet,basename='fetch')
 
 urlpatterns = [
     path('', include(router.urls)),    

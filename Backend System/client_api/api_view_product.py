@@ -10,7 +10,7 @@ from products.models import *
 from rest_framework.exceptions import AuthenticationFailed,PermissionDenied as DRFPermissionDenied
 from django.core.exceptions import PermissionDenied
 from rest_framework.response import Response
-from django.db.models import Min, Max
+from products.product_serializers import *
 
 def get_client_ip(request):
     """
@@ -46,7 +46,7 @@ class SafeJWTAuthentication(JWTAuthentication):
         except AuthenticationFailed:
             return None  # Treat invalid/expired tokens as anonymous
         
-class ProductViewPermission(BasePermission):
+class FetchViewPermission(BasePermission):
     """
     Permission that allows both authenticated and guest access to the cart.
 
@@ -66,7 +66,7 @@ class ProductViewPermission(BasePermission):
         return obj.device_ip == client_ip
 
 
-class ProductViewSet(viewsets.ViewSet):
+class FetchViewSet(viewsets.ViewSet):
 
     authentication_classes = [SafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -74,50 +74,184 @@ class ProductViewSet(viewsets.ViewSet):
     queryset = Product_SKU.objects.all()
 
     def get_permissions(self):
-        """
-        Override ViewSet permissions for specific actions.
-        - `fetch`: anyone can call (guest or authenticated).
-        - Others: default to `CartOwnerPermission`.
-        """
-        if self.action == 'fetch_product_with_search':
+        
+        if self.action in ['fetch_product_with_search','fetch_product_with_brand','fetch_product_with_category','fetch_product_with_sub_category',
+                           'fetch_product_with_price','fetch_all_product','fetch_brands']:
             return [AllowAny()]
         return super().get_permissions()
     
     @action(detail=False, methods=['GET'])
-    def fetch_product_with_search(self, request):
+    def fetch_all_product(self, request):
     
-        # try:
+        try:
             with transaction.atomic():
                 queryset = Product_SKU.objects.all()
-                #brand, category, sub-category, min price, max price, search, lowest, highest
-                max_price_ = Product_SKU.objects.all().order_by('-product_price')[0]
-
-                # brand = request.query_params.get('brand',"").strip()
-                # category = request.query_params.get('category',"").strip()
-                # sub_category = request.query_params.get('sub_category',"").strip()
-                # min_price = request.query_params.get('min_price',0)
-                # max_price = request.query_params.get('max_price',max_price_.product_price)
-                search = request.query_params.get('name',"").strip()
-                # sort_order = request.query_params.get('sort', "").strip()  # 'asc' or 'desc'
-
-
-                if search:
-                    queryset = queryset.filter(product_id__product_name__icontains=search) or queryset.filter(product_id__product_brand__brand_name__icontains=search) or queryset.filter(product_id__product_category__category_name__icontains=search) or queryset.filter(product_id__product_sub_category__sub_category_name__icontains=search) or queryset.filter(product_price__gte=int(search)) or queryset.filter(product_price__lte=int(search))
 
                 serializer = self.serializer_class(queryset, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-        # except ProductNotFound as e:
-        #     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        # except (PermissionDenied, DRFPermissionDenied):
-        #     raise  # 403
-        # except Exception as e:
-        #     return Response(
-        #         {'error': 'Failed to add product to cart'},
-        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        #     )
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
+    @action(detail=False, methods=['GET'])
+    def fetch_product_with_search(self, request):
+    
+        try:
+            with transaction.atomic():
+                queryset = Product_SKU.objects.all()
+                search = request.query_params.get('search',"").strip()
+
+                if search:
+                    queryset = queryset.filter(product_id__product_name__icontains=search) or queryset.filter(product_id__product_brand__brand_name__icontains=search) or queryset.filter(product_id__product_category__category_name__icontains=search) or queryset.filter(product_id__product_sub_category__sub_category_name__icontains=search) or queryset.filter(product_price__gte=search) or queryset.filter(product_price__lte=search)
+
+                serializer = self.serializer_class(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['GET'])
+    def fetch_product_with_brand(self, request):
+        
+        try:
+            with transaction.atomic():
+                queryset = Product_SKU.objects.all()
+                brand_name = request.query_params.get('brand_name',"").strip()
+                if brand_name:
+                    queryset = queryset.filter(product_id__product_brand__brand_name=brand_name)
+
+                serializer = self.serializer_class(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    @action(detail=False, methods=['GET'])
+    def fetch_product_with_category(self, request):
+        
+        try:
+            with transaction.atomic():
+                queryset = Product_SKU.objects.all()
+                category_name = request.query_params.get('category_name',"").strip()
+                if category_name:
+                    queryset = queryset.filter(product_id__product_category__category_name=category_name)
+
+                serializer = self.serializer_class(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.
+                HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    @action(detail=False, methods=['GET'])
+    def fetch_product_with_sub_category(self, request):
+        
+        try:
+            with transaction.atomic():
+                queryset = Product_SKU.objects.all()
+                sub_category_name = request.query_params.get('sub_category_name',"").strip()
+
+                if sub_category_name:
+                    queryset = queryset.filter(product_id__product_sub_category__sub_category_name=sub_category_name)
+
+                serializer = self.serializer_class(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    @action(detail=False, methods=['GET'])
+    def fetch_product_with_price(self, request):
+        
+        try:
+            with transaction.atomic():
+                queryset = Product_SKU.objects.all()
+                max_price_ = Product_SKU.objects.all().order_by('-product_price')[0]
+                min_price = request.query_params.get('min_price',0)
+                max_price = request.query_params.get('max_price',max_price_.product_price)
+
+                queryset = queryset.filter(product_price__gte = min_price,product_price__lte = max_price)
+
+                serializer = self.serializer_class(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['GET'])
+    def fetch_brands(self, request):
+        try:
+            with transaction.atomic():
+                queryset = Product_Brands.objects.all()
+                brand_name = request.query_params.get('brand_name',"").strip()
+
+                if brand_name!="":
+                    queryset = queryset.filter(brand_name=brand_name)
+                else:
+                    queryset = queryset
+
+                serializer = Product_Brands_Serializer(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 
 

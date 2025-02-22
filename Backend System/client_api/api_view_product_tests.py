@@ -95,9 +95,47 @@ class ProductAPITests(TestCase):
         #creating product sku
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
+        self.product_sku3 = Product_SKU.objects.create(product_id=self.product2,product_color="silver",product_price=50,product_stock=50,created_at=now)
 
         self.product_sku1.product_flavours.set([self.product_flavour1])
         self.product_sku2.product_flavours.set([self.product_flavour2])
+        self.product_sku3.product_flavours.set([self.product_flavour1,self.product_flavour2])
+
+        self.active_discount = Product_Discount.objects.create(
+            discount_name="Active Discount",
+            discount_amount=10.00,
+            start_date=now - datetime.timedelta(days=1),  # Started yesterday
+            end_date=now + datetime.timedelta(days=10),    # Ends in 10 days
+            is_active=False,
+            product_id_pk=1
+        )
+        self.active_discount.save()
+        self.active_discount.product_id.add(self.product1)
+        self.active_discount.save()
+
+        # Inactive discount (end date in the past)
+        self.inactive_discount = Product_Discount.objects.create(
+            discount_name="Inactive Discount",
+            discount_amount=5.00,
+            start_date=now - datetime.timedelta(days=10),  # Started 10 days ago
+            end_date=now - datetime.timedelta(days=1),      # Ended yesterday
+            product_id_pk=2
+        )
+        self.inactive_discount.save()
+        self.inactive_discount.product_id.add(self.product2)
+        self.inactive_discount.save()
+
+        # Inactive discount (start date in the future)
+        self.future_discount = Product_Discount.objects.create(
+            discount_name="Future Discount",
+            discount_amount=15.00,
+            start_date=now + datetime.timedelta(days=1),  # Starts tomorrow
+            end_date=now + datetime.timedelta(days=10),    # Ends in 10 days
+            brand_id_pk = 1
+        )
+        self.future_discount.save()
+        self.future_discount.product_id.add(self.product3)
+        self.future_discount.save()
 
     def get_auth_header(self, user):
         token = AccessToken.for_user(user)
@@ -105,8 +143,47 @@ class ProductAPITests(TestCase):
     
     def test_fetch_product(self):
 
-        data = {
-            'brand':'ov'
+        #gll product search
+        # data = {
+        #     'search':'40'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_search/',data=data,format='json')
+        # print(response.data)
+
+        #with brand
+        # data={
+        #     'brand_name':'Dove'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_brand/',data=data,format='json')
+        # print(response.data)
+
+        #with category
+        # data={
+        #     'category_name':'Skincare'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_category/',data=data,format='json')
+        # print(response.data)
+
+        #with sub_category
+        # data={
+        #     'sub_category_name':'Cleansers'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_sub_category/',data=data,format='json')
+        # print(response.data)
+
+        #with price
+
+        data={
+            'min_price':'40',
+            'max_price':'50'
         }
-        response = self.client.get('/client_api/products/fetch_product_with_search/',data=data,format='json')
+        response = self.client.get('/client_api/fetch/fetch_product_with_price/',data=data,format='json')
+        # print(response.data)
+
+    def test_fetch_brand(self):
+
+        data={
+            'brand_name':'Dove'
+        }
+        response = self.client.get('/client_api/fetch/fetch_brands/',data=data,format='json')
         print(response.data)

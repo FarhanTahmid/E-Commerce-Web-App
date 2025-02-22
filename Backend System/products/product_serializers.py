@@ -78,10 +78,14 @@ class Product_SKU_Detail_Serializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     product_discount = serializers.SerializerMethodField()
     product_images= serializers.SerializerMethodField()
+    product_flavours = serializers.SerializerMethodField()
 
     class Meta:
         model = Product_SKU
         fields='__all__'
+
+    def get_product_flavours(self, obj):
+        return [flavour.product_flavour_name for flavour in obj.product_flavours.all()]
 
     def get_product(self,obj):
         try:
