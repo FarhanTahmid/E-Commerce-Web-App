@@ -8,9 +8,8 @@ import Select from "react-select";
 import { set } from 'date-fns';
 
 
-const ProductDeliveryTimeUpdate = () => {
+const OrderDeliveryTimeUpdate = () => {
     const { id } = useParams(); // Get the ID from the URL
-    const [flavourName, setFlavourName] = useState(''); // Initialize the flavour name state
     const [deliveryName, setDeliveryName] = useState('');
     const [estimatedTime, setEstimatedTime] = useState('');
     const [message, setMessage] = useState('');
@@ -23,12 +22,12 @@ const ProductDeliveryTimeUpdate = () => {
     const navigate = useNavigate(); // Initialize the navigate hook
 
     const handleDeleteflavour = () => {
-        setDeleteAction({ type: 'flavour' });
+        setDeleteAction({ type: 'delivery' });
         setShowDeleteModal(true);
     };
 
     const confirmDelete = () => {
-        if (deleteAction.type === 'flavour') {
+        if (deleteAction.type === 'delivery') {
             fetch(`${API_BASE_URL}/delete/${id}/`, {
                 method: 'DELETE',
                 headers: {
@@ -44,7 +43,7 @@ const ProductDeliveryTimeUpdate = () => {
                     setMessageType('success');
 
                     // Redirect to the flavour list page after deletion
-                    navigate('/products/flavour');
+                    navigate('/orders/delivery-time');
                 })
                 .catch(error => {
                     setMessage(error.message);
@@ -70,12 +69,12 @@ const ProductDeliveryTimeUpdate = () => {
             params: { delivery_pk: id }
         })
             .then(response => {
-                console.log(response.data);
-                setDeliveryName(response.data.delivery_time_data.delivery_name || '');
-                setEstimatedTime(response.data.delivery_time_data.estimated_delivery_time || '');
+                setDeliveryName(response.data.delivery_time_data.delivery_name);
+                setEstimatedTime(response.data.delivery_time_data.estimated_delivery_time);
             })
             .catch(error => {
                 console.error("Error fetching Flavour data:", error.response ? error.response.data : error);
+                navigate("/404");
             });
     }, []);
 
@@ -85,15 +84,10 @@ const ProductDeliveryTimeUpdate = () => {
     const handleSubmitCategory = async (e) => {
         e.preventDefault();
 
-        // Validate input fields
-        if (!flavourName.trim()) {
-            alert("Flavour name is required!");
-            return;
-        }
-
         try {
             const response = await axios.put(`${API_BASE_URL}/update/${id}/`, {
-                product_flavour_name: flavourName
+                delivery_name: deliveryName,
+                estimated_time: estimatedTime
             }, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get('accessToken')}`,
@@ -101,12 +95,10 @@ const ProductDeliveryTimeUpdate = () => {
                 },
             });
 
-            setFlavourName(response.data.name);
             setMessage("Flavour Updated Successfully!");
             setMessageType('success');
         } catch (error) {
-            console.error("Error Updating Flavour:", error.response ? error.response.data : error.message);
-            setMessage("Failed to update the Flavour.");
+            setMessage(error.response.data.message);
             setMessageType('danger');
         }
     };
@@ -135,7 +127,7 @@ const ProductDeliveryTimeUpdate = () => {
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Flavour Update & Deletion</h5>
-                    <Link to="/products/delivery-time" className="btn btn-primary">← Back</Link>
+                    <Link to="/orders/delivery-time" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleSubmitCategory}>
@@ -166,13 +158,13 @@ const ProductDeliveryTimeUpdate = () => {
                                     />
                                 </div>
                                 <div className='d-flex gap-2'>
-                                    <button type="submit" className="btn btn-success">Update Product Flavour</button>
+                                    <button type="submit" className="btn btn-success">Update Delivery Time</button>
                                     <button
                                         type="button"
                                         className="btn btn-danger"
                                         onClick={handleDeleteflavour}  // Call the function here
                                     >
-                                        Delete Product Flavour
+                                        Delete Delivery Time
                                     </button>
                                 </div>
                             </div>
@@ -183,7 +175,7 @@ const ProductDeliveryTimeUpdate = () => {
                         show={showDeleteModal}
                         onClose={cancelDelete}
                         onConfirm={confirmDelete}
-                        message={`Are you sure you want to delete this flavour?`}
+                        message={`Are you sure you want to delete?`}
                     />
                 </div>
             </div>
@@ -191,4 +183,4 @@ const ProductDeliveryTimeUpdate = () => {
     );
 }
 
-export default ProductDeliveryTimeUpdate;
+export default OrderDeliveryTimeUpdate;

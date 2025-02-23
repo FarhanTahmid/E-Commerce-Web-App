@@ -97,10 +97,10 @@ import ProductImage from "../pages/product-image";
 import ProductImageUpdate from "@/components/products/image/ProductImageUpdate";
 import AdminManagementPermissions from "../pages/admin-management-permissions";
 import AdminManagementPermissionsUpdate from "@/components/admin-management/permissions/AdminManagementPermissionsUpdate";
-import ProductDeliveryTime from "../pages/product-delivery-time";
-import ProductDeliveryTimeCreate from "@/components/products/deliveryTime/ProductDeliveryTimeCreate";
-import ProductDeliveryTimeUpdate from "@/components/products/deliveryTime/ProductDeliveryTimeUpdate";
+import OrderDeliveryTimeCreate from "@/components/orders/deliveryTime/OrderDeliveryTimeCreate";
+import OrderDeliveryTimeUpdate from "@/components/orders/deliveryTime/OrderDeliveryTimeUpdate";
 import RequirePermission from "@/components/RequirePermission";
+import OrderDeliveryTime from "../pages/order-delivery-time";
 
 
 const parseJwt = (token) => {
@@ -238,16 +238,16 @@ export const router = createBrowserRouter([
                 element: <RequirePermission pageName="change_product_flavour_update"><ProductFlavourUpdate /></RequirePermission>,
             },
             {
-                path: "/products/delivery-time",
-                element: <ProductDeliveryTime />
+                path: "/orders/delivery-time",
+                element: <OrderDeliveryTime />
             },
             {
-                path: "/products/delivery-time/create",
-                element: <ProductDeliveryTimeCreate />
+                path: "/orders/delivery-time/create",
+                element: <OrderDeliveryTimeCreate />
             },
             {
-                path: "/products/delivery-time/:id",
-                element: <ProductDeliveryTimeUpdate />
+                path: "/orders/delivery-time/:id",
+                element: <OrderDeliveryTimeUpdate />
             },
             {
                 path: "/admin-management/positions",

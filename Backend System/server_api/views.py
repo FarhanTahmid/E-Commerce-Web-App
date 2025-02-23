@@ -3239,10 +3239,9 @@ class FetchDeliveryTime(APIView):
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None):
 
-        # try:
+        try:
             delivery_pk = self.request.query_params.get('delivery_pk',"")
             delivery_name = self.request.query_params.get('delivery_name',"")
-            print(delivery_pk)
 
             if delivery_pk!="":
                 delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_pk)
@@ -3252,39 +3251,39 @@ class FetchDeliveryTime(APIView):
                 delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
             else:
                 delivery_time,message = OrderManagement.fetch_delivery_time()
-                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True).data
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True)
             
             if delivery_time:
                 return Response({
                     'message':message,
-                    'delivery_time_data':delivery_time_data
+                    'delivery_time_data':delivery_time_data.data
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
 
-        # except JSONDecodeError as e:
-        #     return Response(
-        #         {'error': 'Invalid JSON format'},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
-        # except KeyError as e:
-        #     return Response(
-        #         {'error': f'Missing required field: {str(e)}'},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
-        # except ValueError as e:
-        #     return Response(
-        #         {'error': f'Invalid value: {str(e)}'},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
-        # except Exception as e:
-        #     return Response(
-        #         {'error': f'An unexpected error occurred: {str(e)}'},
-        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     )
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class CreateDeliveryTime(APIView):
     authentication_classes = [JWTAuthentication]

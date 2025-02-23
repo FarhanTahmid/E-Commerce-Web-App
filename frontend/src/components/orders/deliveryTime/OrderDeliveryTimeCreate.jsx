@@ -4,7 +4,7 @@ import Cookies from 'js-cookie';
 import Select from "react-select";
 import { Link } from 'react-router-dom';
 
-const ProductDeliveryTimeCreate = () => {
+const OrderDeliveryTimeCreate = () => {
     const [deliveryName, setDeliveryName] = useState('');
     const [estimatedTime, setEstimatedTime] = useState('');
     const [message, setMessage] = useState('');
@@ -59,7 +59,7 @@ const ProductDeliveryTimeCreate = () => {
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Create Delivery Time</h5>
-                    <Link to="/products/delivery-time" className="btn btn-primary">← Back</Link>
+                    <Link to="/orders/delivery-time" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleSubmit}>
@@ -99,4 +99,4 @@ const ProductDeliveryTimeCreate = () => {
     );
 };
 
-export default ProductDeliveryTimeCreate;
+export default OrderDeliveryTimeCreate;
