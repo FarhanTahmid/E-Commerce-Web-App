@@ -11,16 +11,6 @@ const RequirePermission = ({ children, pageName }) => {
     useEffect(() => {
         const fetchPermissions = async () => {
             const username = Cookies.get("username");
-            if (!username) {
-                navigate("/403");
-                return;
-            }
-
-            if (userPermissionsCache !== null) {
-                setHasPermission(userPermissionsCache.includes(pageName));
-                if (!userPermissionsCache.includes(pageName)) navigate("/403");
-                return;
-            }
 
             try {
                 const response = await fetch("http://127.0.0.1:8000/server_api/system/has-permissions/", {
@@ -33,7 +23,6 @@ const RequirePermission = ({ children, pageName }) => {
                 });
 
                 const data = await response.json();
-                console.log(data);
                 userPermissionsCache = data.hasPermissions;
                 if (!userPermissionsCache) navigate("/403");
                 setHasPermission(userPermissionsCache);

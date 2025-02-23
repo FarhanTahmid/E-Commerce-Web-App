@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FiFacebook, FiGithub, FiTwitter } from 'react-icons/fi';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import { BackendUrlMainAPI } from '../../BackendUrlMainAPI';
 
 const LoginForm = ({ registerPath, resetPath }) => {
     const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ const LoginForm = ({ registerPath, resetPath }) => {
         setError('');
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/server_api/business-admin/login/', {
+            const response = await fetch(`${BackendUrlMainAPI}server_api/business-admin/login/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -28,7 +29,7 @@ const LoginForm = ({ registerPath, resetPath }) => {
                 // Assuming the API returns a token or success message
                 // Set cookies with expiration times
                 const accessTokenExpiry = new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days
-                const refreshTokenExpiry = new Date(new Date().getTime() + 4 * 24 * 60 * 60 * 1000); // 4 days
+                const refreshTokenExpiry = new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days
 
                 Cookies.set('accessToken', data.access, { expires: accessTokenExpiry });
                 Cookies.set('refreshToken', data.refresh, { expires: refreshTokenExpiry });
@@ -74,11 +75,11 @@ const LoginForm = ({ registerPath, resetPath }) => {
                         required
                     />
                 </div>
-                <div className="d-flex align-items-center justify-content-between">
+                {/* <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <Link to={resetPath} className="fs-11 text-primary">Forget password?</Link>
                     </div>
-                </div>
+                </div> */}
                 <div className="mt-5">
                     <button type="submit" className="btn btn-lg btn-primary w-100">Login</button>
                 </div>

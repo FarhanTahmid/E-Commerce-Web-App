@@ -3,11 +3,12 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import ConfirmationModal from '../../ConfirmationModal';
+import { BackendUrlMainAPI } from '../../../BackendUrlMainAPI';
 
 const AdminManagementPermissionsUpdate = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin';
+    const API_BASE_URL = `${BackendUrlMainAPI}server_api/business-admin`;
     const [positions, setPositions] = useState([]);
     const [permissions, setPermissions] = useState([]);
     const [rolePermissions, setRolePermissions] = useState([]);

@@ -59,15 +59,16 @@ const ProfileModal = () => {
         }
     };
 
-    const handleLogout = async () => {
+    const handleLogout = () => {
         const refreshToken = Cookies.get("refreshToken");
+        console.log("Refresh token:", refreshToken);
         if (!refreshToken) {
             console.error("No refresh token found");
             return;
         }
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/server_api/business-admin/logout/", {
+            const response = fetch("http://127.0.0.1:8000/server_api/business-admin/logout/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -76,7 +77,8 @@ const ProfileModal = () => {
                 body: JSON.stringify({ refresh: refreshToken }),
             });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.error}`);
+
 
             // Clear cookies and redirect
             Cookies.remove("accessToken");
@@ -107,71 +109,10 @@ const ProfileModal = () => {
                         </div>
                     </div>
                 </div>
-                {/* <div className="dropdown">
-                    <a href="#" className="dropdown-item" data-bs-toggle="dropdown">
-                        <span className="hstack">
-                            <i className="wd-10 ht-10 border border-2 border-gray-1 bg-success rounded-circle me-2"></i>
-                            <span>Active</span>
-                        </span>
-                        <i className="ms-auto me-0"><FiChevronRight /></i>
-                    </a>
-                    <div className="dropdown-menu user-active">
-                        {activePosition.map((item, index) => (
-                            <Fragment key={index}>
-                                {index === activePosition.length - 1 && <div className="dropdown-divider"></div>}
-                                <a href="#" className="dropdown-item">
-                                    <span className="hstack">
-                                        <i className={`wd-10 ht-10 border border-2 border-gray-1 rounded-circle me-2 ${getColor(item)}`}></i>
-                                        <span>{item}</span>
-                                    </span>
-                                </a>
-                            </Fragment>
-                        ))}
-                    </div>
-                </div> */}
-                {/* <div className="dropdown">
-                    <a href="#" className="dropdown-item" data-bs-toggle="dropdown">
-                        <span className="hstack">
-                            <i className="me-2"><FiDollarSign /></i>
-                            <span>Subscriptions</span>
-                        </span>
-                        <i className="ms-auto me-0"><FiChevronRight /></i>
-                    </a>
-                    <div className="dropdown-menu">
-                        {subscriptionsList.map((item, index) => (
-                            <Fragment key={index}>
-                                {index === subscriptionsList.length - 1 && <div className="dropdown-divider"></div>}
-                                <a href="#" className="dropdown-item">
-                                    <span className="hstack">
-                                        <i className="wd-5 ht-5 bg-gray-500 rounded-circle me-3"></i>
-                                        <span>{item}</span>
-                                    </span>
-                                </a>
-                            </Fragment>
-                        ))}
-                    </div>
-                </div>
-                <div className="dropdown-divider"></div> */}
                 <a href="/profile/details" className="dropdown-item">
                     <i><FiUser /></i>
                     <span>Profile Details</span>
                 </a>
-                {/* <a href="#" className="dropdown-item">
-                    <i><FiActivity /></i>
-                    <span>Activity Feed</span>
-                </a>
-                <a href="#" className="dropdown-item">
-                    <i><FiDollarSign /></i>
-                    <span>Billing Details</span>
-                </a>
-                <a href="#" className="dropdown-item">
-                    <i><FiBell /></i>
-                    <span>Notifications</span>
-                </a> */}
-                {/* <a href="#" className="dropdown-item">
-                    <i><FiSettings /></i>
-                    <span>Account Settings</span>
-                </a> */}
                 <div className="dropdown-divider"></div>
                 <a href="#" className="dropdown-item" onClick={handleLogout}>
                     <i><FiLogOut /></i>

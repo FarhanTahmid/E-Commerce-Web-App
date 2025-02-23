@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import ConfirmationModal from '../../ConfirmationModal'; // Import the modal component
+import { BackendUrlMainAPI } from "../../../BackendUrlMainAPI";
+
 
 const AdminManagementAdminsOperation = () => {
     const { admin_user_name } = useParams();
@@ -15,7 +17,7 @@ const AdminManagementAdminsOperation = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false); // Modal visibility state
     const [deleteAction, setDeleteAction] = useState(null); // Action type to confirm
 
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/admin-position';
+    const API_BASE_URL = `${BackendUrlMainAPI}server_api/business-admin/admin-position`;
 
     const fetchAdminPosition = async () => {
         try {

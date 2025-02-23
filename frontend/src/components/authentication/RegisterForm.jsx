@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
+import { BackendUrlMainAPI } from '../../BackendUrlMainAPI';
 
 const RegisterForm = ({ path }) => {
     const [adminFullName, setAdminFullName] = useState('');
@@ -81,7 +82,7 @@ const RegisterForm = ({ path }) => {
 
         try {
             const response = await axios.post(
-                "http://127.0.0.1:8000/server_api/business-admin/signup/",
+                `${BackendUrlMainAPI}server_api/business-admin/signup/`,
                 formData,
                 {
                     headers: {

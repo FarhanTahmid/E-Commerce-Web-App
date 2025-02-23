@@ -481,11 +481,11 @@ export const router = createBrowserRouter([
         element: <LayoutAuth />,
         children: [
             {
-                path: "/authentication/login/minimal",
+                path: "/authentication/login",
                 element: <PublicRoute><LoginMinimal /></PublicRoute>
             },
             {
-                path: "/authentication/register/minimal",
+                path: "/authentication/register",
                 element: <PublicRoute><RegisterMinimal /></PublicRoute>
             },
             {

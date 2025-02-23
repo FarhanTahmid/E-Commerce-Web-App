@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import allRoutes from "./extractRoutes"; // Import extracted routes
-console.log(allRoutes);
+import { BackendUrlMainAPI } from "./BackendUrlMainAPI";
 
 const SendRoutes = () => {
     useEffect(() => {
         const sendRoutesToBackend = async () => {
             try {
-                await fetch("http://127.0.0.1:8000/server_api/system/register-permissions/", {
+                await fetch(`${BackendUrlMainAPI}server_api/system/register-permissions/`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ permission_names_list: allRoutes }),
