@@ -186,4 +186,23 @@ class ProductAPITests(TestCase):
             'brand_name':'Dove'
         }
         response = self.client.get('/client_api/fetch/fetch_brands/',data=data,format='json')
+        # print(response.data)
+
+    def test_fetch_category(self):
+
+        response = self.client.get('/client_api/fetch/fetch_categories/',format='json')
+        # print(response.data)
+
+    def test_fetch_sub_categories(self):
+
+        response = self.client.get('/client_api/fetch/fetch_sub_categories/',format='json')
+        # print(response.data)
+
+    def test_fetch_product_with_flavour(self):
+
+        data = {
+            'flavour_name':'Vanilla'
+        }
+        
+        response = self.client.get('/client_api/fetch/fetch_product_with_flavour/',data=data,format='json')
         print(response.data)

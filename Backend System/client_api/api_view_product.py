@@ -76,7 +76,7 @@ class FetchViewSet(viewsets.ViewSet):
     def get_permissions(self):
         
         if self.action in ['fetch_product_with_search','fetch_product_with_brand','fetch_product_with_category','fetch_product_with_sub_category',
-                           'fetch_product_with_price','fetch_all_product','fetch_brands']:
+                           'fetch_product_with_price','fetch_all_product','fetch_brands','fetch_categories','fetch_sub_categories','fetch_product_with_flavour']:
             return [AllowAny()]
         return super().get_permissions()
     
@@ -110,7 +110,7 @@ class FetchViewSet(viewsets.ViewSet):
                 search = request.query_params.get('search',"").strip()
 
                 if search:
-                    queryset = queryset.filter(product_id__product_name__icontains=search) or queryset.filter(product_id__product_brand__brand_name__icontains=search) or queryset.filter(product_id__product_category__category_name__icontains=search) or queryset.filter(product_id__product_sub_category__sub_category_name__icontains=search) or queryset.filter(product_price__gte=search) or queryset.filter(product_price__lte=search)
+                    queryset = queryset.filter(product_id__product_name__icontains=search) or queryset.filter(product_id__product_brand__brand_name__icontains=search) or queryset.filter(product_id__product_category__category_name__icontains=search) or queryset.filter(product_id__product_sub_category__sub_category_name__icontains=search) or queryset.filter(product_price__gte=search) or queryset.filter(product_price__lte=search) or queryset.filter(product_flavours__product_flavour_name=search)
 
                 serializer = self.serializer_class(queryset, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -201,6 +201,31 @@ class FetchViewSet(viewsets.ViewSet):
             )
         
     @action(detail=False, methods=['GET'])
+    def fetch_product_with_flavour(self, request):
+        
+        try:
+            with transaction.atomic():
+                queryset = Product_SKU.objects.all()
+                flavour_name = request.query_params.get('flavour_name',"").strip()
+
+                if flavour_name:
+                    queryset = queryset.filter(product_flavours__product_flavour_name=flavour_name)
+
+                serializer = self.serializer_class(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    @action(detail=False, methods=['GET'])
     def fetch_product_with_price(self, request):
         
         try:
@@ -241,6 +266,56 @@ class FetchViewSet(viewsets.ViewSet):
                 serializer = Product_Brands_Serializer(queryset, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['GET'])
+    def fetch_categories(self, request):
+        try:
+            with transaction.atomic():
+                queryset = Product_Category.objects.all()
+                category_name = request.query_params.get('category_name',"").strip()
+
+                if category_name!="":
+                    queryset = queryset.filter(category_name=category_name)
+                else:
+                    queryset = queryset
+
+                serializer = Product_Category_Serializer(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    @action(detail=False, methods=['GET'])
+    def fetch_sub_categories(self, request):
+        try:
+            with transaction.atomic():
+                queryset = Product_Sub_Category.objects.all()
+                sub_category_name = request.query_params.get('sub_category_name',"").strip()
+
+                if sub_category_name!="":
+                    queryset = queryset.filter(sub_category_name=sub_category_name)
+                else:
+                    queryset = queryset
+
+                serializer = Product_Sub_Category_Serializer(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
         except ProductNotFound as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
