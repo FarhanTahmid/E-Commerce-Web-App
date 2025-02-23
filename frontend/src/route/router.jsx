@@ -163,43 +163,43 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/products",
-                element: <Product />
+                element: <RequirePermission pageName="view_product"><Product /></RequirePermission>,
             },
             {
                 path: "/products/create",
-                element: <ProductCreate />
+                element: <RequirePermission pageName="change_product_create"><ProductCreate /></RequirePermission>,
             },
             {
                 path: "/products/:id",
-                element: <ProductUpdate />
+                element: <RequirePermission pageName="change_product_update"><ProductUpdate /></RequirePermission>,
             },
             {
                 path: "/products/sku",
-                element: <ProductSKUTable />
+                element: <RequirePermission pageName="view_product_sku"><ProductSKUTable /></RequirePermission>,
             },
             {
                 path: "/products/sku/create/:product_id",
-                element: <ProductSKUCreate />
+                element: <RequirePermission pageName="change_product_sku_create"><ProductSKUCreate /></RequirePermission>,
             },
             {
                 path: "/products/sku/:product_id",
-                element: <ProductSKU />
+                element: <RequirePermission pageName="view_each_product_sku"><ProductSKU /></RequirePermission>,
             },
             {
                 path: "/products/sku/:product_id/:id",
-                element: <ProductSKUUpdate />
+                element: <RequirePermission pageName="change_product_sku_update"><ProductSKUUpdate /></RequirePermission>,
             },
             {
                 path: "/products/image",
-                element: <ProductImage />
+                element: <RequirePermission pageName="view_product_image"><ProductImage /></RequirePermission>,
             },
             {
                 path: "/products/image/:id",
-                element: <ProductImageUpdate />
+                element: <RequirePermission pageName="change_product_image_update"><ProductImageUpdate /></RequirePermission>,
             },
             {
                 path: "/products/image/:id/create",
-                element: <ProductImageCreate />
+                element: <RequirePermission pageName="change_product_image_create"><ProductImageCreate /></RequirePermission>,
             },
             {
                 path: "/products/category",
@@ -215,27 +215,27 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/products/brand",
-                element: <ProductBrand />
+                element: <RequirePermission pageName="view_product_brand"><ProductBrand /></RequirePermission>,
             },
             {
                 path: "/products/brand/create",
-                element: <ProductBrandCreate />
+                element: <RequirePermission pageName="change_product_brand_create"><ProductBrandCreate /></RequirePermission>,
             },
             {
                 path: "/products/brand/:id",
-                element: <ProductBrandUpdate />
+                element: <RequirePermission pageName="change_product_brand_update"><ProductBrandUpdate /></RequirePermission>,
             },
             {
                 path: "/products/flavour",
-                element: <ProductFlavour />
+                element: <RequirePermission pageName="view_product_flavour"><ProductFlavour /></RequirePermission>,
             },
             {
                 path: "/products/flavour/create",
-                element: <ProductFlavourCreate />
+                element: <RequirePermission pageName="change_product_flavour_create"><ProductFlavourCreate /></RequirePermission>,
             },
             {
                 path: "/products/flavour/:id",
-                element: <ProductFlavourUpdate />
+                element: <RequirePermission pageName="change_product_flavour_update"><ProductFlavourUpdate /></RequirePermission>,
             },
             {
                 path: "/products/delivery-time",

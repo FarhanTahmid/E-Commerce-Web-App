@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Select from "react-select";
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+
 
 const ProductSKUCreate = () => {
+    const navigate = useNavigate();
     const { product_id } = useParams();
     const [products, setProducts] = useState('');
     const [productPrice, setProductPrice] = useState('');
@@ -52,6 +54,9 @@ const ProductSKUCreate = () => {
 
             if (selectedProduct) {
                 setProducts(selectedProduct.label);
+            }
+            else {
+                navigate("/404");
             }
 
 

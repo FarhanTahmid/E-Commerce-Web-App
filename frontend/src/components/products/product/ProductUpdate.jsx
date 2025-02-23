@@ -86,6 +86,7 @@ const ProductUpdate = () => {
             fetchSubcategoriesForCategories(selectedCat, product.product_sub_category);
         } catch (error) {
             console.error("Error fetching product details:", error);
+            navigate("/404"); // Redirect if request fails
         }
     };
 

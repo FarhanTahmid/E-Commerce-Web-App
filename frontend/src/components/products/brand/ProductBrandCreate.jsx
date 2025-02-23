@@ -187,6 +187,7 @@ const ProductBrandCreate = () => {
                                         id="brandLogo"
                                         accept="image/jpeg, image/png, image/jpg"
                                         onChange={handleLogoChange}
+                                        required
                                     />
 
                                     {previewLogo && (

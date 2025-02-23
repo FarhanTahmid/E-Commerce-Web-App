@@ -233,6 +233,7 @@ const ProductCategoryUpdate = () => {
             })
             .catch(error => {
                 console.error("Error fetching categories:", error.response ? error.response.data : error);
+                navigate("/404");
             });
     }, []);
 

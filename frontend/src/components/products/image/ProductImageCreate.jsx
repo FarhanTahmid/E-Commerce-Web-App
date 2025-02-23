@@ -57,6 +57,7 @@ const ProductImageCreate = () => {
             .catch(error => {
                 setMessage(error.response ? error.response.data.error : error.message);
                 setMessageType('danger');
+                navigate("/404");
             });
     };
 
