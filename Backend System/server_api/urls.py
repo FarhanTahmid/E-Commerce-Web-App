@@ -44,7 +44,8 @@ urlpatterns = [                                                                 
     path('business-admin/admin-role-permission/create/',views.CreateBusinessAdminRolePermission.as_view(),name='create_business_admin_role_permissions'),
     path('business-admin/admin-role-permission/update/<int:admin_position_pk>/',views.UpdateBusinessAdminRolePermission.as_view(),name='update_business_admin_role_permissions'),
     path('business-admin/admin-role-permission/delete/<int:admin_position_pk>/',views.DeleteBusinessAdminRolePermission.as_view(),name='delete_business_admin_role_permissions'),
-    #discount type
+    
+    #delivery-time
     path('business-admin/delivery-time/fetch/',views.FetchDeliveryTime.as_view(),name="fetch_delivery_time"),#pass parameters /?delivery_pk= OR delivery_name= OR none to fech all
     path('business-admin/delivery-time/create/',views.CreateDeliveryTime.as_view(),name="create_delivery_time"),
     path('business-admin/delivery-time/update/<int:delivery_time_pk>/',views.UpdateDeliveryTime.as_view(),name="update_delivery_time"),
