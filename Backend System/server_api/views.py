@@ -3251,12 +3251,12 @@ class FetchDeliveryTime(APIView):
                 delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
             else:
                 delivery_time,message = OrderManagement.fetch_delivery_time()
-                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True).data
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True)
             
             if delivery_time:
                 return Response({
                     'message':message,
-                    'delivery_time_data':delivery_time_data
+                    'delivery_time_data':delivery_time_data.data
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
