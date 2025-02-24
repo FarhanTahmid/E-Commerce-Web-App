@@ -10,6 +10,7 @@ urlpatterns = [                                                                 
     #system
     path('system/register-permissions/',views.RegisterPermissionsPages.as_view(),name='register_permissions'),
     path('system/has-permissions/',views.CheckPermission.as_view(),name='has_permissions'),
+    path('system/notification/fetch/',views.FetchUserNotifications.as_view(),name='fetch_user_notifications'),
 
     #business admin
     path('business-admin/admin/fetch-all/',views.FetchBusinessAdminUsers.as_view(),name='fetch_all_business_admin_user'),#pass parameters /?admin_user_name= OR admin_unique_id= OR admin_email= OR none to retrieve all

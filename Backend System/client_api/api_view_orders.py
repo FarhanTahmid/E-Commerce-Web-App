@@ -247,13 +247,20 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 }
 
-                SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed")
-                notification = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
-                if notification[0]:
-                    print(notification[1])
+                SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed",emails_to=[request.user.email])
+                notification_to_client = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
+                if notification_to_client[0]:
+                    print(notification_to_client[1])
                 else:
-                    print("notification creation failed")
-                #send email to specific admin and notification
+                    print("notification creation failed to client")
+
+                #TODO:send notiication to admin of desire role
+                notification_to_admin = SystemManagement.create_notification(title="A new order has been placed",role="Manage")
+                if notification_to_admin[0]:
+                    print(notification_to_admin[1])
+                else:
+                    print("notification creation failed to admin")
+
                 return Response(data=response, status=status.HTTP_201_CREATED)
 
         except Cart.DoesNotExist:

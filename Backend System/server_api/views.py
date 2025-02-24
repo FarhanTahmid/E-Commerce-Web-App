@@ -24,6 +24,7 @@ from orders.serializers import DeliveryTimeSerializer
 from orders.order_management import OrderManagement
 from system.manage_system import SystemManagement
 from system.permissions import has_permission
+from system.serializer import *
 
 REFRESH_RATE = '50/m'
 SERVER_API_URL = 'server_api'
@@ -101,6 +102,71 @@ class CheckPermission(APIView):
                 return Response({
                     'hasPermissions':permission
                 },status=status.HTTP_403_FORBIDDEN)
+
+        except JSONDecodeError as e:
+                return Response(
+                    {'error': 'Invalid JSON format'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class FetchUserNotifications(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=None, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+            
+            #TO GET USER NOTIFICATION PASS USER NAME AND READ= "t" for fetching notifications that are marked read by user
+            #TO GET USER NOTIFICATION PASS USER NAME AND READ= "f" for fetching notifications that are not read by user
+            #TO GET ALL USER NOTIFICATION JUST PASS USER NAME
+            #TO GET SPECIFIC USER NOTIFICATION JUST PASS NOTIFICATION PK
+            #TO GET ALL NOTIIFCAIOTN PASS NOTHING
+            
+            read = self.request.data.get('read',"")
+            user_name = self.request.data.get('user_name',"")
+            notification_pk = self.request.data.get('notification_pk',"")
+
+            if user_name!="" and read!="":
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user(read=read,user_name=user_name)
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=True)
+            elif user_name!="":
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user(user_name=user_name)
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=True)
+            elif notification_pk!="":
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user(notification_pk=notification_pk)
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=False)
+            else:
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user()
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=True)
+
+            if fetch_notification:
+                return Response({
+                    'message':message,
+                    'user_notifications':fetch_notification_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
 
         except JSONDecodeError as e:
                 return Response(
