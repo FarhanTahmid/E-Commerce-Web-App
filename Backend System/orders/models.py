@@ -230,4 +230,19 @@ class CartItems(models.Model):
     def __str__(self):
         return str(self.pk)
 
+class CancelOrderRequest(models.Model):
+
+    order_id = models.ForeignKey(Order,on_delete=models.CASCADE, null=False, blank=False,related_name="cancel_order")
+    cancellation_reason = models.TextField(null=False,blank=False)
+    cancellation_status = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Cancel Order"
+
+    def __str__(self):
+        return f"Order-ID:{self.order_id.order_id} - Reason:{self.cancellation_reason}, Status - {self.cancellation_status}"
+    
+
 

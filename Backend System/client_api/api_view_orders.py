@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.db import transaction
 from datetime import timedelta
 import uuid
-from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems
+from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems, CancelOrderRequest
 from customer.models import Coupon, CustomerAddress
 from rest_framework.permissions import BasePermission
 from products.product_management import ManageProducts
@@ -306,6 +306,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                         payment.coupon_applied.usage_limit+=1
                         payment.coupon_applied.save()
                         payment.save()
+                    
+                    order.delete()
 
                     return Response(
                         {'message': 'Order cancelled successfully'},
@@ -314,6 +316,23 @@ class OrderViewSet(viewsets.ModelViewSet):
                 else:
                     # Create cancellation request
                     cancellation_reason = serializer.validated_data['reason']
+                    if cancellation_reason:
+                        CancelOrderRequest.objects.create(
+                            order_id = order,
+                            cancellation_reason = cancellation_reason
+                        )
+                    notification_to_client = SystemManagement.create_notification(title="Cancellation Request Sent",user_names=[request.user.username])
+                    if notification_to_client[0]:
+                        print(notification_to_client[1])
+                    else:
+                        print("notification creation failed to client for order cancellation")
+                        
+                    notification_to_admin = SystemManagement.create_notification(title="Request for Order Cancellation",role="Manage")
+                    if notification_to_admin[0]:
+                        print(notification_to_admin[1])
+                    else:
+                        print("notification creation failed to admin for order cancellation")
+
                     # Implement cancellation request workflow here
                     return Response(
                         {'message': 'Cancellation request submitted for approval'},
