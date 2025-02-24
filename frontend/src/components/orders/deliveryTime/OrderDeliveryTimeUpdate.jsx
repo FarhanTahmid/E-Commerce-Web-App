@@ -37,9 +37,9 @@ const OrderDeliveryTimeUpdate = () => {
             })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Failed to delete flavour');
+                        throw new Error('Failed to delete delivery time');
                     }
-                    setMessage('Flavour deleted successfully!');
+                    setMessage('Delivery time deleted successfully!');
                     setMessageType('success');
 
                     // Redirect to the flavour list page after deletion
@@ -73,7 +73,7 @@ const OrderDeliveryTimeUpdate = () => {
                 setEstimatedTime(response.data.delivery_time_data.estimated_delivery_time);
             })
             .catch(error => {
-                console.error("Error fetching Flavour data:", error.response ? error.response.data : error);
+                console.error("Error fetching Delivery time data:", error.response ? error.response.data : error);
                 navigate("/404");
             });
     }, []);
@@ -95,7 +95,7 @@ const OrderDeliveryTimeUpdate = () => {
                 },
             });
 
-            setMessage("Flavour Updated Successfully!");
+            setMessage("Delivery Time Updated Successfully!");
             setMessageType('success');
         } catch (error) {
             setMessage(error.response.data.message);
@@ -126,7 +126,7 @@ const OrderDeliveryTimeUpdate = () => {
             )}
             <div className="card invoice-container">
                 <div className="card-header">
-                    <h5>Flavour Update & Deletion</h5>
+                    <h5>Delivery Time Update & Deletion</h5>
                     <Link to="/orders/delivery-time" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">

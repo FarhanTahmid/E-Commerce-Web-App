@@ -239,15 +239,15 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/orders/delivery-time",
-                element: <OrderDeliveryTime />
+                element: <RequirePermission pageName="view_delivery_time"><OrderDeliveryTime /></RequirePermission>,
             },
             {
                 path: "/orders/delivery-time/create",
-                element: <OrderDeliveryTimeCreate />
+                element: <RequirePermission pageName="change_delivery_time_create"><OrderDeliveryTimeCreate /></RequirePermission>,
             },
             {
                 path: "/orders/delivery-time/:id",
-                element: <OrderDeliveryTimeUpdate />
+                element: <RequirePermission pageName="change_delivery_time_update"><OrderDeliveryTimeUpdate /></RequirePermission>,
             },
             {
                 path: "/admin-management/positions",
