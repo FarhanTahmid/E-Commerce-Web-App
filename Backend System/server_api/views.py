@@ -17,14 +17,118 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
 from business_admin import serializers
+from business_admin.models import *
+from e_commerce_app.settings import MEDIA_URL
+from datetime import datetime
+from orders.serializers import DeliveryTimeSerializer
+from orders.order_management import OrderManagement
+from system.manage_system import SystemManagement
+from system.permissions import has_permission
+
+REFRESH_RATE = '50/m'
+SERVER_API_URL = 'server_api'
 
 # Create your views here.
+
+#system
+class RegisterPermissionsPages(APIView):
+
+    permission_classes = [AllowAny]
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+
+            permission_names_list = self.request.data.get('permission_names_list',[])
+
+            created,message = SystemManagement.register_all_page_permissions(request,permission_names_list)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CheckPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    #PASS PERMISSION PAGE NAME AS 
+    # view_..... OR change_....  (.... == page name)
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+
+            user_name = self.request.data.get('user_name',"")
+            permission_page_name = self.request.data.get('permission_page_name',"")
+
+            if user_name=="":
+                return Response({
+                    'error':"User Name required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            permission = has_permission(request,user_name,permission_page_name)
+            if permission:
+                return Response({
+                    'hasPermissions':permission
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'hasPermissions':permission
+                },status=status.HTTP_403_FORBIDDEN)
+
+        except JSONDecodeError as e:
+                return Response(
+                    {'error': 'Invalid JSON format'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 #business admin
 class SignupBusinessAdminUser(APIView):
     
     permission_classes = [AllowAny]
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
             admin_full_name = self.request.data.get('admin_full_name',"")
@@ -32,7 +136,6 @@ class SignupBusinessAdminUser(APIView):
             password = self.request.data.get('password',"")
             confirm_password = self.request.data.get('confirm_password',"")
 
-            admin_position_pk = self.request.data.get('admin_position_pk',"")
             admin_contact_no = self.request.data.get('admin_contact_no',"")
             admin_avatar = self.request.data.get('admin_avatar',"")
             is_superuser = self.request.data.get('is_superuser',False)
@@ -48,8 +151,6 @@ class SignupBusinessAdminUser(APIView):
                 missing_fields.append('password')
             if confirm_password == "":
                 missing_fields.append('confirm password')
-            if admin_position_pk == "":
-                missing_fields.append('admin position')
 
             if missing_fields:
                 return Response(
@@ -66,7 +167,7 @@ class SignupBusinessAdminUser(APIView):
                 )
             
             business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,
-                                                                                    password=password,admin_position_pk=admin_position_pk,
+                                                                                    password=password,
                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
                                                                                     admin_avatar=admin_avatar,is_superuser=is_superuser,is_staff_user=is_staff)
             if business_admin_user:
@@ -103,7 +204,7 @@ class SignupBusinessAdminUser(APIView):
 class LoginInBusinessAdminUser(APIView):
 
     permission_classes = [AllowAny]
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
             email = self.request.data.get('email',"")
@@ -164,7 +265,7 @@ class LogOutBusinessAdminUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -214,16 +315,14 @@ class UpdateBusinessAdminUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,admin_user_name,format=None):
 
         try:
             admin_user_name = admin_user_name
-            admin_full_name = self.request.data.get('admin_full_name',"")
-            admin_position_pk = self.request.data.get('admin_position_pk',"")
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
-            admin_email = self.request.data.get('admin_email',"")
             #can none
+            admin_full_name = self.request.data.get('admin_full_name',"")
+            admin_email = self.request.data.get('admin_email',"")
             admin_contact_no = self.request.data.get('admin_contact_no',"")
             admin_avatar = self.request.data.get('admin_avatar',"")
             old_password = self.request.data.get('old_password',"")
@@ -231,10 +330,7 @@ class UpdateBusinessAdminUser(APIView):
             is_superuser = self.request.data.get('is_superuser',False)
             is_staff_user = self.request.data.get('is_staff_user',False)
             missing_fields = []
-            if admin_full_name == "":
-                missing_fields.append("Admin full name")
-            if admin_position_pk == "":
-                missing_fields.append("Admin position")
+
             if missing_fields:
                 return Response(
                     {
@@ -242,7 +338,7 @@ class UpdateBusinessAdminUser(APIView):
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_unique_id,admin_full_name,admin_position_pk,
+            admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_user_name,admin_full_name,
                                                                                 admin_email,admin_contact_no,admin_avatar,old_password,password,is_superuser,is_staff_user)
             if admin_updated:
                 return Response({
@@ -279,12 +375,11 @@ class UpdateBusinessAdminUserPassword(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,admin_user_name,format=None):
         try:
 
             admin_user_name = admin_user_name
-            admin_unique_id = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)[0].admin_unique_id
             old_password = self.request.data.get('old_password',"")
             new_password = self.request.data.get('new_password',"")
             new_password_confirm = self.request.data.get('new_password_confirm',"")
@@ -297,7 +392,7 @@ class UpdateBusinessAdminUserPassword(APIView):
                     'error':"Please provide old password"
                 },status=status.HTTP_400_BAD_REQUEST)
             if new_password == new_password_confirm:
-                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_unique_id,old_password,new_password)
+                password_update,message = AdminManagement.update_business_admin_user_password(request,admin_user_name,old_password,new_password)
                 if password_update:
                     return Response({
                         'message':message
@@ -336,7 +431,7 @@ class DeleteBusinessAdminUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,admin_user_name,format=None):
         try:
             admin_user_name=admin_user_name
@@ -371,6 +466,112 @@ class DeleteBusinessAdminUser(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+class FetchBusinessAdminUsers(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+            
+            admin_unique_id = self.request.query_params.get('admin_unique_id',"")
+            admin_email = self.request.query_params.get('admin_email',"")
+            admin_user_name = self.request.query_params.get('admin_user_name',"")
+
+            if admin_unique_id != "":
+                fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+            elif admin_email!= "":
+                fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+            elif admin_user_name!= "":
+                fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+            else:
+                fetched_admin,message = AdminManagement.fetch_business_admin_user()
+                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=True)
+
+            if fetched_admin:
+                return Response({
+                    'message':message,
+                    'admin_users':fetched_admin_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class GetBusinessAdminAvatar(APIView):
+    
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,admin_user_name,format=None):
+        try:
+            domain = request.get_host()
+            admin_user_name = admin_user_name
+
+            if admin_user_name!= "":
+                fetched_admin_avatar,message = AdminManagement.fetch_business_admin_profile_picture(admin_user_name=admin_user_name)
+            else:
+                return Response({
+                    'error':"Please provide admin unique id or email or admin user name"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            if fetched_admin_avatar:
+                return Response({
+                    'message':message,
+                    'admin_avatar': str(domain)+ '/' + SERVER_API_URL + MEDIA_URL + str(fetched_admin_avatar)
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 #business admin position
 
@@ -378,12 +579,13 @@ class FetchBusinessAdminPosition(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
             name = self.request.query_params.get('name',"")
             pk = self.request.query_params.get('pk',"")
+            available = self.request.query_params.get('available',False)
 
             if name!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(name=name)
@@ -391,6 +593,9 @@ class FetchBusinessAdminPosition(APIView):
             elif pk!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(pk=pk)
                 fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+            elif available:
+                fetched_position,message = AdminManagement.fetch_admin_position(available=True)
+                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
             else:
                 fetched_position,message = AdminManagement.fetch_admin_position()
                 fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
@@ -429,13 +634,19 @@ class FetchBusinessAdminPosition(APIView):
         
 class CreateBusinessAdminPosition(APIView):
 
+    """Permissions"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    # required_permissions = [
+    #     AdminPermissions.CREATE,
+    #     AdminPermissions.VIEW
+    # ] 
+    # def get_permissions(self):
+    #     return [IsAdminWithPermission(self.required_permissions)]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
         try:
-
             name = self.request.data.get('name',"")
             description = self.request.data.get('description',"")
 
@@ -481,19 +692,16 @@ class UpdateBusinessAdminPosition(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,admin_position_pk,format=None,*args, **kwargs):
         try:
-
             admin_position_pk= admin_position_pk
             name = self.request.data.get('name',"")
             description = self.request.data.get('description',"")
-
             if name == "":
                 return Response({
                     'message':"Admin position name is required"
                 },status=status.HTTP_400_BAD_REQUEST)
-            
             admin_position_updated,message = AdminManagement.update_admin_position(request,admin_position_pk,name,description)
             if admin_position_updated:
                 return Response({
@@ -530,7 +738,7 @@ class DeleteBusinessAdminPosition(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def delete(self,request,admin_position_pk,format=None,*args, **kwargs):
 
         try:
@@ -566,14 +774,210 @@ class DeleteBusinessAdminPosition(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )   
 
+#business admin permission
+class FetchBusinessAdminPermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            permission_pk = self.request.query_params.get('permission_pk',"")
+            permission_name = self.request.query_params.get('permission_name',"")
+            exclude = self.request.query_params.get('exclude',False)
+
+            if permission_pk != "":
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+            elif permission_name!= "":
+                admin_permission,message = AdminManagement.fetch_admin_permissions(permission_name=permission_name)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+            elif exclude:
+                admin_permission,message = AdminManagement.fetch_admin_permissions(exclude=True)
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
+            else:
+                admin_permission,message = AdminManagement.fetch_admin_permissions()
+                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
+            
+            if admin_permission:
+                return Response({
+                    'message':message,
+                    'admin_permission':admin_permission_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )    
+
+class CreateBusinessAdminPermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None,*args, **kwargs):
+        try:
+
+            permission_name = self.request.data.get('permission_name',"")
+            permission_description = self.request.data.get('permission_description',"")
+
+            if permission_name == "":
+                return Response({
+                    'error':'Permission name required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            permission_created,message = AdminManagement.create_admin_permissions(request,permission_name,permission_description)
+            if permission_created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+        
+class UpdateBusinessAdminPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,admin_permission_pk,format=None,*args, **kwargs):
+
+        try:
+            admin_permission_pk=admin_permission_pk
+            permission_name = self.request.data.get('permission_name',"")
+            permission_description = self.request.data.get('permission_description',"")
+
+            if permission_name == "":
+                return Response({
+                    'error':'Permission name required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            updated_permission,message = AdminManagement.update_admin_permissions(request,admin_permission_pk,permission_name,permission_description)
+            if updated_permission:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
+        
+class DeleteBusinessAdminPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,admin_permission_pk,format=None,*args, **kwargs):
+
+        try:
+
+            admin_permission_pk = admin_permission_pk
+            deleted,message = AdminManagement.delete_admin_permissions(request,admin_permission_pk)
+            if deleted:
+                return Response(
+                    {"message": message},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) 
 
 #product categories
-class FetchProductCategoryView(APIView):
+class FetchProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             pk = request.query_params.get('pk',"")
@@ -612,12 +1016,12 @@ class FetchProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class FetchProductCategoryWithPkView(APIView):
+class FetchProductCategoryWithPk(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,pk,format=None):
         try:
 
@@ -653,13 +1057,13 @@ class FetchProductCategoryWithPkView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class CreateProductCategoryView(APIView):
+class CreateProductCategory(APIView):
    
     
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self, request, format=None):
         
         try:
@@ -712,13 +1116,13 @@ class CreateProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class UpdateProductCategoryView(APIView):
+class UpdateProductCategory(APIView):
 
     
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self, request,pk, format=None):
         try:
 
@@ -767,12 +1171,12 @@ class UpdateProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class DeleteProductCategoryView(APIView):
+class DeleteProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,pk,format=None):
         
         try:
@@ -809,12 +1213,12 @@ class DeleteProductCategoryView(APIView):
             )
         
 #product sub categories
-class FetchProductSubCategoryView(APIView):
+class FetchProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,pk,format=None):
         try:
 
@@ -850,12 +1254,12 @@ class FetchProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class CreateProductSubCategoryView(APIView):
+class CreateProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,product_category_pk,format=None):
         try:
 
@@ -904,12 +1308,12 @@ class CreateProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class UpdateProductSubCategoryView(APIView):
+class UpdateProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_sub_category_pk,format=None):
         try:
 
@@ -963,12 +1367,12 @@ class UpdateProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class DeleteProductSubCategoryView(APIView):
+class DeleteProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_sub_category_pk,format=None):
         try:
 
@@ -1010,7 +1414,7 @@ class FetchProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
 
         try:
@@ -1018,13 +1422,13 @@ class FetchProductBrands(APIView):
             brand_name = request.query_params.get('brand_name',"")
             if pk!= "":
                 product_brands,message = ManageProducts.fetch_product_brand(pk=pk)
-                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False)
+                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False,context={'request': request})
             elif brand_name!= "":
                 product_brands,message = ManageProducts.fetch_product_brand(brand_name=brand_name)
-                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False)
+                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=False,context={'request': request})
             else:
                 product_brands,message = ManageProducts.fetch_product_brand()
-                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=True)
+                product_brands_data = product_serializers.Product_Brands_Serializer(product_brands,many=True,context={'request': request})
             if product_brands:
                 return Response(
                     {"message": message,"product_brands": product_brands_data.data},
@@ -1060,7 +1464,7 @@ class CreateProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
             
@@ -1070,6 +1474,8 @@ class CreateProductBrands(APIView):
             brand_country = self.request.data.get('brand_country',"")
             brand_description = self.request.data.get('brand_description',"")
             brand_logo = self.request.data.get('brand_logo',"")
+
+            print(brand_name,brand_established_year,is_own_brand,brand_country,brand_description,brand_logo)
 
             missing_fields = []
             if brand_name == "":
@@ -1123,7 +1529,7 @@ class UpdateProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_brand_pk,format=None):
         try:
             product_brand_pk = product_brand_pk
@@ -1187,7 +1593,7 @@ class DeleteProductBrands(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_brand_pk,format=None):
         try:
 
@@ -1229,7 +1635,7 @@ class FetchProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             pk = request.query_params.get('pk',"")
@@ -1279,7 +1685,7 @@ class CreateProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -1328,7 +1734,7 @@ class UpdateProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_flavour_pk,format=None):
         try:
             product_flavour_pk=product_flavour_pk
@@ -1373,7 +1779,7 @@ class DeleteProductFlavour(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_flavour_pk,format=None):
         try:
             product_flavour_pk = product_flavour_pk
@@ -1413,15 +1819,15 @@ class FetchProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
-            product_pk = self.request.data.get('product_pk',"")
-            product_name = self.request.data.get('product_name',"")
-            product_brand_pk = self.request.data.get('product_brand_pk',"")
-            product_category_pk_list = self.request.data.get('product_category_pk_list',[])
-            product_sub_category_pk_list = self.request.data.get('product_sub_category_pk_list',[])
+            product_pk = self.request.query_params.get('product_pk',"")
+            product_name = self.request.query_params.get('product_name',"")
+            product_brand_pk = self.request.query_params.get('product_brand_pk',"")
+            product_category_pk_list = self.request.query_params.get('product_category_pk_list',[])
+            product_sub_category_pk_list = self.request.query_params.get('product_sub_category_pk_list',[])
 
             if product_pk!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_pk)
@@ -1431,7 +1837,7 @@ class FetchProduct(APIView):
                 product_data = product_serializers.Product_Serializer(product,many=False)
             elif product_brand_pk!= "":
                 product,message = ManageProducts.fetch_product(product_brand_pk=product_brand_pk)
-                product_data = product_serializers.Product_Serializer(product,many=False)
+                product_data = product_serializers.Product_Serializer(product,many=True)
             elif len(product_category_pk_list)!=0:
                 product,message = ManageProducts.fetch_product(product_category_pk_list=product_category_pk_list)
                 product_data = product_serializers.Product_Serializer(product,many=True)
@@ -1472,12 +1878,80 @@ class FetchProduct(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+class FetchProductDetails(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+
+            product_pk = self.request.query_params.get('product_pk',"")
+            product_brand_pk = self.request.query_params.get('product_brand_pk',"")
+            product_category_pk = self.request.query_params.get('product_category_pk',"")
+            product_sub_category_pk = self.request.query_params.get('product_sub_category_pk',"")
+
+            if product_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_pk=product_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=False).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=False).data
+                product_data['product_images'] = product_serializers.Product_Images_Serializer(product['product_images'],many=True).data
+            elif product_brand_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_brand_pk=product_brand_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=True).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=True).data
+                product_data['product_images'] = product_serializers.Product_Images_Serializer(product['product_images'],many=True).data
+            elif product_category_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_category_pk=product_category_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=True).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=True).data
+                product_data['product_images'] = product_serializers.Product_Images_Serializer(product['product_images'],many=True).data
+            elif product_sub_category_pk!= "":
+                product,message = ManageProducts.fetch_product_with_sku_and_discount(product_sub_category_pk=product_sub_category_pk)
+                product_data = product_serializers.Product_Serializer(product['product'],many=True).data
+                product_data['product_sku'] = product_serializers.Product_SKU_Serializer(product['product_skus'],many=True).data
+                product_data['product_discount'] = product_serializers.Product_Discount_Serializer(product['product_discount'],many=True).data
+                product_data['product_images'] = product_serializers.Product_Images_Serializer(product['product_images'],many=True).data
+            
+            if product:
+                return Response({
+                    'message':message,
+                    'product_data':product_data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message,
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 class CreateProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
         try:
 
@@ -1549,7 +2023,7 @@ class UpdateProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_pk,format=None):
     
         try:
@@ -1620,7 +2094,7 @@ class DeleteProduct(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_pk,format=None):
 
         try:
@@ -1661,7 +2135,7 @@ class FetchProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
 
@@ -1675,7 +2149,7 @@ class FetchProductSKU(APIView):
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
             elif product_id!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_id=product_id)
-                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
+                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=True)
             elif product_name!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_name=product_name)
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
@@ -1722,7 +2196,7 @@ class CreateProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None):
 
         try:
@@ -1785,7 +2259,7 @@ class UpdateProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_sku_pk,format=None):
         try:
 
@@ -1850,7 +2324,7 @@ class DeleteProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_sku_pk,format=None):
         try:
             product_sku_pk = product_sku_pk
@@ -1890,20 +2364,20 @@ class FetchProductImages(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             product_pk = self.request.query_params.get('product_pk',"")
             product_image_pk = self.request.query_params.get('product_image_pk',"")
             if product_pk!= "":
                 product_images,message = ManageProducts.fetch_product_image(product_pk=product_pk)
-                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True,context={'request': request})
             elif product_image_pk!= "":
                 product_images,message = ManageProducts.fetch_product_image(product_image_pk=product_image_pk)
-                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=False)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=False,context={'request': request})
             else:
                 product_images,message = ManageProducts.fetch_product_image()
-                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True)
+                product_images_data = product_serializers.Product_Images_Serializer(product_images,many=True,context={'request': request})
             
             if product_images:
                 return Response({
@@ -1940,7 +2414,7 @@ class CreateProductImages(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,product_id,format=None):
         try:
             product_id=product_id
@@ -1990,7 +2464,7 @@ class UpdateProductImage(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
     def put(self,request,product_image_pk,format=None):
         try:
             product_image_pk=product_image_pk
@@ -2036,7 +2510,7 @@ class DeleteProductImage(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
     def delete(self,request,product_image_pk,format=None):
         try:
             product_image_pk = product_image_pk
@@ -2070,20 +2544,32 @@ class DeleteProductImage(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) 
-        
+
+#product discount        
 class FetchProductDiscount(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='GET', block=True))
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             
             product_id = self.request.query_params.get('product_id',"")
             discount_name = self.request.query_params.get('discount_name',"")
-            is_active = self.request.query_params.get('is_active',"")
+            is_active = self.request.query_params.get('is_active',False)
             product_discount_pk = self.request.query_params.get('product_discount_pk',"")
+            brand_id = self.request.query_params.get('brand_id',"")
+            sub_category_pk = self.request.query_params.get('sub_category_pk',"")
+            category_pk = self.request.query_params.get('category_pk',"")
+            product_id_pk= self.request.query_params.get('product_id_pk',"")
+            brand_id_pk = self.request.query_params.get('brand_id_pk',"")
+            sub_category_id_pk = self.request.query_params.get('sub_category_id_pk',"")
+            category_id_pk = self.request.query_params.get('category_id_pk',"")
+            product_id_pk_all = self.request.data.get('product_id_pk_all',False)
+            brand_id_pk_all = self.request.data.get('brand_id_pk_all',False)
+            sub_category_id_pk_all = self.request.data.get('sub_category_id_pk_all',False)
+            category_id_pk_all = self.request.data.get('category_id_pk_all',False)
 
             if product_id!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(product_id=product_id)
@@ -2091,12 +2577,45 @@ class FetchProductDiscount(APIView):
             elif discount_name!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
-            elif is_active!= "":
+            elif is_active != False:
                 product_discount,message = ManageProducts.fetch_product_discount(is_active=True)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
             elif product_discount_pk!= "":
                 product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif brand_id!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(brand_id=brand_id)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif sub_category_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(sub_category_pk=sub_category_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif category_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(category_pk=category_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif product_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(product_id_pk=product_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif brand_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(brand_id_pk=brand_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif sub_category_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(sub_category_id_pk=sub_category_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif category_id_pk!= "":
+                product_discount,message = ManageProducts.fetch_product_discount(category_id_pk=category_id_pk)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=False)
+            elif product_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(product_id_pk=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif brand_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(brand_id_pk=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif sub_category_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(sub_category_id_pk=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
+            elif category_id_pk_all:
+                product_discount,message = ManageProducts.fetch_product_discount(category_id_pk=True)
+                product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
             else:
                 product_discount,message = ManageProducts.fetch_product_discount()
                 product_discount_data = product_serializers.Product_Discount_Serializer(product_discount,many=True)
@@ -2138,15 +2657,21 @@ class CreateProductDiscount(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True))
-    def post(self,request,product_id):
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None,*args, **kwargs):
 
         try:
-            product_id = product_id
             discount_name = self.request.data.get('discount_name',"")
             discount_amount = self.request.data.get('discount_amount',"")
-            start_date = self.request.get('start_date',"")
-            end_date = self.request.get('end_date',"")
+            start_date = self.request.data.get('start_date',"")
+            end_date = self.request.data.get('end_date',"")
+            # is_active = self.request.data.get('is_active',False)
+
+            #any one from here
+            product_id = self.request.data.get('product_id',"")
+            brand_id = self.request.data.get('brand_id',"")
+            sub_category_id = self.request.data.get('sub_category_id',"")
+            category_id = self.request.data.get('category_id',"")
 
             missing_fields = []
             if discount_name == "":
@@ -2158,6 +2683,10 @@ class CreateProductDiscount(APIView):
             if end_date == "":
                 missing_fields.append("End date")
 
+            start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S.%f")
+            end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S.%f")
+
+
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
@@ -2167,10 +2696,23 @@ class CreateProductDiscount(APIView):
                 return Response({
                     'error':"Start date of discount must be less than or equal to end data"
                 },status=status.HTTP_400_BAD_REQUEST)
-            discount_created,message = ManageProducts.create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date)
+            
+            if brand_id!="" and sub_category_id=="" and product_id=="" and category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"",brand_id,"","")
+            elif sub_category_id!="" and brand_id=="" and product_id=="" and category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","",sub_category_id,"")
+            elif product_id!="" and brand_id=="" and sub_category_id=="" and category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id,"","","")
+            elif category_id!="" and brand_id=="" and product_id=="" and sub_category_id=="":
+                discount_created,message = ManageProducts.create_product_discount(request,discount_name,discount_amount,start_date,end_date,"","","",category_id)
+            else:
+                return Response({
+                    'error':"Must provide either one of product id or brand id or sub category id or category id, not more than one"
+                },status=status.HTTP_400_BAD_REQUEST)
+
             if discount_created:
                 return Response({
-                    'messge':message
+                    'message':message
                 },status=status.HTTP_201_CREATED)
             else:
                 return Response({
@@ -2204,17 +2746,32 @@ class UpdateProductDiscount(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='PUT', block=True))
-    def put(self,request,product_discount_pk,format=None):
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,format=None):
 
         try:
             #getting the product discount
-            product_discount_pk = product_discount_pk
-            product_id = self.request.data.get('product_id',"")
+            product_discount_brand_id_pk = self.request.data.get('product_discount_brand_id_pk',"")
+            product_discount_sub_category_id_pk = self.request.data.get('product_discount_sub_category_id_pk',"")
+            product_discount_category_id_pk = self.request.data.get('product_discount_category_id_pk',"")
+            product_discount_product_id_pk = self.request.data.get('product_discount_product_id_pk',"")
+
+            
             discount_name = self.request.data.get('discount_name',"")
             discount_amount = self.request.data.get('discount_amount',"")
             start_date = self.request.data.get('start_date',"")
-            end_data = self.request.data.get('end_date',"")
+            end_date = self.request.data.get('end_date',"")
+            # is_active = self.request.data.get('is_active',"")
+            delete = self.request.data.get('delete',False)
+
+            start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S.%f")
+            end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S.%f")
+
+            #getting optional parametes, MUST have one
+            brand_id = self.request.data.get('brand_id',"")
+            sub_category_id = self.request.data.get('sub_category_id',"")
+            category_id = self.request.data.get('category_id',"")
+            product_id = self.request.data.get('product_id',"")
 
             missing_fields = []
             if product_id == "":
@@ -2225,7 +2782,7 @@ class UpdateProductDiscount(APIView):
                 missing_fields.append("Discount amount")
             if start_date == "":
                 missing_fields.append("Start date")
-            if end_data == "":
+            if end_date == "":
                 missing_fields.appned("End date")
 
             if missing_fields:
@@ -2233,14 +2790,21 @@ class UpdateProductDiscount(APIView):
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
                 },status=status.HTTP_400_BAD_REQUEST)
 
-            if start_date>end_data:
+            if start_date>end_date:
                 return Response({
                     'error':"Start date of discount must be less than or equal to end data"
                 },status=status.HTTP_400_BAD_REQUEST)
             
-            product_discount_updated,message = ManageProducts.update_product_discount(request,product_discount_pk,product_id,discount_name,discount_amount,
-                                                                              start_date,end_data)
-            if product_discount_updated:
+            if product_discount_brand_id_pk!="" and product_discount_sub_category_id_pk=="" and product_discount_category_id_pk=="" and product_discount_product_id_pk=="":
+                updated,message = ManageProducts.update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name,discount_amount,start_date,end_date,brand_id,False,delete)
+            elif product_discount_sub_category_id_pk!="" and product_discount_brand_id_pk=="" and product_discount_category_id_pk=="" and product_discount_product_id_pk == "":
+                updated,message = ManageProducts.update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name,discount_amount,start_date,end_date,sub_category_id,False,delete)
+            elif product_discount_category_id_pk!="" and product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_product_id_pk=="":
+                updated,message = ManageProducts.update_product_discount_for_category(request,product_discount_category_id_pk,discount_name,discount_amount,start_date,end_date,category_id,False,delete)
+            elif product_discount_product_id_pk!="" and  product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_category_id_pk=="":
+                updated, message = ManageProducts.update_product_discount_for_product(request,product_discount_product_id_pk,discount_name,discount_amount,start_date,end_date,product_id,False,delete)
+           
+            if updated:
                 return Response({
                     'message':message
                 },status=status.HTTP_200_OK)
@@ -2269,19 +2833,180 @@ class UpdateProductDiscount(APIView):
             return Response(
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) 
+            )
         
-class DeleteProductDiscount(APIView):
+#position for admin
+class FetchPositionForAdmin(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for fetching position"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+            fetch_admin_position,message = AdminManagement.fetch_postion_of_admin(request,admin_user_name)
+            fetch_admin_position_data = serializers.AdminPositionSerializer(fetch_admin_position,many=False)
+            if fetch_admin_position:
+                return Response({
+                    'message':message,
+                    'position':fetch_admin_position_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class AddPositionForAdmin(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate='5/m', method='DELETE', block=True))
-    def delete(self,request,product_discount_pk,format=None):
-        
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
         try:
-            product_discount_pk=product_discount_pk
-            deleted,message = ManageProducts.delete_product_discount(request,product_discount_pk)
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            extra_permissions_pk_list = self.request.data.get('extra_permissions_pk_list',[])
+
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            position_pk = self.request.data.get('position_pk',"")
+            if position_pk == "":
+                return Response({
+                    'error':"Postion needed"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            
+            added,message = AdminManagement.add_user_admin_position(request,admin_user_name,position_pk,extra_permissions_pk_list)
+            if added:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdatePositionForAdmin(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,format=None):
+        try:
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            extra_permissions_pk_list = self.request.data.get('extra_permissions_pk_list',[])
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            position_pk = self.request.data.get('position_pk',"")
+
+            
+            updated,message = AdminManagement.update_user_admin_position(request,admin_user_name,position_pk,extra_permissions_pk_list)
+            if updated:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class RemovePositionForAdmin(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,format=None):
+        try:
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            delete = self.request.data.get('delete',False)
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for position"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            deleted,message = AdminManagement.remove_position_of_admin(request,admin_user_name,delete)
             if deleted:
                 return Response({
                     'message':message
@@ -2290,6 +3015,392 @@ class DeleteProductDiscount(APIView):
                 return Response({
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+#admin role permission
+class FetchBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+
+            admin_role_permission_pk = self.request.query_params.get('admin_role_permission_pk',"")
+            admin_position_pk = self.request.query_params.get('admin_position_pk',"")
+            admin_permission_pk = self.request.query_params.get('admin_permission_pk',"")
+
+            if admin_role_permission_pk!= "":
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_role_permission_pk=admin_role_permission_pk)
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=False)
+            elif admin_position_pk!= "":
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_position_pk=admin_position_pk)
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+            elif admin_permission_pk!= "":
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_permission_pk=admin_permission_pk)
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+            else:
+                admin_role_permission,message = AdminManagement.fetch_admin_role_permission()
+                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+            
+            if admin_role_permission:
+                return Response({
+                    'message':message,
+                    'admin_role_permission':admin_role_permission_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+   
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CreateBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+            admin_position_pk = self.request.data.get('admin_position_pk',"")
+            admin_permission_pk_list = self.request.data.get('admin_permission_pk_list',[])
+            if admin_position_pk == "":
+                return Response({
+                    'error':"Admin position is needed"
+                },status=status.HTTP_400_BAD_REQUEST)
+            if len(admin_permission_pk_list)==0:
+                return Response({
+                    'error':"Atleast 1 permission is needed"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            created,message = AdminManagement.create_admin_role_permission(request,admin_position_pk,admin_permission_pk_list)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,admin_position_pk,format=None):
+        try:
+
+            admin_position_pk = admin_position_pk
+            admin_permission_pk_list = self.request.data.get('admin_permission_pk_list',[])
+            
+            updated,message = AdminManagement.update_admin_role_permission(request,admin_position_pk,admin_permission_pk_list)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class DeleteBusinessAdminRolePermission(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,admin_position_pk,format=None):
+        try:
+            
+            admin_position_pk = admin_position_pk
+            deleted,message = AdminManagement.delete_admin_role_permission(request,admin_position_pk)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class FetchDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+
+        try:
+            delivery_pk = self.request.query_params.get('delivery_pk',"")
+            delivery_name = self.request.query_params.get('delivery_name',"")
+
+            if delivery_pk!="":
+                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_pk)
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
+            elif delivery_name!="":
+                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_name=delivery_name)
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
+            else:
+                delivery_time,message = OrderManagement.fetch_delivery_time()
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True)
+            
+            if delivery_time:
+                return Response({
+                    'message':message,
+                    'delivery_time_data':delivery_time_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CreateDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            delivery_name = self.request.data.get('delivery_name',"")
+            estimated_time = self.request.data.get('estimated_time',"")
+
+            if delivery_name == "":
+                return Response({
+                    'error': 'Delivery Name Required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            if estimated_time == "":
+                return Response({
+                    'error': 'Delivery Time is required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            created,message = OrderManagement.create_delivery_time(request,delivery_name,estimated_time)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,delivery_time_pk,format=None):
+
+        try:
+            delivery_time_pk=delivery_time_pk
+            delivery_name = self.request.data.get('delivery_name',"")
+            estimated_time = self.request.data.get('estimated_time',"")
+
+            updated,message = OrderManagement.update_delivery_time(request,delivery_time_pk,delivery_name,estimated_time)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {'message':message}
+                ,status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class DeleteDeliveryTime(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,delivery_time_pk,format=None):
+
+        try:
+            delivery_time_pk=delivery_time_pk
+            deleted,message = OrderManagement.delete_delivery_time(request,delivery_time_pk)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},

@@ -1,138 +1,117 @@
-import React, { Fragment } from 'react';
-import { FiActivity, FiBell, FiChevronRight, FiDollarSign, FiLogOut, FiSettings, FiUser } from "react-icons/fi";
-import Cookies from 'js-cookie';
+import React, { useEffect, useState, Fragment } from "react";
+import {
+    FiActivity, FiBell, FiChevronRight, FiDollarSign, FiLogOut, FiSettings, FiUser,
+} from "react-icons/fi";
+import Cookies from "js-cookie";
+import axios from 'axios';
 
 const activePosition = ["Active", "Always", "Bussy", "Inactive", "Disabled", "Cutomization"];
 const subscriptionsList = ["Plan", "Billings", "Referrals", "Payments", "Statements", "Subscriptions"];
 
 const ProfileModal = () => {
-    const handleLogout = async () => {
-        const refreshToken = Cookies.get('refreshToken');
+    const [avatar, setAvatar] = useState("/images/avatar/default.jpg"); // Default avatar
+    const admin_user_name = Cookies.get("username");
+    const [userInfo, setUserInfo] = useState({});
+    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/'
 
+    useEffect(() => {
+
+        const accessToken = Cookies.get('accessToken'); // Ensure accessToken is available
+        if (!accessToken || !admin_user_name) return; // Exit if no token or admin_user_name
+
+        axios.get(`${API_BASE_URL}avatar/${admin_user_name}`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        })
+            .then(response => {
+                if (response.status === 200) {
+                    setAvatar("http://" + response.data.admin_avatar);
+                } else {
+                    setAvatar('/images/avatar/default.jpg'); // Fallback to default avatar
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching avatar:', error);
+                setAvatar('/images/avatar/default.jpg'); // Fallback to default avatar
+            });
+
+    }, [admin_user_name]);
+    useEffect(() => {
+        fetchUserInfo();
+    }, []);
+
+    const fetchUserInfo = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}admin/fetch-all/?admin_user_name=${admin_user_name}`, {
+                headers: {
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.admin_users) {
+                setUserInfo(data.admin_users);  // Triggers useEffect to fetch position
+            }
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+        }
+    };
+
+    const handleLogout = () => {
+        const refreshToken = Cookies.get("refreshToken");
+        console.log("Refresh token:", refreshToken);
         if (!refreshToken) {
-            console.error('No refresh token found');
+            console.error("No refresh token found");
             return;
         }
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/server_api/business-admin/logout/', {
-                method: 'POST',
+            const response = fetch("http://127.0.0.1:8000/server_api/business-admin/logout/", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${Cookies.get('accessToken')}` // Include the access token in the Authorization header
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${Cookies.get("accessToken")}`,
                 },
-                body: JSON.stringify({ refresh: refreshToken })
+                body: JSON.stringify({ refresh: refreshToken }),
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.error}`);
 
-            const data = await response.json();
 
-            // Remove the authToken cookie
-            Cookies.remove('accessToken');
-            Cookies.remove('refreshToken');
-            Cookies.remove('username');
-
-            // Redirect to the login page
-            window.location.href = '/';
+            // Clear cookies and redirect
+            Cookies.remove("accessToken");
+            Cookies.remove("refreshToken");
+            Cookies.remove("username");
+            window.location.href = "/";
         } catch (error) {
-            console.error('Logout failed:', error);
-
-            // Optionally, you can handle specific errors here
-            if (error.message.includes('429')) {
-                alert('Too many requests - try again in 1 minute');
-            } else {
-                alert('Logout failed. Please try again or contact support.');
-            }
+            console.error("Logout failed:", error);
+            alert("Logout failed. Please try again.");
         }
     };
 
     return (
         <div className="dropdown nxl-h-item">
             <a href="#" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside">
-                <img src="/images/avatar/1.png" alt="user-image" className="img-fluid user-avtar me-0" />
+                <div style={{ width: '40px', height: '40px' }} className="w-8 h-8 d-flex align-items-center justify-content-center rounded-circle bg-light me-3 overflow-hidden">
+                    <img src={avatar} alt="user-image" className="rounded-circle border" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
             </a>
             <div className="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                 <div className="dropdown-header">
                     <div className="d-flex align-items-center">
-                        <img src="/images/avatar/1.png" alt="user-image" className="img-fluid user-avtar" />
                         <div>
-                            <h6 className="text-dark mb-0">Alexandra Della <span className="badge bg-soft-success text-success ms-1">PRO</span></h6>
-                            <span className="fs-12 fw-medium text-muted">alex.della@outlook.com</span>
+                            <h6 className="text-dark mb-0 fw-small">
+                                {userInfo.admin_full_name} {/* <span className="badge bg-soft-success text-success ms-1">PRO</span> */}
+                            </h6>
+                            <span className="fs-12 fw-medium text-muted">{userInfo.admin_email}</span>
                         </div>
                     </div>
                 </div>
-                <div className="dropdown">
-                    <a href="#" className="dropdown-item" data-bs-toggle="dropdown">
-                        <span className="hstack">
-                            <i className="wd-10 ht-10 border border-2 border-gray-1 bg-success rounded-circle me-2"></i>
-                            <span>Active</span>
-                        </span>
-                        <i className="ms-auto me-0"><FiChevronRight /></i>
-                    </a>
-                    <div className="dropdown-menu user-active">
-                        {
-                            activePosition.map((item, index) => (
-                                <Fragment key={index}>
-                                    {index === activePosition.length - 1 && <div className="dropdown-divider"></div>}
-                                    <a href="#" className="dropdown-item">
-                                        <span className="hstack">
-                                            <i className={`wd-10 ht-10 border border-2 border-gray-1 rounded-circle me-2 ${getColor(item)}`}></i>
-                                            <span>{item}</span>
-                                        </span>
-                                    </a>
-                                </Fragment>
-                            ))
-                        }
-                    </div>
-                </div>
-                <div className="dropdown-divider"></div>
-                <div className="dropdown">
-                    <a href="#" className="dropdown-item" data-bs-toggle="dropdown">
-                        <span className="hstack">
-                            <i className=" me-2"><FiDollarSign /></i>
-                            <span>Subscriptions</span>
-                        </span>
-                        <i className="ms-auto me-0"><FiChevronRight /></i>
-                    </a>
-                    <div className="dropdown-menu">
-                        {
-                            subscriptionsList.map((item, index) => (
-                                <Fragment key={index}>
-                                    {index === subscriptionsList.length - 1 && <div className="dropdown-divider"></div>}
-                                    <a href="#" className="dropdown-item">
-                                        <span className="hstack">
-                                            <i className="wd-5 ht-5 bg-gray-500 rounded-circle me-3"></i>
-                                            <span>{item}</span>
-                                        </span>
-                                    </a>
-                                </Fragment>
-                            ))
-                        }
-                    </div>
-                </div>
-                <div className="dropdown-divider"></div>
-                <a href="#" className="dropdown-item">
-                    <i ><FiUser /></i>
+                <a href="/profile/details" className="dropdown-item">
+                    <i><FiUser /></i>
                     <span>Profile Details</span>
-                </a>
-                <a href="#" className="dropdown-item">
-                    <i ><FiActivity /></i>
-                    <span>Activity Feed</span>
-                </a>
-                <a href="#" className="dropdown-item">
-                    <i ><FiDollarSign /></i>
-                    <span>Billing Details</span>
-                </a>
-                <a href="#" className="dropdown-item">
-                    <i><FiBell /></i>
-                    <span>Notifications</span>
-                </a>
-                <a href="#" className="dropdown-item">
-                    <i><FiSettings /></i>
-                    <span>Account Settings</span>
                 </a>
                 <div className="dropdown-divider"></div>
                 <a href="#" className="dropdown-item" onClick={handleLogout}>

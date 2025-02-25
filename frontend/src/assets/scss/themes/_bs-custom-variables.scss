@@ -153,11 +153,9 @@ $font-weight-bold: 700;
 $font-weight-bolder: 800;
 $font-weight-black: 900;
 $utilities: (
-	"font-weight": (
-		property: font-weight,
+	"font-weight": (property: font-weight,
 		class: fw,
-		values: (
-			light: $font-weight-light,
+		values: (light: $font-weight-light,
 			lighter: $font-weight-lighter,
 			normal: $font-weight-normal,
 			medium: $font-weight-medium,
@@ -170,8 +168,16 @@ $utilities: (
 );
 
 // Breadcrumb
-.breadcrumb-item + .breadcrumb-item::before {
+.breadcrumb-item+.breadcrumb-item::before {
 	content: var(--bs-breadcrumb-divider, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='14' height='14' stroke='%2364748b' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round' class='css-i6dzq1'%3E%3Cpolyline points='9 18 15 12 9 6'%3E%3C/polyline%3E%3C/svg%3E")) !important;
+}
+
+.truncate-text {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 200px;
+	/* Adjust width as necessary */
 }
 
 // List-Group

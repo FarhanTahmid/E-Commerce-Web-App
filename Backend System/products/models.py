@@ -5,6 +5,7 @@ from inventory.models import *
 from django.core.validators import MaxValueValidator
 from customer.models import Accounts
 from django_resized import ResizedImageField
+from django.core.exceptions import ValidationError
 import hashlib
 
 # Create your models here.
@@ -116,13 +117,19 @@ class Product(models.Model):
     def __lt__(self,other):
         return self.product_name< other.product_name
     
+    def has_active_discount(self):
+        """
+        Checks whether a product has an active discount
+        """
+        now = timezone.now()
+        return self.product_discount.filter(start_date__lte=now, end_date__gte=now).exists()
 
 class Product_SKU(models.Model):
 
-    product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE)
-    product_sku = models.CharField(null=False, blank=False, max_length=100,unique=True)
-    product_color = models.CharField(null=True, blank=True, max_length=100)
-    product_size = models.CharField(null=True, blank=True, max_length=100)
+    product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE,related_name='product')
+    product_sku = models.CharField(null=False, blank=False, max_length=1000,unique=True)
+    product_color = models.CharField(null=True, blank=True, max_length=1000)
+    product_size = models.CharField(null=True, blank=True, max_length=1000)
     product_price=models.DecimalField(null=False,blank=False,default=0,max_digits=50,decimal_places=2)
     product_stock = models.IntegerField(null=False, blank=False, default=0)
     product_flavours=models.ManyToManyField(Product_Flavours,related_name='product_flavour')
@@ -216,11 +223,19 @@ class Product_Videos(models.Model):
 class Product_Discount(models.Model):
     ''''This table stores all the discounts of a product'''
 
-    product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE)
-    discount_name = models.CharField(null=False, blank=False, max_length=100,unique=True)
+    product_id = models.ManyToManyField(Product,blank=True, related_name='product_discount')
+    product_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
+    brand_id = models.ForeignKey(Product_Brands,null=True,blank=True,on_delete=models.CASCADE, related_name='brand_discount')
+    brand_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
+    sub_category_id = models.ForeignKey(Product_Sub_Category,null=True,blank=True,on_delete=models.CASCADE, related_name='sub_category_discount')
+    sub_category_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
+    category_id = models.ForeignKey(Product_Category,null=True,blank=True,on_delete=models.CASCADE, related_name='category_discount')
+    category_id_pk = models.BigIntegerField(default=0,null=True,blank=True)
+    discount_name = models.CharField(null=False, blank=False, max_length=100)
     discount_amount = models.DecimalField(null=False, blank=False, max_digits=10, decimal_places=2)
-    start_date = models.DateTimeField(null=False, blank=False)
-    end_date = models.DateTimeField(null=False, blank=False)
+    start_date = models.DateField(null=False, blank=False)
+    end_date = models.DateField(null=False, blank=False)
+    is_active = models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
@@ -230,7 +245,7 @@ class Product_Discount(models.Model):
         verbose_name_plural="Product Discounts"
 
     def __str__(self):
-        return f"{self.product_id.product_name} - {self.discount_amount}. Discount duration - {self.start_date} - {self.end_date}"
+        return f"Discount amount:{self.discount_amount}. Discount duration - {self.start_date} - {self.end_date}"
     
     def is_discount_active(self):
 

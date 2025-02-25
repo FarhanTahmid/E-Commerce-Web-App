@@ -11,7 +11,7 @@ const RegisterMinimal = () => {
                             <img src="/images/logo-abbr.png" alt="img" className="img-fluid" />
                         </div>
                         <div className="card-body p-sm-5">
-                            <RegisterForm path={"/authentication/login/minimal"}/>
+                            <RegisterForm path={"/authentication/login"} />
                         </div>
                     </div>
                 </div>

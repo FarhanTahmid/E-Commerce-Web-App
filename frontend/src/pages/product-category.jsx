@@ -1,8 +1,8 @@
 import React from 'react'
 import PageHeader from '@/components/shared/pageHeader/PageHeader'
-import ProductCategoryHeader from '@/components/products/ProductCategoryHeader'
+import ProductCategoryHeader from '@/components/products/category/ProductCategoryHeader'
 import Footer from '@/components/shared/Footer'
-import ProductCategoryTable from '@/components/products/ProductCategoryTable'
+import ProductCategoryTable from '@/components/products/category/ProductCategoryTable'
 
 const ProductCategory = () => {
     return (

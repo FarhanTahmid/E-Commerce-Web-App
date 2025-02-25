@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     
 ]
 
+API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -83,10 +85,12 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOW_HEADERS = [
     "content-type",
     "authorization",
-    "x-api-key",
+    "HTTP_X_API_KEY",
 ]
 
 REST_FRAMEWORK = {
@@ -236,6 +240,14 @@ else:
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST='smtp.gmail.com'
+EMAIL_PORT=587
+EMAIL_HOST_USER=os.environ.get('EMAIL_USER')
+EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_PASSWORD')
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # # AWS Configs for production usage

@@ -19,14 +19,14 @@ const RequireAuth = ({ children }) => {
     const accessToken = Cookies.get('accessToken');
 
     if (!accessToken) {
-        return <Navigate to="/authentication/login/minimal" replace />;
+        return <Navigate to="/authentication/login" replace />;
     }
 
     const decodedToken = parseJwt(accessToken);
 
     if (!decodedToken || decodedToken.exp * 1000 < Date.now()) {
         // Token expired, redirect to login
-        return <Navigate to="/authentication/login/minimal" replace />;
+        return <Navigate to="/authentication/login" replace />;
     }
 
     return children;

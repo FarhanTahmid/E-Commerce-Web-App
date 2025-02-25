@@ -6,11 +6,12 @@ from e_commerce_app import settings
 import os
 from system.system_log import SystemLogs
 from django.utils import timezone
+from datetime import datetime
 
 class ManageProducts:
     
     # Manage Product Category
-    def fetch_product_categories(product_category_pk=None):
+    def fetch_product_categories(product_category_pk=""):
 
         """
     Retrieve all product categories from the database with detailed exception handling.
@@ -63,7 +64,7 @@ class ManageProducts:
         - The `message` provides user-friendly feedback on the success or failure of the operation.
     """        
         try:
-            if product_category_pk:
+            if product_category_pk != "":
                 return Product_Category.objects.get(pk=product_category_pk), "Product categories successfully!"
             else:
                 product_category = Product_Category.objects.all()
@@ -157,8 +158,8 @@ class ManageProducts:
             # Create a new product type if no duplicates are found
             product_category = Product_Category.objects.create(category_name=product_category_name, description=description)
             product_category.save()
-            updated,message = SystemLogs.updated_by(request,product_category)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Category {product_category_name}",message="Created")
+            SystemLogs.updated_by(request,product_category)
+            SystemLogs.admin_activites(request,f"Created Product Category {product_category_name}",message="Created")
             return True, f"New Product category. {product_category_name} successfully added!"
 
 
@@ -224,22 +225,22 @@ class ManageProducts:
         try:
             # Fetch existing product types
             product_categories, message = ManageProducts.fetch_product_categories()
-            if product_categories:
-                # Check for duplicate types (case-insensitive)
-                if any(p.category_name.lower() == new_category_name.lower() for p in product_categories):
-                    return False, "Same type exists in Database!" 
-            
             # Get the product type object
             product_category = Product_Category.objects.get(pk=product_category_pk)
-
+            if product_categories:
+                # Check for duplicate types (case-insensitive)
+                for p in product_categories:
+                    if p != product_category and p.category_name.lower() == new_category_name.lower():
+                        return False, "Same type exists in Database!" 
+        
             # Update the product type if changed
-            if product_category.category_name != new_category_name:
+            if product_category.category_name.lower() != new_category_name.lower():
                 product_category.category_name = new_category_name  # Ensure this is a string
-            if product_category.description != description:
+            if product_category.description.lower() != description.lower():
                 product_category.description = description
             product_category.save()
-            updated, message = SystemLogs.updated_by(request,product_category)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Category, {new_category_name}",message="Updated")
+            SystemLogs.updated_by(request,product_category)
+            SystemLogs.admin_activites(request,f"Updated Product Category, {new_category_name}",message="Updated")
             return True, "Product Category updated successfully!"
         
         except Product_Category.DoesNotExist:
@@ -304,7 +305,7 @@ class ManageProducts:
 
         try:
             get_product_category = Product_Category.objects.get(pk=product_category_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Category {get_product_category.category_name}",message="Deleted")
+            SystemLogs.admin_activites(request,f"Deleted Product Category {get_product_category.category_name}",message="Deleted")
             get_product_category.delete()
             return True, "Product Category deleted successfully!"
         except Product_Category.DoesNotExist:
@@ -325,6 +326,49 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product Category! Please try again later.")
     
     # Manage Product Sub Category
+    def fetch_product_sub_category(product_sub_category_pk=""):
+        try:
+            if product_sub_category_pk != "":
+                product_sub_category = Product_Sub_Category.objects.get(pk=product_sub_category_pk)
+                return product_sub_category, "Product sub-categories successfully!"
+            else:
+                product_sub_category = Product_Sub_Category.objects.all()
+                return product_sub_category, "Fetched all product sub-categories successfully!" if len(product_sub_category) > 0 else "No product sub-categories found"
+        # Handle database-related errors
+        except DatabaseError as db_err:
+            print(f"Database error occurred: {db_err}")
+            new_error = ErrorLogs.objects.create(error_type="DatabaseError", error_message=str(db_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle Operational errors, e.g., connection issues
+        except OperationalError as op_err:
+            print(f"Operational error occurred: {op_err}")
+            new_error = ErrorLogs.objects.create(error_type="OperationalError", error_message=str(op_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle programming errors, e.g., invalid queries
+        except ProgrammingError as prog_err:
+            print(f"Programming error occurred: {prog_err}")
+            new_error = ErrorLogs.objects.create(error_type="ProgrammingError", error_message=str(prog_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle integrity errors, e.g., data inconsistency
+        except IntegrityError as integrity_err:
+            print(f"Integrity error occurred: {integrity_err}")
+            new_error = ErrorLogs.objects.create(error_type="IntegrityError", error_message=str(integrity_err))
+            new_error.save()
+            return None, "An unexpected error in Database occurred! Please try again later."
+
+        # Handle general exceptions (fallback for unexpected errors)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            new_error = ErrorLogs.objects.create(error_type="UnexpectedError", error_message=str(e))
+            new_error.save()
+            return None, "An unexpected error occurred! Please try again later."
+        
     def fetch_all_product_sub_categories_for_a_category(product_category_pk):
         """
         Fetch all product sub-categories for a given product category.
@@ -454,8 +498,8 @@ class ManageProducts:
             product_category = Product_Category.objects.get(pk=product_category_pk)
             sub_category = Product_Sub_Category.objects.create(sub_category_name=sub_category_name,description=description)
             sub_category.category_id.add(product_category)
-            updated, message = SystemLogs.updated_by(request,sub_category)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Sub Category {sub_category_name}",message="Created")
+            SystemLogs.updated_by(request,sub_category)
+            SystemLogs.admin_activites(request,f"Created Product Sub Category {sub_category_name}",message="Created")
             return True, f"New Product sub-category, {sub_category_name} successfully added!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -541,8 +585,8 @@ class ManageProducts:
                 product_sub_categories.description = description
             #saving the changes made
             product_sub_categories.save()
-            updated, message = SystemLogs.updated_by(request,product_sub_categories)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Sub Category {product_sub_categories.sub_category_name}",message="Updated")
+            SystemLogs.updated_by(request,product_sub_categories)
+            SystemLogs.admin_activites(request,f"Updated Product Sub Category {product_sub_categories.sub_category_name}",message="Updated")
             return True, "Product Sub Category updated successfully!"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError) as error:
@@ -608,7 +652,7 @@ class ManageProducts:
         """
         try:
             get_product_sub_category = Product_Sub_Category.objects.get(pk=product_sub_category_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Sub Category {get_product_sub_category.sub_category_name}",message="Deleted")
+            SystemLogs.admin_activites(request,f"Deleted Product Sub Category {get_product_sub_category.sub_category_name}",message="Deleted")
             get_product_sub_category.delete()
             return True, "Product Sub Category deleted successfully!"
         except Product_Sub_Category.DoesNotExist:
@@ -695,8 +739,8 @@ class ManageProducts:
             if (brand_logo != ""):
                 product_brand.brand_logo=brand_logo
             product_brand.save()
-            updated, message = SystemLogs.updated_by(request,product_brand)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Brand {brand_name}",message="Created")
+            SystemLogs.updated_by(request,product_brand)
+            SystemLogs.admin_activites(request,f"Created Product Brand {brand_name}",message="Created")
             return True, f"New Product brand, {brand_name} successfully added!"
                                               
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -715,7 +759,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating Product brand! Please try again later.")
 
-    def fetch_product_brand(pk=None,brand_name=None):
+    def fetch_product_brand(pk="",brand_name=""):
 
         """
         Fetch a product brand by its name or pk with detailed exception handling.
@@ -758,9 +802,9 @@ class ManageProducts:
         """
         
         try:
-            if brand_name:
+            if brand_name != "":
                 return Product_Brands.objects.get(brand_name=brand_name), "Product brand fetched successfully!"
-            elif pk:
+            elif pk != "":
                 return Product_Brands.objects.get(pk=pk), "Product brand fetched successfully!"
             else:
                 product_brand = Product_Brands.objects.all()
@@ -854,9 +898,10 @@ class ManageProducts:
                     if os.path.exists(path):
                         os.remove(path)
                     product_brand.brand_logo.delete()
+                product_brand.brand_logo = brand_logo
             product_brand.save()
-            updated,message = SystemLogs.updated_by(request,product_brand)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
+            SystemLogs.updated_by(request,product_brand)
+            SystemLogs.admin_activites(request,f"Updated Product Brand {product_brand.brand_name}",message="Updated")
             return True, f"Product brand, {brand_name} updated successfully!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -920,7 +965,7 @@ class ManageProducts:
                 path = settings.MEDIA_ROOT+str(product_brand.brand_logo)
                 if os.path.exists(path):
                     os.remove(path)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Brand {product_brand.brand_name}",message="Deleted")
+            SystemLogs.admin_activites(request,f"Deleted Product Brand {product_brand.brand_name}",message="Deleted")
             product_brand.delete()
             return True, "Product brand deleted successfully!"
 
@@ -941,7 +986,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting Product brand! Please try again later.")
         
     #Manage Product Flavour
-    def fetch_product_flavour(product_flavour_name=None,pk=None):
+    def fetch_product_flavour(product_flavour_name="",pk=""):
 
         """
         Fetch a product flavour by its name or primary key with detailed exception handling.
@@ -987,9 +1032,9 @@ class ManageProducts:
         """
 
         try:
-            if product_flavour_name:
+            if product_flavour_name!= "":
                 return Product_Flavours.objects.get(product_flavour_name=product_flavour_name), "Product flavour fetched successfully!"
-            elif pk:
+            elif pk!= "":
                 return Product_Flavours.objects.get(pk=pk), "Product flavour fetched successfully!"
             else:
                 product_flavour = Product_Flavours.objects.all()
@@ -1057,8 +1102,8 @@ class ManageProducts:
                     return False, "Same flavour exists in Database!"
             
             product_flavour = Product_Flavours.objects.create(product_flavour_name=product_flavour_name)
-            updated,message = SystemLogs.updated_by(request,product_flavour)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Flavour {product_flavour_name}",message="Created")
+            SystemLogs.updated_by(request,product_flavour)
+            SystemLogs.admin_activites(request,f"Created Product Flavour {product_flavour_name}",message="Created")
             return True, f"New Product flavour, {product_flavour_name} successfully added!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1124,8 +1169,8 @@ class ManageProducts:
                         return False, "Same product flavour already exists!"
                 product_flavour.product_flavour_name = product_flavour_name
             product_flavour.save()
-            updated,message = SystemLogs.updated_by(request,product_flavour)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Flavour {product_flavour.product_flavour_name}",message="Updated")
+            SystemLogs.updated_by(request,product_flavour)
+            SystemLogs.admin_activites(request,f"Updated Product Flavour {product_flavour.product_flavour_name}",message="Updated")
             return True, "Product flavour updated successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1181,7 +1226,7 @@ class ManageProducts:
         try:
             #fetch product flavour with pk
             product_flavour,message = ManageProducts.fetch_product_flavour(pk=product_flavour_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product Flavour {product_flavour.product_flavour_name}",message="Deleted")
+            SystemLogs.admin_activites(request,f"Deleted Product Flavour {product_flavour.product_flavour_name}",message="Deleted")
             product_flavour.delete()
             return True, "Product flavour deleted successfully!"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1201,8 +1246,8 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product flavour! Please try again later.") 
         
     #Manage Product
-    def fetch_product(product_pk=None,product_name=None,product_brand_pk=None,
-                      product_category_pk_list=None,product_sub_category_pk_list=None):
+    def fetch_product(product_pk="",product_name="",product_brand_pk="",
+                      product_category_pk_list=[],product_sub_category_pk_list=[]):
         
         """
         Fetch products based on various optional parameters with detailed exception handling.
@@ -1258,21 +1303,21 @@ class ManageProducts:
         """
         try:
             #fetching products according to provided arguments
-            if product_pk:
+            if product_pk!= "":
                 return Product.objects.get(pk=product_pk), "Products fetched successfully!"
-            elif product_name:
+            elif product_name!= "":
                 return Product.objects.get(product_name=product_name), "Products fetched successfully!"
-            elif product_brand_pk:
+            elif product_brand_pk!= "":
                 product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
                 products = Product.objects.filter(product_brand=product_brand)
                 return products, "Products fetched successfully!" if products else "No products found using this brand"
-            elif product_category_pk_list:
+            elif len(product_category_pk_list)>0:
                 product_categories = [Product_Category.objects.get(pk=p) for p in product_category_pk_list]
                 products=set()
                 for categories in product_categories:
                     products.update(categories.products.all())
                 return products, "Products fetched successfully!" if products else "No products found using this categories"
-            elif product_sub_category_pk_list:
+            elif len(product_sub_category_pk_list)>0:
                 product_sub_categories = [Product_Sub_Category.objects.get(pk=p) for p in product_sub_category_pk_list]
                 products = set()
                 for sub_categories in product_sub_categories:
@@ -1281,6 +1326,57 @@ class ManageProducts:
             else:
                 products = Product.objects.all()
                 return products, "All Products fetched successfully!" if len(products)>0 else "No products founds"
+            
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching product! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching product! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching product! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching product! Please try again later.") 
+    
+    def fetch_product_with_sku_and_discount(product_pk="",product_brand_pk="",
+                      product_category_pk="",product_sub_category_pk="",min_price="",max_price=""):
+        
+        try:
+            product_with_sku_and_discount = {}
+            #fetching products according to provided arguments
+            if product_pk!= "":
+                product,message = ManageProducts.fetch_product(product_pk=product_pk)
+                product_skus,message = ManageProducts.fetch_product_sku(product_id=product_pk)
+                product_images,message = ManageProducts.fetch_product_image(product_pk=product_pk)
+                all_product_discount,message = ManageProducts.fetch_product_discount(product_id=product_pk)
+                product_discount = all_product_discount[0] if all_product_discount else ""
+                
+                product_with_sku_and_discount = {
+                'product':product,
+                'product_skus':product_skus,
+                'product_discount':product_discount,
+                'product_images':product_images
+                }
+
+            elif product_brand_pk!= "":
+                products,message = ManageProducts.fetch_product(product_brand_pk=product_brand_pk)
+                for p in products:
+                    product_with_sku_and_discount[p.pk] = ManageProducts.fetch_product_with_sku_and_discount(product_pk=p.pk)
+            elif product_category_pk!= "":
+                products,message = ManageProducts.fetch_product(product_category_pk_list=[product_category_pk])
+                for p in products:
+                    product_with_sku_and_discount[p.pk] = ManageProducts.fetch_product_with_sku_and_discount(product_pk=p.pk)
+            elif product_sub_category_pk!= "":
+                products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[product_sub_category_pk])
+                for p in products:
+                    product_with_sku_and_discount[p.pk] = ManageProducts.fetch_product_with_sku_and_discount(product_pk=p.pk)
+            
+            return product_with_sku_and_discount, "Fetched successfully"
             
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -1380,8 +1476,8 @@ class ManageProducts:
                 if product_usage_direction!= "":
                     product.product_usage_direction = product_usage_direction
                 product.save()
-                updated, message = SystemLogs.updated_by(request,product)
-                activity_updated, message = SystemLogs.admin_activites(request,f"Created Product {product_name}",message="Created")
+                SystemLogs.updated_by(request,product)
+                SystemLogs.admin_activites(request,f"Created Product {product_name}",message="Created")
                 return product, f"Product, {product_name} created!"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1482,18 +1578,15 @@ class ManageProducts:
             if product.product_summary.lower() != product_summary.lower():
                 product.product_summary = product_summary
             if product_brand_pk!= "":
-                if not product.product_brand.pk or product_brand_pk != product.product_brand.pk:
-                    product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
-                    product.product_brand = product_brand
+                product_brand,message = ManageProducts.fetch_product_brand(pk=product_brand_pk)
+                product.product_brand = product_brand
             if product_ingredients!= "":
-                if not product.product_ingredients or product.product_ingredients.lower() != product_ingredients.lower():
-                    product.product_ingredients =  product_ingredients
+                product.product_ingredients =  product_ingredients
             if product_usage_direction!= "":
-                if not product.product_usage_direction or product.product_usage_direction.lower() != product_usage_direction.lower():
-                    product.product_usage_direction = product_usage_direction
+                product.product_usage_direction = product_usage_direction
             product.save()
-            updated,message = SystemLogs.updated_by(request,product)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
+            SystemLogs.updated_by(request,product)
+            SystemLogs.admin_activites(request,f"Updated Product {product.product_name}",message="Updated")
             return True, "Product updated successfully!"
             
         
@@ -1552,7 +1645,7 @@ class ManageProducts:
         try:
             #getting the product
             product,message = ManageProducts.fetch_product(product_pk=product_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product {product.product_name}",message="Deleted")
+            SystemLogs.admin_activites(request,f"Deleted Product {product.product_name}",message="Deleted")
             product.delete()
             return True, "Product deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1572,7 +1665,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product! Please try again later.")
     
     #Manage product sku
-    def fetch_product_sku(pk=None,product_id=None,product_name=None,product_sku=None):
+    def fetch_product_sku(pk="",product_id="",product_name="",product_sku=""):
 
         """
         Fetch product SKUs based on various optional parameters with detailed exception handling.
@@ -1622,17 +1715,17 @@ class ManageProducts:
         """
 
         try:
-            if pk:
+            if pk!= "":
                 return Product_SKU.objects.get(pk=pk), "Fetched successfully"
-            elif product_id:
+            elif product_id!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
                 product_skus = Product_SKU.objects.filter(product_id=product)
                 return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
-            elif product_name:
+            elif product_name!= "":
                 product,message = ManageProducts.fetch_product(product_name=product_name)
                 product_skus = Product_SKU.objects.filter(product_id=product)
                 return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
-            elif product_sku:
+            elif product_sku!= "":
                 try:
                     return Product_SKU.objects.get(product_sku=product_sku.upper()), "Fetched successfully"
                 except:
@@ -1721,8 +1814,8 @@ class ManageProducts:
                 else:
                     product_sku.product_size = product_size
             product_sku.save()
-            updated, message = SystemLogs.updated_by(request,product_sku)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product sku with sku - {product_sku.product_sku}",message="Created")
+            SystemLogs.updated_by(request,product_sku)
+            SystemLogs.admin_activites(request,f"Created Product sku with sku - {product_sku.product_sku}",message="Created")
             return True, "Product sku created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1811,17 +1904,15 @@ class ManageProducts:
             if existing_product_flavours != new_product_flavours:
                 product_sku.product_flavours.set(new_product_flavours)
             if product_color!= "":
-                if not product_sku.product_color or product_sku.product_color.lower() != product_color.lower():
-                    product_sku.product_color = product_color
+                product_sku.product_color = product_color
             if product_size!= "":
-                if not product_sku.product_size or product_sku.product_size.lower() != product_size.lower():
                     if type(product_size) == int:
                         product_sku.product_size = str(product_size)
                     else:
                         product_sku.product_size = product_size
             product_sku.save()
-            updated,message = SystemLogs.updated_by(request,product_sku)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product sku with sku - {product_sku.product_sku}",message="Updated")
+            SystemLogs.updated_by(request,product_sku)
+            SystemLogs.admin_activites(request,f"Updated Product sku with sku - {product_sku.product_sku}",message="Updated")
             return True, f"Product sku updated with new sku id"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1879,7 +1970,7 @@ class ManageProducts:
         try:
             #getting the product sku
             product_sku, message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product sku with sku - {product_sku.product_sku}",message="Deleted")
+            SystemLogs.admin_activites(request,f"Deleted Product sku with sku - {product_sku.product_sku}",message="Deleted")
             product_sku.delete()
             return True, "Product sku successfully deleted!"
 
@@ -1900,7 +1991,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product sku! Please try again later.")
     
     #product images
-    def fetch_product_image(product_pk=None,product_image_pk=None):
+    def fetch_product_image(product_pk="",product_image_pk=""):
         
         """
     Fetch product images based on various optional parameters with detailed exception handling.
@@ -1946,11 +2037,11 @@ class ManageProducts:
         - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
     """
         try:
-            if product_pk:
+            if product_pk!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_pk)
                 product_images = Product_Images.objects.filter(product_id=product)
                 return product_images, "Product images fetched successfully" if len(product_images)>0 else "No images found for this product"
-            elif product_image_pk:
+            elif product_image_pk!= "":
                 product_image = Product_Images.objects.get(pk=product_image_pk)
                 return product_image, "Product images fetched successfully"
             else:
@@ -2034,8 +2125,8 @@ class ManageProducts:
                         else:
                             product_image_created.size = size
                     product_image_created.save()
-                    updated, message = SystemLogs.updated_by(request,product_image_created)
-                    activity_updated, message = SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
+                    SystemLogs.updated_by(request,product_image_created)
+                    SystemLogs.admin_activites(request,f"Created Product image for the product, {product_image_created.product_id.product_name}",message="Created Product Image")
                 return True, "Product image created successfully"
             except:
                 return False, "No product image found"
@@ -2113,16 +2204,14 @@ class ManageProducts:
                     product_image.product_image.delete()
                 product_image.product_image = new_image
             if color!= "":
-                if not product_image.color or product_image.color.lower() != color.lower():
-                    product_image.color = color
+                product_image.color = color
             if size!= "":
                 size = str(size)
-                if not product_image.size or product_image.size.lower() != size.lower():
-                    product_image.size = size
+                product_image.size = size
             
             product_image.save()
-            updated, message = SystemLogs.updated_by(request,product_image)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product image for the product, {product_image.product_id.product_name}",message="Updated Product Image")
+            SystemLogs.updated_by(request,product_image)
+            SystemLogs.admin_activites(request,f"Updated Product image for the product, {product_image.product_id.product_name}",message="Updated Product Image")
             return True,"Product image updated successfully"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -2190,7 +2279,7 @@ class ManageProducts:
                 if os.path.exists(path):
                     os.remove(path)
                 product_image.product_image.delete()
-            activity_updated, message = SystemLogs.admin_activites(request,f"Deleted Product image for the product, {product_image.product_id.product_name}",message="Deleted Product Image")
+            SystemLogs.admin_activites(request,f"Deleted Product image for the product, {product_image.product_id.product_name}",message="Deleted Product Image")
             product_image.delete()
             return True,"Product image deleted successfully"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -2210,26 +2299,65 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product image! Please try again later.")
         
     #product discount
-    def fetch_product_discount(product_id=None,discount_name=None,is_active=None,product_discount_pk=None):
+    def fetch_product_discount(product_id="",discount_name="",is_active=False,product_discount_pk="",brand_id="",sub_category_pk="",category_pk="",product_id_pk="",brand_id_pk="",sub_category_id_pk="",category_id_pk="",
+                               product_id_pk_all=False,brand_id_pk_all=False,sub_category_id_pk_all=False,category_id_pk_all=False):
+
+        #fetches all active discount if parameters passed, else all discounts are fetched
         try:
-            if product_id:
+
+            if product_id!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                product_discount = Product_Discount.objects.filter(product_id=product)
+                product_discount = Product_Discount.objects.filter(product_id__id=product.pk,start_date__lte=timezone.now().date(),end_date__gte=timezone.now().date()).order_by('-discount_amount')
                 return product_discount, "Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
-            elif product_discount_pk:
+            elif product_discount_pk!= "":
                 product_discount = Product_Discount.objects.get(pk=product_discount_pk)
                 return product_discount,"Product Discount fetched successfully"
-            elif discount_name:
+            elif product_id_pk!= "":
+                product_discount = Product_Discount.objects.get(product_id_pk=product_id_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif sub_category_id_pk!= "":
+                product_discount = Product_Discount.objects.get(sub_category_id_pk=sub_category_id_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif category_id_pk!= "":
+                product_discount = Product_Discount.objects.get(category_id_pk=category_id_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif brand_id_pk!= "":
+                product_discount = Product_Discount.objects.get(brand_id_pk=brand_id_pk)
+                return product_discount,"Product Discount fetched successfully"
+            elif discount_name!= "":
                 product,message = ManageProducts.fetch_product(product_pk=product_id)
-                product_discount = Product_Discount.objects.get(discount_name=discount_name)
-                return product_discount, "Product Discount fetched successfully"
+                product_discount = Product_Discount.objects.filter(discount_name=discount_name).order_by('-discount_amount')
+                return product_discount, "Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
             elif is_active == True:
-                now = timezone.now()
-                product_discount = Product_Discount.objects.filter(start_date__lte=now, end_date__gte=now)
-                return product_discount, "Active Product Discount fetched successfully"
+                product_discount = Product_Discount.objects.filter(start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-discount_amount')
+                return product_discount, "Active Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif brand_id!= "":
+                brand,message = ManageProducts.fetch_product_brand(pk=brand_id)
+                product_discount = Product_Discount.objects.filter(brand_id=brand,start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-discount_amount')
+                return product_discount,"Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif sub_category_pk!= "":
+                sub_category,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_pk)
+                product_discount = Product_Discount.objects.filter(sub_category_id=sub_category,start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-discount_amount')
+                return product_discount,"Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif category_pk!= "":
+                category,message = ManageProducts.fetch_product_categories(product_category_pk=category_pk)
+                product_discount=Product_Discount.objects.filter(category_id=category,start_date__lte=timezone.now(),end_date__gte=timezone.now()).order_by('-discount_amount')
+                return product_discount,"Product Discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif product_id_pk_all:
+                product_discount = Product_Discount.objects.filter(product_id_pk__gt=0).order_by('-discount_amount')
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif brand_id_pk_all:
+                product_discount = Product_Discount.objects.filter(brand_id_pk__gt=0).order_by('-discount_amount')
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif sub_category_id_pk_all:
+                product_discount = Product_Discount.objects.filter(sub_category_id_pk__gt=0).order_by('-discount_amount')
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
+            elif category_id_pk_all:
+                product_discount = Product_Discount.objects.filter(category_id_pk__gt=0).order_by('-discount_amount')
+                return product_discount,"Product Discount fetched successfully" if len(product_discount)>0 else "No product discount found"
             else:
-                product_discount = Product_Discount.objects.all()
-                return product_discount,"All product discounts fetched successfully"
+                product_discount = Product_Discount.objects.all().order_by('-discount_amount')
+                return product_discount,"All product discounts fetched successfully" if len(product_discount)>0 else "No product discount found"
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -2246,21 +2374,78 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product discount! Please try again later.")
         
-    def create_product_discount(request,product_id,discount_name,discount_amount,start_date,end_date):
+         
+    def create_product_discount(request,discount_name,discount_amount,start_date,end_date,product_id="",brand_id="",sub_category_id="",category_id="",is_active=False):
+
         try:
-            #getting the product
-            product,message = ManageProducts.fetch_product(product_pk=product_id)
-            try:
-                existing_product_discount,message = ManageProducts.fetch_product_discount(discount_name=discount_name)
-                if existing_product_discount.is_discount_active():
-                    return False, "Product discount with this name already exists and is active"
-            except:
-                pass
-            product_discount= Product_Discount.objects.create(product_id=product,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date)
-            product_discount.save()
-            updated, message = SystemLogs.updated_by(request,product_discount)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Created Product Discount for the product, {product_discount.product_id.product_name}",message="Created Product Discount")
-            return True,"Product discount created successfully"
+
+            discount_amount = float(discount_amount)
+            if product_id!="":
+                #product list
+                products,message = ManageProducts.fetch_product(product_pk=product_id)#single product
+                #adding the products
+                product_discount = Product_Discount.objects.create(discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
+                product_discount.product_id.add(products)
+                product_discount.product_id_pk += 1
+                product_discount.save()          
+
+                SystemLogs.updated_by(request,product_discount)
+                SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
+  
+            elif brand_id!="":
+                brand,message = ManageProducts.fetch_product_brand(pk=brand_id)
+                products,message = ManageProducts.fetch_product(product_brand_pk=brand.pk)#multiple products
+                #adding the products
+                product_discount = Product_Discount.objects.create(brand_id=brand,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
+                product_discount.product_id.add(*products)
+                product_discount.brand_id_pk += 1
+                product_discount.save()
+
+                SystemLogs.updated_by(request,product_discount)
+                SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
+                if len(product_discount.product_id.all()) == 0:
+                    SystemLogs.updated_by(request,product_discount)
+                    SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
+                    product_discount.delete()
+                    return False,f"Product discount deleted. No discount added to any products."
+
+            elif sub_category_id!="":
+                sub_category,message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_id)
+                products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[sub_category.pk])#multiple products
+                #adding the products
+                product_discount = Product_Discount.objects.create(sub_category_id=sub_category,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
+                product_discount.product_id.add(*products)
+
+                product_discount.sub_category_id_pk += 1
+                product_discount.save()
+                SystemLogs.updated_by(request,product_discount)
+                SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
+                if len(product_discount.product_id.all()) == 0:
+                    SystemLogs.updated_by(request,product_discount)
+                    SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
+                    product_discount.delete()
+                    return False,f"Product discount deleted. No discount added to any products."
+
+            elif category_id!="":
+                category,message = ManageProducts.fetch_product_categories(product_category_pk=category_id)
+                products,message = ManageProducts.fetch_product(product_category_pk_list=[category.pk])#multiple products
+                #adding the products
+                product_discount = Product_Discount.objects.create(category_id=category,discount_name=discount_name,discount_amount=discount_amount,start_date=start_date,end_date=end_date,is_active=is_active)
+                product_discount.product_id.add(*products)
+                product_discount.category_id_pk += 1
+                product_discount.save()
+                SystemLogs.updated_by(request,product_discount)
+                SystemLogs.admin_activites(request,f"Created Product Discount",message="Created Product Discount")
+                if len(product_discount.product_id.all()) == 0:
+                    SystemLogs.updated_by(request,product_discount)
+                    SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
+                    product_discount.delete()
+                    return False,f"Product discount deleted. No discount added to any products, as already has discount."
+            else:
+                return False,"No paramters passed"
+
+            return True,f"Product discount created successfully."
+        
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -2277,26 +2462,109 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product discount! Please try again later.")
         
-    def update_product_discount(request,product_discount_pk,product_id,discount_name,discount_amount,start_date,end_date):
+    def update_product_discount_for_brand(request,product_discount_brand_id_pk,discount_name,discount_amount,start_date,end_date,brand_id="",is_active=False,delete=False):
 
+      
         try:
-            #getting the product_discount
-            product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
-            new_product,message = ManageProducts.fetch_product(product_pk=product_id)
-            if product_discount.product_id != new_product:
-                product_discount.product_id = new_product
-            if product_discount.discount_name.lower() != discount_name.lower():
+
+            #getting product discount
+            product_discount = Product_Discount.objects.get(brand_id_pk = product_discount_brand_id_pk)
+            if delete:
+                product_discount.delete()
+                SystemLogs.admin_activites(request,f"DEleted Product Discount",message="Deleted Product Discount")
+                return True, "Deleted Successfully"
+            
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
+            
+            if product_discount.brand_id:
+
+                if brand_id!= "":
+                    new_brand, message = ManageProducts.fetch_product_brand(pk=brand_id)
+                    if new_brand != product_discount.brand_id:
+                        product_discount.brand_id = new_brand
+                        product_discount.product_id.clear()
+                        new_products,message = ManageProducts.fetch_product(product_brand_pk=new_brand.pk)
+                        product_discount.product_id.add(*new_products)
+                        product_discount.save()
+                        
+            if discount_name!="" and discount_name.lower() != product_discount.discount_name.lower():
                 product_discount.discount_name = discount_name
-            if product_discount.discount_amount != discount_amount:
+            if discount_amount!="" and product_discount.discount_amount != discount_amount:
                 product_discount.discount_amount = discount_amount
-            if product_discount.start_date != start_date and start_date <= product_discount.end_date:
+            if start_date!="" and product_discount.start_date != start_date:
                 product_discount.start_date = start_date
-            if product_discount.end_date != end_date and end_date >= product_discount.start_date:
+            if end_date!="" and product_discount.end_date != end_date:
                 product_discount.end_date = end_date
+            
             product_discount.save()
-            updated, message = SystemLogs.updated_by(request,product_discount)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
-            return True, "Product Discount updated"
+
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
+
+            return True, f"Product Discount Updated."
+            
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
+    
+    def update_product_discount_for_sub_category(request,product_discount_sub_category_id_pk,discount_name,discount_amount,start_date,end_date,sub_category_id="",is_active=False,delete=False):
+
+        
+        try:
+
+            #getting product discount
+            product_discount= Product_Discount.objects.get(sub_category_id_pk =product_discount_sub_category_id_pk)
+            if delete:
+                product_discount.delete()
+                SystemLogs.admin_activites(request,f"DEleted Product Discount",message="Deleted Product Discount")
+                return True, "Deleted Successfully"
+            
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
+
+            if product_discount.sub_category_id:
+
+                if sub_category_id!="":
+                    new_sub_category, message = ManageProducts.fetch_product_sub_category(product_sub_category_pk=sub_category_id)
+                    if new_sub_category != product_discount.sub_category_id:
+                        product_discount.sub_category_id = new_sub_category
+                        product_discount.product_id.clear()
+                        new_products,message = ManageProducts.fetch_product(product_sub_category_pk_list=[new_sub_category.pk])
+                        product_discount.product_id.add(*new_products)
+                        product_discount.save()
+                        
+            if discount_name!="" and discount_name.lower() != product_discount.discount_name.lower():
+                product_discount.discount_name = discount_name
+            if discount_amount!="" and product_discount.discount_amount != discount_amount:
+                product_discount.discount_amount = discount_amount
+            if start_date!="" and product_discount.start_date != start_date:
+                product_discount.start_date = start_date
+            if end_date!="" and product_discount.end_date != end_date:
+                product_discount.end_date = end_date
+            
+            product_discount.save()
+
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
+
+            return True, f"Product Discount Updated."
+            
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -2314,13 +2582,48 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
         
-    def delete_product_discount(request,product_discount_pk):
+    def update_product_discount_for_category(request,product_discount_category_id_pk,discount_name,discount_amount,start_date,end_date,category_id="",is_active=False,delete=False):
+
         try:
-            #getting the product discount
-            product_discount,message = ManageProducts.fetch_product_discount(product_discount_pk=product_discount_pk)
-            activity_updated, message = SystemLogs.admin_activites(request,f"Updated Product Discount for the product, {product_discount.product_id.product_name}",message="Updated Product Discount")
-            product_discount.delete()
-            return True,"Product discount deleted successfully"
+
+            #getting product discount
+            product_discount= Product_Discount.objects.get(category_id_pk = product_discount_category_id_pk)
+            if delete:
+                product_discount.delete()
+                SystemLogs.admin_activites(request,f"DEleted Product Discount",message="Deleted Product Discount")
+                return True,"Deleted Successfully"
+            
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
+
+            if product_discount.category_id:
+
+                if category_id!= "":
+                    new_category, message = ManageProducts.fetch_product_categories(product_category_pk=category_id)
+                    if new_category != product_discount.category_id:
+                        product_discount.category_id = new_category
+                        product_discount.product_id.clear()
+                        new_products,message = ManageProducts.fetch_product(product_category_pk_list=[new_category.pk])
+                        product_discount.product_id.add(*new_products)
+                        product_discount.save()
+            
+            if discount_name!="" and discount_name.lower() != product_discount.discount_name.lower():
+                product_discount.discount_name = discount_name
+            if discount_amount!="" and product_discount.discount_amount != discount_amount:
+                product_discount.discount_amount = discount_amount
+            if start_date!="" and product_discount.start_date != start_date:
+                product_discount.start_date = start_date
+            if end_date!="" and product_discount.end_date != end_date:
+                product_discount.end_date = end_date
+
+            product_discount.save()
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
+
+            return True, f"Product Discount Updated."
+            
+        
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -2330,11 +2633,71 @@ class ManageProducts:
 
             # Return appropriate messages based on the error type
             error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while deleting product discount! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while deleting product discount! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while deleting product discount! Please try again later.",
+                "DatabaseError": "An unexpected error in Database occurred while updating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product discount! Please try again later.",
                 "IntegrityError": "Same type exists in Database!",
             }
-            return False, error_messages.get(error_type, "An unexpected error occurred while deleting product discount! Please try again later.") 
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.") 
+        
+    def update_product_discount_for_product(request,product_discount_product_id_pk,discount_name,discount_amount,start_date,end_date,product_id="",is_active=False,delete=False):
+
+        try:
+            #getting product discount
+            product_discount = Product_Discount.objects.get(product_id_pk = product_discount_product_id_pk)
+
+            if delete:
+                product_discount.delete()
+                SystemLogs.admin_activites(request,f"DEleted Product Discount",message="Deleted Product Discount")
+                return True, "Deleted Successfully"
+            
+            # if is_active != "":
+            #     product_discount.is_active = is_active
+            # product_discount.save()
+
+            if product_id!= "":
+                
+                try:
+                    product = product_discount.product_id.all()[0]
+                except:
+                    product = None
+
+                new_product, message = ManageProducts.fetch_product(product_pk=product_id)
+                if new_product != product:
+                    product_discount.product_id.clear()
+                    product_discount.product_id.add(new_product)
+                    product_discount.save()
+            
+            if discount_name!="" and discount_name.lower() != product_discount.discount_name.lower():
+                product_discount.discount_name = discount_name
+            if discount_amount!="" and product_discount.discount_amount != discount_amount:
+                product_discount.discount_amount = discount_amount
+            if start_date!="" and product_discount.start_date != start_date:
+                product_discount.start_date = start_date
+            if end_date!="" and product_discount.end_date != end_date:
+                product_discount.end_date = end_date
+            product_discount.save()
+
+            SystemLogs.updated_by(request,product_discount)
+            SystemLogs.admin_activites(request,f"Updated Product Discount",message="Updated Product Discount")
+
+            return True, f"Product Discount Updated."
+            
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating product discount! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating product discount! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating product discount! Please try again later.")
 
         

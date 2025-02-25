@@ -1,66 +1,103 @@
+import axios from 'axios';
 import React, { useState } from 'react';
-import { FiEye, FiHash } from 'react-icons/fi';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
+import { BackendUrlMainAPI } from '../../BackendUrlMainAPI';
 
 const RegisterForm = ({ path }) => {
-    const [formData, setFormData] = useState({
-        admin_full_name: '',
-        admin_email: '',
-        password: '',
-        confirm_password: '',
-        admin_contact_no: '',
-        admin_position_pk: '', // Assuming this is required
-        admin_avatar: null, // For file upload, if needed
-    });
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [adminFullName, setAdminFullName] = useState('');
+    const [adminEmail, setAdminEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [adminContactNo, setAdminContactNo] = useState('');
+    const [adminAvatar, setAdminAvatar] = useState(null);
+
+    const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [success, setSuccess] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        setFormData({
-            ...formData,
-            [name]: files ? files[0] : value, // Handle file uploads
-        });
+
+        if (name === 'admin_avatar') {
+            setAdminAvatar(files ? files[0] : null);
+        } else {
+            switch (name) {
+                case 'admin_full_name':
+                    setAdminFullName(value);
+                    break;
+                case 'admin_email':
+                    setAdminEmail(value);
+                    break;
+                case 'password':
+                    setPassword(value);
+                    break;
+                case 'confirm_password':
+                    setConfirmPassword(value);
+                    break;
+                case 'admin_contact_no':
+                    setAdminContactNo(value);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+    const validateFields = () => {
+        let errors = {};
+        if (!adminFullName.trim()) errors.adminFullName = "Admin full name is required";
+        if (!adminEmail.trim()) errors.adminEmail = "Admin email is required";
+        if (!password) errors.password = "Password is required";
+        if (!confirmPassword) errors.confirmPassword = "Confirm password is required";
+        if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match";
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
+        setError(null);
+        setSuccess(null);
 
-        // Validate passwords match
-        if (formData.password !== formData.confirm_password) {
-            setError('Passwords do not match.');
-            return;
-        }
+        if (!validateFields()) return;
 
-        // Prepare form data for submission
-        const data = new FormData();
-        for (const key in formData) {
-            if (formData[key] !== null) {
-                data.append(key, formData[key]);
-            }
+        setLoading(true);
+        const formData = new FormData();
+        formData.append('admin_full_name', adminFullName.trim());
+        formData.append('admin_email', adminEmail.trim());
+        formData.append('password', password);
+        formData.append('confirm_password', confirmPassword);
+        formData.append('admin_contact_no', adminContactNo.trim());
+
+        if (adminAvatar) {
+            formData.append('admin_avatar', adminAvatar);
         }
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/server_api/business-admin/signup/', {
-                method: 'POST',
-                body: data,
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Registration failed. Please try again.');
-            }
-
+            const response = await axios.post(
+                `${BackendUrlMainAPI}server_api/business-admin/signup/`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+            setLoading(false);
             setSuccess('Registration successful! Redirecting to login...');
             setTimeout(() => {
-                navigate(result.redirect_url || '/login-page');
-            }, 2000); // Redirect after 2 seconds
+                navigate('/authentication/login/minimal');
+            }, 2000);
         } catch (err) {
-            setError(err.message);
+            setLoading(false);
+            setError(err.response?.data?.error || 'An unexpected error occurred!');
         }
     };
 
@@ -69,120 +106,86 @@ const RegisterForm = ({ path }) => {
             <h2 className="fs-20 fw-bolder mb-4">Register</h2>
             <h4 className="fs-13 fw-bold mb-2">Manage all your Duralux CRM</h4>
             <p className="fs-12 fw-medium text-muted">
-                Let's get you all setup, so you can verify your personal account and begin setting up your profile.
+                Let's get you all set up so you can verify your personal account and begin setting up your profile.
             </p>
-            {error && <div className="alert alert-danger">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
-            <form onSubmit={handleSubmit} className="w-100 mt-4 pt-2">
-                <div className="mb-4">
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Full Name"
-                        name="admin_full_name"
-                        value={formData.admin_full_name}
-                        onChange={handleChange}
-                        required
-                    />
+
+            {error && (
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                    {error}
+                    <button
+                        type="button"
+                        className="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"
+                        onClick={() => setError(null)} // Close message on button click
+                    ></button>
                 </div>
-                <div className="mb-4">
-                    <input
-                        type="email"
-                        className="form-control"
-                        placeholder="Email"
-                        name="admin_email"
-                        value={formData.admin_email}
-                        onChange={handleChange}
-                        required
-                    />
+            )}
+
+            {success && (
+                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    {success}
+                    <button
+                        type="button"
+                        className="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"
+                        onClick={() => setSuccess(null)} // Close message on button click
+                    ></button>
                 </div>
-                <div className="mb-4">
-                    <input
-                        type="tel"
-                        className="form-control"
-                        placeholder="Contact Number"
-                        name="admin_contact_no"
-                        value={formData.admin_contact_no}
-                        onChange={handleChange}
-                        required
-                    />
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="admin_full_name" maxLength="50" value={adminFullName} onChange={handleChange} className="form-control" required />
+                    {fieldErrors.adminFullName && <small className="text-danger">{fieldErrors.adminFullName}</small>}
                 </div>
-                <div className="mb-4">
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Admin Position (ID)"
-                        name="admin_position_pk"
-                        value={formData.admin_position_pk}
-                        onChange={handleChange}
-                        required
-                    />
+
+                <div className="form-group">
+                    <label>Email</label>
+                    <input type="email" name="admin_email" value={adminEmail} onChange={handleChange} className="form-control" required />
+                    {fieldErrors.adminEmail && <small className="text-danger">{fieldErrors.adminEmail}</small>}
                 </div>
-                <div className="mb-4 generate-pass">
-                    <div className="input-group field">
-                        <input
-                            type="password"
-                            className="form-control password"
-                            placeholder="Password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
-                        <div className="input-group-text c-pointer gen-pass" data-bs-toggle="tooltip" title="Generate Password">
-                            <FiHash size={16} />
-                        </div>
-                        <div className="input-group-text border-start bg-gray-2 c-pointer" data-bs-toggle="tooltip" title="Show/Hide Password">
-                            <FiEye size={16} />
-                        </div>
+
+                <div className="form-group">
+                    <label>Contact Number</label>
+                    <input type="text" name="admin_contact_no" value={adminContactNo} onChange={handleChange} className="form-control" required />
+                </div>
+
+                <div className="form-group">
+                    <label>Password</label>
+                    <div className="input-group">
+                        <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={handleChange} className="form-control" required />
+                        <span className="input-group-text" onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                        </span>
                     </div>
-                    <div className="progress-bar mt-2">
-                        <div />
-                        <div />
-                        <div />
-                        <div />
+                    {fieldErrors.password && <small className="text-danger">{fieldErrors.password}</small>}
+                </div>
+
+                <div className="form-group">
+                    <label>Confirm Password</label>
+                    <div className="input-group">
+                        <input type={showConfirmPassword ? "text" : "password"} name="confirm_password" value={confirmPassword} onChange={handleChange} className="form-control" required />
+                        <span className="input-group-text" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                            {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                        </span>
                     </div>
+                    {fieldErrors.confirmPassword && <small className="text-danger">{fieldErrors.confirmPassword}</small>}
                 </div>
-                <div className="mb-4">
-                    <input
-                        type="password"
-                        className="form-control"
-                        placeholder="Confirm Password"
-                        name="confirm_password"
-                        value={formData.confirm_password}
-                        onChange={handleChange}
-                        required
-                    />
+
+                <div className="form-group">
+                    <label>Avatar</label>
+                    <input type="file" name="admin_avatar" accept="image/png, image/jpg, image/jpeg" onChange={handleChange} className="form-control" required />
                 </div>
-                <div className="mb-4">
-                    <input
-                        type="file"
-                        className="form-control"
-                        name="admin_avatar"
-                        onChange={handleChange}
-                    />
-                </div>
-                <div className="mt-4">
-                    <div className="custom-control custom-checkbox mb-2">
-                        <input type="checkbox" className="custom-control-input" id="receiveMail" required />
-                        <label className="custom-control-label c-pointer text-muted" htmlFor="receiveMail">
-                            Yes, I want to receive Duralux community emails
-                        </label>
-                    </div>
-                    <div className="custom-control custom-checkbox">
-                        <input type="checkbox" className="custom-control-input" id="termsCondition" required />
-                        <label className="custom-control-label c-pointer text-muted" htmlFor="termsCondition">
-                            I agree to all the <a href="#">Terms & Conditions</a> and <a href="#">Fees</a>.
-                        </label>
-                    </div>
-                </div>
-                <div className="mt-5">
-                    <button type="submit" className="btn btn-lg btn-primary w-100">
-                        Create Account
-                    </button>
-                </div>
+
+                <button type="submit" className="btn btn-primary mt-3" disabled={loading}>
+                    {loading ? "Registering..." : "Register"}
+                </button>
             </form>
-            <div className="mt-5 text-muted">
+
+            <div className="mt-4 text-muted">
                 <span>Already have an account?</span>
                 <Link to={path} className="fw-bold"> Login</Link>
             </div>
