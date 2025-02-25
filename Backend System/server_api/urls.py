@@ -102,6 +102,10 @@ urlpatterns = [                                                                 
     path('product/product-discounts/create/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
     path('product/product-discounts/update/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
 
+    #orders
+    path('order/order-status/fetch/',views.FetchOrderStatusList.as_view(),name="fetch_order_status"),
+    path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or none to fetch all
+
 
     re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),

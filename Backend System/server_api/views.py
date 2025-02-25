@@ -20,7 +20,7 @@ from business_admin import serializers
 from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
 from datetime import datetime
-from orders.serializers import DeliveryTimeSerializer
+from orders.serializers import *
 from orders.order_management import OrderManagement
 from system.manage_system import SystemManagement
 from system.permissions import has_permission
@@ -3467,6 +3467,102 @@ class DeleteDeliveryTime(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
             
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+#orders
+class FetchOrderStatusList(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+
+            order_status = OrderManagement.fetch_order_status_list()
+            return Response({
+                'list':order_status
+            },status=status.HTTP_200_OK)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class FetchOrderDetails(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+
+            order_id = self.request.query_params.get('order_id',"")
+            user_name = self.request.query_params.get('user_name',"")
+            order_pk = self.request.query_params.get('order_pk',"")
+
+            if order_id!="":
+                order_details,message = OrderManagement.fetch_orders_details(order_id=order_id)
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+            elif user_name!="":
+                order_details,message = OrderManagement.fetch_orders_details(user_name=user_name)
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+            elif order_pk!="":
+                order_details,message = OrderManagement.fetch_orders_details(order_pk=order_pk)
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+            else:
+                order_details,message = OrderManagement.fetch_orders_details()
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+
+            if order_details:
+                return Response({
+                    'message':message,
+                    'order_details':order_details_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},

@@ -14,6 +14,8 @@ from system.models import *
 from rest_framework_simplejwt.tokens import RefreshToken
 import time
 from business_admin import serializers
+from orders.models import *
+from decimal import Decimal
 
 # Create your tests here.
 class ServerAPITestCases(APITestCase):
@@ -185,6 +187,158 @@ class ServerAPITestCases(APITestCase):
         self.future_discount.save()
         self.future_discount.product_id.add(self.product3)
         self.future_discount.save()
+
+
+        self.delivery_time1 = DeliveryTime.objects.create(
+            delivery_name= "Inside dhaka",
+            estimated_delivery_time = "7 days"
+        )
+        self.delivery_time2 = DeliveryTime.objects.create(
+            delivery_name= "Outside dhaka",
+            estimated_delivery_time = "10 days"
+        )
+        self.delivery_time3 = DeliveryTime.objects.create(
+            delivery_name= "Internation",
+            estimated_delivery_time = "1 months"
+        )
+
+
+        self.customer1 = Accounts.objects.create(username="customer1", email="customer1@example.com")
+        self.customer2 = Accounts.objects.create(username="customer2", email="customer2@example.com")
+        self.customer3 = Accounts.objects.create(username="customer3", email="customer3@example.com")
+
+        self.order1 = Order.objects.create(
+            order_id="ORD001",
+            customer_id=self.customer1,
+            delivery_time=self.delivery_time1,
+            total_amount=Decimal("90.50"),
+            order_status="pending",
+        )
+
+        self.order2 = Order.objects.create(
+            order_id="ORD002",
+            customer_id=self.customer2,
+            delivery_time=self.delivery_time2,
+            total_amount=Decimal("150.00"),
+            order_status="shipped",
+        )
+
+        self.order3 = Order.objects.create(
+            order_id="ORD003",
+            customer_id=self.customer3,
+            delivery_time=self.delivery_time1,
+            total_amount=Decimal("50.75"),
+            order_status="delivered",
+        )
+
+        # Create order details
+        self.order_details1 = OrderDetails.objects.create(
+            order_id=self.order1,
+            product_sku=self.product_sku1,
+            quantity=2,
+            units=1,
+            subtotal=Decimal("60.00")
+        )
+
+        self.order_details2 = OrderDetails.objects.create(
+            order_id=self.order2,
+            product_sku=self.product_sku2,
+            quantity=3,
+            units=1,
+            subtotal=Decimal("136.50")
+        )
+
+        self.order_details3 = OrderDetails.objects.create(
+            order_id=self.order3,
+            product_sku=self.product_sku2,
+            quantity=1,
+            units=1,
+            subtotal=Decimal("20.75")
+        )
+
+        # Create shipping addresses
+        self.shipping1 = OrderShippingAddress.objects.create(
+            order_id=self.order1,
+            address_line1="123 Main St",
+            city="New York",
+            country="USA",
+            postal_code="10001"
+        )
+
+        self.shipping2 = OrderShippingAddress.objects.create(
+            order_id=self.order2,
+            address_line1="456 Elm St",
+            city="Los Angeles",
+            country="USA",
+            postal_code="90001"
+        )
+
+        self.shipping3 = OrderShippingAddress.objects.create(
+            order_id=self.order3,
+            address_line1="789 Oak St",
+            city="Chicago",
+            country="USA",
+            postal_code="60601"
+        )
+
+        # Create coupons
+        self.coupon1 = Coupon.objects.create(
+            coupon_code = 'UNIQUE1',
+            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[0][0],#percentage
+            discount_percentage=30,
+            maximum_discount_amount=100,
+            start_date = self.now,
+            end_date = self.now + datetime.timedelta(days=10),
+            customer_id = self.customer1,
+            created_at = self.now
+
+        )
+
+        self.coupon2 = Coupon.objects.create(
+            coupon_code = 'UNIQUE2',
+            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[1][1],#fixed
+            discount_amount=50,
+            usage_limit=1,
+            maximum_discount_amount=100,
+            start_date = self.now + datetime.timedelta(days=-5),
+            end_date = self.now + datetime.timedelta(days=20),
+            customer_id = self.customer2,
+            created_at = self.now
+
+        )
+
+        # Create payments
+        self.payment1 = OrderPayment.objects.create(
+            order_id=self.order1,
+            coupon_applied=self.coupon1,
+            payment_mode="credit_card",
+            payment_status="success",
+            payment_amount=Decimal("81.45"),
+            payment_reference="PAY123"
+        )
+
+        self.payment2 = OrderPayment.objects.create(
+            order_id=self.order2,
+            coupon_applied=self.coupon2,
+            payment_mode="paypal",
+            payment_status="success",
+            payment_amount=Decimal("142.50"),
+            payment_reference="PAY456"
+        )
+
+        self.payment3 = OrderPayment.objects.create(
+            order_id=self.order3,
+            coupon_applied=None,  # No coupon applied
+            payment_mode="debit_card",
+            payment_status="pending",
+            payment_amount=Decimal("50.75"),
+            payment_reference="PAY789"
+        )
+
+        self.cancelorder1= CancelOrderRequest.objects.create(
+            order_id = self.order1,
+            cancellation_reason = "yyy"
+        )
 
 
     # @staticmethod
@@ -1031,6 +1185,21 @@ class ServerAPITestCases(APITestCase):
             'user_name':self.user.username
         }
         response = self.client.get('/server_api/system/notification/fetch/',data=data,format='json')
+        # print(response.data)
+
+    #orders
+
+    def test_fetch_order_details(self):
+
+        response = self.client.get(f'/server_api/order/fetch/?user_name={self.customer1.username}')
+        # print(response.data)
+
+        #orderid
+        response = self.client.get(f'/server_api/order/fetch/?order_id={self.order3.order_id}')
+        # print(response.data)
+
+        #all
+        response = self.client.get(f'/server_api/order/fetch/')
         print(response.data)
 
 

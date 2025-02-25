@@ -217,3 +217,27 @@ class DeliveryTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model= DeliveryTime
         fields = '__all__'
+
+class OrderDetailSerializerForAdmin(serializers.ModelSerializer):
+
+    order = OrderSerializer(many=True,read_only=True)
+    order_details = OrderDetailsSerializer(many=True,read_only=True)
+    shipping_address = OrderShippingAddressSerializer(many=True,read_only=True)
+    payment_details = OrderPaymentSerializer(many=True,read_only=True)
+
+    def to_representation(self, instance):
+        """Manually format the dictionary data into JSON"""
+        formatted_data = {}
+        for order_id, data_list in instance.items():
+            order_instance, order_details, shipping_address, payment_details = data_list
+
+            formatted_data[order_id] = {
+                "order": OrderSerializer(order_instance).data,
+                "order_details": OrderDetailsSerializer(order_details, many=True).data,
+                "shipping_address": OrderShippingAddressSerializer(shipping_address).data,
+                "payment_details": OrderPaymentSerializer(payment_details).data
+            }
+
+        return formatted_data
+
+    
