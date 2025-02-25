@@ -161,25 +161,33 @@ class OrderManagement:
             if order_id!="":
                 order = Order.objects.get(order_id=order_id)
                 order_details = OrderDetails.objects.filter(order_id = order)
-                dic[order.order_id] = [order,order_details] 
+                order_shipping_address = OrderShippingAddress.objects.get(order_id=order)
+                order_payment = OrderPayment.objects.get(order_id=order)
+                dic[order.order_id] = [order,order_details,order_shipping_address,order_payment] 
                 return dic, "Order Fetched Successfully"
             elif user_name!="":
                 account = Accounts.objects.get(username=user_name)
                 orders = Order.objects.filter(customer_id = account).order_by('-pk')
                 for o in orders:
                     order_details = OrderDetails.objects.filter(order_id = o)
-                    dic[o.order_id] = [o, order_details]
+                    order_shipping_address = OrderShippingAddress.objects.get(order_id=o)
+                    order_payment = OrderPayment.objects.get(order_id=o)
+                    dic[o.order_id] = [o, order_details,order_shipping_address,order_payment]
                 return dic, "Orders Fetched Successfully" if len(orders)>0 else "No Orders found"
             elif order_pk!="":
                 order = Order.objects.get(pk=order_pk)
                 order_details = OrderDetails.objects.filter(order_id = order)
-                dic[order.order_id] = [order,order_details]
+                order_shipping_address = OrderShippingAddress.objects.get(order_id=order)
+                order_payment = OrderPayment.objects.get(order_id=order)
+                dic[order.order_id] = [order,order_details,order_shipping_address,order_payment]
                 return dic, "Order Fetched Successfully"
             else:
                 orders = Order.objects.all().order_by('-pk')
                 for o in orders:
                     order_details = OrderDetails.objects.filter(order_id = o)
-                    dic[o.order_id] = [o, order_details]
+                    order_shipping_address = OrderShippingAddress.objects.get(order_id=o)
+                    order_payment = OrderPayment.objects.get(order_id=o)
+                    dic[o.order_id] = [o, order_details,order_shipping_address,order_payment]
                 return dic, "All Orders Fetched Successfully" if len(orders)>0 else "No Orders found"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -225,10 +233,10 @@ class OrderManagement:
                     if o.product_sku.pk == product_sku.pk and o.quantity != quantity:
                         price = o.product_sku.product_price
                         old_subtotal = o.subtotal
-                        old_subtotal= old_subtotal - (price * o.quantity)
-                        order.total_amount = order.total_amount - old_subtotal
-                        new_subtotal = old_subtotal + (price * quantity)
-                        order.total_amount = order.total_amount + new_subtotal
+                        old_subtotal= old_subtotal - float(price * o.quantity)
+                        order.total_amount = order.total_amount - float(price * o.quantity)
+                        new_subtotal = old_subtotal + float(price * quantity)
+                        order.total_amount = order.total_amount + float(price * quantity)
 
                         o.subtotal = new_subtotal
                         o.save()
