@@ -20,8 +20,8 @@ class Notification_Serializer(serializers.ModelSerializer):
 
 class NotificationTo_Serializer(serializers.ModelSerializer):
 
-    to = Account_Serialier()
-    notification = Notification_Serializer()
+    to = Account_Serialier(read_only=True)
+    notification = Notification_Serializer(read_only=True)
 
     class Meta:
         model = NotificationTo

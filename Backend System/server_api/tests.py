@@ -1031,7 +1031,7 @@ class ServerAPITestCases(APITestCase):
             'user_name':self.user.username
         }
         response = self.client.get('/server_api/system/notification/fetch/',data=data,format='json')
-        # print(response.data)
+        print(response.data)
 
 
     
