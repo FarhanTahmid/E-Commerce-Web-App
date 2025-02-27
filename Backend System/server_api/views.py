@@ -2953,7 +2953,7 @@ class FetchPositionForAdmin(APIView):
             )
         
 class FetchExtraPositionsOfAdmin(APIView):
-    
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -2970,7 +2970,7 @@ class FetchExtraPositionsOfAdmin(APIView):
 
 
             fetch_admin_extra_position,message = AdminManagement.fetch_extra_postions_of_admin(admin_user_name=admin_user_name)
-            fetch_admin_extra_position_data = AdminUserRoleSerializer(fetch_admin_extra_position)
+            fetch_admin_extra_position_data = AdminUserRoleSerializer(fetch_admin_extra_position,many=True)
             if fetch_admin_extra_position:
                 return Response({
                     'message':message,
