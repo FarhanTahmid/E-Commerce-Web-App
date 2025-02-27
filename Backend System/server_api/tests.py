@@ -1211,9 +1211,21 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.data['message'],"Updated Sucessfully")
 
 
-    
+    def test_fetch_order_cancellation_request(self):
 
+        response = self.client.get(f'/server_api/order/fetch-cancel-order-requests/?order_cancellation_request_pk={self.cancelorder1.pk}')
+        # print(response.data['message'])
+        # print(response.data['order_cancellation_data'])
 
+    def test_update_order_cancellation(self):
+
+        data = {
+            'stat':True
+        }
+
+        response = self.client.put(f'/server_api/order/update-cancel-order-requests/{self.cancelorder1.pk}/')
+        print(response.data['message'])
+        
 
 
 

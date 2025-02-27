@@ -291,7 +291,7 @@ class OrderManagement:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while cancelling order! Please try again later.")
         
-    def order_cancellation_request(request,order_cancellation_pk,status=False):
+    def update_order_cancellation_request(request,order_cancellation_pk,status=False):
 
         try:
             order_cancel,message = OrderManagement.fetch_order_cancellation_requests(order_cancellation_request_pk=order_cancellation_pk)
@@ -311,7 +311,7 @@ class OrderManagement:
                     payment.coupon_applied.usage_limit+=1
                     payment.coupon_applied.save()
                     payment.save()
-
+                print("cancelled")
             SystemLogs.updated_by(request,order_cancel.order_id)
             SystemLogs.admin_activites(request,f"Order Cancelled, order_id - {(order_cancel.order_id)} ","Cancelled")
             SystemManagement.send_email("Order Cancelled","Your Order has been cancelled",[order_cancel.order_id.customer_id.email],[],"","",request)

@@ -16,7 +16,7 @@ from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
-from business_admin import serializers
+from business_admin.serializers import *
 from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
 from datetime import datetime
@@ -547,16 +547,16 @@ class FetchBusinessAdminUsers(APIView):
 
             if admin_unique_id != "":
                 fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=False)
             elif admin_email!= "":
                 fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=False)
             elif admin_user_name!= "":
                 fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=False)
             else:
                 fetched_admin,message = AdminManagement.fetch_business_admin_user()
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=True)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=True)
 
             if fetched_admin:
                 return Response({
@@ -655,16 +655,16 @@ class FetchBusinessAdminPosition(APIView):
 
             if name!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(name=name)
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=False)
             elif pk!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(pk=pk)
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=False)
             elif available:
                 fetched_position,message = AdminManagement.fetch_admin_position(available=True)
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=True)
             else:
                 fetched_position,message = AdminManagement.fetch_admin_position()
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=True)
 
             if fetched_position:
                 return Response({
@@ -854,16 +854,16 @@ class FetchBusinessAdminPermission(APIView):
 
             if permission_pk != "":
                 admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
-                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=False)
             elif permission_name!= "":
                 admin_permission,message = AdminManagement.fetch_admin_permissions(permission_name=permission_name)
-                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=False)
             elif exclude:
                 admin_permission,message = AdminManagement.fetch_admin_permissions(exclude=True)
-                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=True)
             else:
                 admin_permission,message = AdminManagement.fetch_admin_permissions()
-                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=True)
             
             if admin_permission:
                 return Response({
@@ -2919,7 +2919,7 @@ class FetchPositionForAdmin(APIView):
 
 
             fetch_admin_position,message = AdminManagement.fetch_postion_of_admin(request,admin_user_name)
-            fetch_admin_position_data = serializers.AdminPositionSerializer(fetch_admin_position,many=False)
+            fetch_admin_position_data = AdminPositionSerializer(fetch_admin_position,many=False)
             if fetch_admin_position:
                 return Response({
                     'message':message,
@@ -2951,6 +2951,108 @@ class FetchPositionForAdmin(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+class FetchExtraPositionsOfAdmin(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for fetching position"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+            fetch_admin_position,message = AdminManagement.fetch_postion_of_admin(request,admin_user_name)
+            fetch_admin_position_data = AdminPositionSerializer(fetch_admin_position,many=False)
+            if fetch_admin_position:
+                return Response({
+                    'message':message,
+                    'position':fetch_admin_position_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class FetchAdminExtraPossitions(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for fetching position"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+            fetch_admin_extra_position,message = AdminManagement.fetch_extra_postions_of_admin(admin_user_name=admin_user_name)
+            fetch_admin_exrta_position_data = AdminUserRoleSerializer(fetch_admin_extra_position)
+            if fetch_admin_extra_position:
+                return Response({
+                    'message':message,
+                    'position':fetch_admin_exrta_position_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 
 class AddPositionForAdmin(APIView):
 
@@ -3119,16 +3221,16 @@ class FetchBusinessAdminRolePermission(APIView):
 
             if admin_role_permission_pk!= "":
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_role_permission_pk=admin_role_permission_pk)
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=False)
+                admin_role_permission_data = AdminRolePermissionSerializer(admin_role_permission,many=False)
             elif admin_position_pk!= "":
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_position_pk=admin_position_pk)
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+                admin_role_permission_data =AdminRolePermissionSerializer(admin_role_permission,many=True)
             elif admin_permission_pk!= "":
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_permission_pk=admin_permission_pk)
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+                admin_role_permission_data = AdminRolePermissionSerializer(admin_role_permission,many=True)
             else:
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission()
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+                admin_role_permission_data = AdminRolePermissionSerializer(admin_role_permission,many=True)
             
             if admin_role_permission:
                 return Response({
@@ -3638,15 +3740,28 @@ class FetchOrderCanellationRequests(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
-    def put(self,request,format=None):
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
 
         try:
             order_cancellation_request_pk = self.request.query_params.get('order_cancellation_request_pk',"")
 
             if order_cancellation_request_pk!="":
                 order_cancellation_request,message = OrderManagement.fetch_order_cancellation_requests(order_cancellation_request_pk=order_cancellation_request_pk)
-                order_cancellation_request_data = 
+                order_cancellation_request_data = OrderCancellationRequestSerializer(order_cancellation_request,many=False)
+            else:
+                order_cancellation_request,message = OrderManagement.fetch_order_cancellation_requests()
+                order_cancellation_request_data = OrderCancellationRequestSerializer(order_cancellation_request,many=True)
+
+            if order_cancellation_request:
+                return Response({
+                    'message':message,
+                    'order_cancellation_data':order_cancellation_request_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},
@@ -3669,3 +3784,47 @@ class FetchOrderCanellationRequests(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+class UpdateOrderCancellationRequest(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,order_cancellation_pk,format=None):
+
+        try:
+
+            order_cancellation_pk = order_cancellation_pk
+            stat = self.request.data.get('status',False)
+
+            updated,message = OrderManagement.update_order_cancellation_request(request,order_cancellation_pk,stat)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
