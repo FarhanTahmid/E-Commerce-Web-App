@@ -1167,7 +1167,7 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin position! Please try again later.")
     
-    def fetch_extra_postions_of_admin(admin_user_name):
+    def fetch_extra_permissions_of_admin(admin_user_name):
 
         try:
             #sall_permissions,message = AdminManagement.fetch_admin_permissions(exclude=True)
@@ -1177,7 +1177,6 @@ class AdminManagement:
                 extra_permissions = admin_user_role.extra_permissions.all()
             except:
                 extra_permissions = []
-            
             return extra_permissions, "Fetched Successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

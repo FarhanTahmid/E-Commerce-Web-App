@@ -30,13 +30,13 @@ urlpatterns = [                                                                 
 
     #business admin postion for user
     path('business-admin/admin-position/fetch-position-for-admin/',views.FetchPositionForAdmin.as_view(),name='fetch_position_for_admin'),#post request, no parameter passing, need to send json
-    path('business-admin/admin-extra-position/fetch-extra-position-for-admin/',views.FetchAdminExtraPossitions.as_view(),name="fetch_admin_extra_postions"),
     path('business-admin/admin-position/add-position-for-admin/',views.AddPositionForAdmin.as_view(),name='add_position_for_admin'),
     path('business-admin/admin-position/update-position-for-admin/',views.UpdatePositionForAdmin.as_view(),name='update_position_for_admin'),
     path('business-admin/admin-position/delete-position-for-admin/',views.RemovePositionForAdmin.as_view(),name='delete_position_for_admin'),
 
     #business admin permissions
     path('business-admin/admin-permissions/fetch-admin-permissions/',views.FetchBusinessAdminPermission.as_view(),name='fetch_business_admin_permissions'),#pass parameter /?permission_pk= OR permission_name= OR none to retrieve all permissions
+    path('business-admin/admin-extra-permissions/fetch-extra-permissions-for-admin/',views.FetchAdminExtraPermissions.as_view(),name="fetch_admin_extra_postions"),
     path('business-admin/admin-permissions/create/',views.CreateBusinessAdminPermission.as_view(),name='create_business_admin_permissions'),
     path('business-admin/admin-permissions/update/<int:admin_permission_pk>/',views.UpdateBusinessAdminPermission.as_view(),name='update_business_admin_permissions'),
     path('business-admin/admin-permissions/delete/<int:admin_permission_pk>/',views.DeleteBusinessAdminPermission.as_view(),name='delete_business_admin_permissions'),

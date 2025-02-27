@@ -2952,58 +2952,62 @@ class FetchPositionForAdmin(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class FetchExtraPositionsOfAdmin(APIView):
+# class FetchExtraPositionsOfAdmin(APIView):
 
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [IsAuthenticated]
 
-    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
-    def post(self,request,format=None):
-
-        try:
-
-            admin_user_name = self.request.data.get('admin_user_name',"")
-            if admin_user_name == "":
-                return Response({
-                    'error':"User name needed for fetching position"
-                },status=status.HTTP_400_BAD_REQUEST)
-
-
-            fetch_admin_extra_position,message = AdminManagement.fetch_extra_postions_of_admin(admin_user_name=admin_user_name)
-            fetch_admin_extra_position_data = AdminUserRoleSerializer(fetch_admin_extra_position,many=True)
-            if fetch_admin_extra_position:
-                return Response({
-                    'message':message,
-                    'position':fetch_admin_extra_position_data.data
-                },status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    'error':message
-                },status=status.HTTP_400_BAD_REQUEST)
-
-        except JSONDecodeError as e:
-            return Response(
-                {'error': 'Invalid JSON format'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except KeyError as e:
-            return Response(
-                {'error': f'Missing required field: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except ValueError as e:
-            return Response(
-                {'error': f'Invalid value: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+#     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+#     def post(self,request,format=None):
         
-        except Exception as e:
-            return Response(
-                {'error': f'An unexpected error occurred: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+#         try:
 
-class FetchAdminExtraPossitions(APIView):
+#             admin_user_name = self.request.data.get('admin_user_name',"")
+#             print("5456")
+#             if admin_user_name == "":
+#                 return Response({
+#                     'error':"User name needed for fetching position"
+#                 },status=status.HTTP_400_BAD_REQUEST)
+
+
+#             fetch_admin_extra_position,message = AdminManagement.fetch_extra_postions_of_admin(admin_user_name=admin_user_name)
+#             fetch_admin_extra_position_data = AdminUserRoleSerializer(fetch_admin_extra_position,many=True)
+#             print("hereer")
+#             print(fetch_admin_extra_position_data)
+#             print("printeddd")
+#             if fetch_admin_extra_position:
+#                 return Response({
+#                     'message':message,
+#                     'position':fetch_admin_extra_position_data.data
+#                 },status=status.HTTP_200_OK)
+#             else:
+#                 return Response({
+#                     'error':message
+#                 },status=status.HTTP_400_BAD_REQUEST)
+
+#         except JSONDecodeError as e:
+#             return Response(
+#                 {'error': 'Invalid JSON format'},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#         except KeyError as e:
+#             return Response(
+#                 {'error': f'Missing required field: {str(e)}'},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#         except ValueError as e:
+#             return Response(
+#                 {'error': f'Invalid value: {str(e)}'},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+        
+#         except Exception as e:
+#             return Response(
+#                 {'error': f'An unexpected error occurred: {str(e)}'},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             )
+
+class FetchAdminExtraPermissions(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -3019,12 +3023,13 @@ class FetchAdminExtraPossitions(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
 
 
-            fetch_admin_extra_position,message = AdminManagement.fetch_extra_postions_of_admin(admin_user_name=admin_user_name)
-            fetch_admin_exrta_position_data = AdminUserRoleSerializer(fetch_admin_extra_position)
-            if fetch_admin_extra_position:
+            fetch_admin_extra_permissions,message = AdminManagement.fetch_extra_permissions_of_admin(admin_user_name=admin_user_name)
+            fetch_admin_extra_permissions_data = AdminPermissionSerializer(fetch_admin_extra_permissions,many=True)
+            print(fetch_admin_extra_permissions_data)
+            if fetch_admin_extra_permissions:
                 return Response({
                     'message':message,
-                    'position':fetch_admin_exrta_position_data.data
+                    'position':fetch_admin_extra_permissions_data.data
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
