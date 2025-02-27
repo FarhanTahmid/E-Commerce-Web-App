@@ -1166,6 +1166,35 @@ class AdminManagement:
             }
 
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin position! Please try again later.")
+    
+    def fetch_extra_postions_of_admin(admin_user_name):
+
+        try:
+            user = Accounts.objects.get(username = admin_user_name)
+            try:
+                admin_user_role = AdminUserRole.objects.get(user = user)
+                extra_permissions = admin_user_role.extra_permissions.all()
+            except:
+                extra_permissions = []
+            
+            return extra_permissions, "Fetched Successfully"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching admin extra position! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching admin extra position! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching admin extra position! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin extra position! Please try again later.")
         
     def add_user_admin_position(request,admin_user_name,admin_position_pk,extra_permissions_pk_list=[]):
 

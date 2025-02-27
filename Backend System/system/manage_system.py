@@ -74,10 +74,10 @@ class SystemManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching notifications! Please try again later.")
 
 
-    def create_notification(title,user_names=[],description="",link="",request=None):
+    def create_notification(title,user_names=[],description="",link="",request=None,role=""):
 
         try:
-            if len(user_names) == 0:
+            if len(user_names) == 0 and role=="":
                 return False, "No users to send notification to"
 
             notification = Notification.objects.create(title=title)
@@ -89,14 +89,25 @@ class SystemManagement:
             SystemLogs.updated_by(request,notification)
             SystemLogs.admin_activites(request,f"Notification created, title- {title}","Created")
 
-            for user in user_names:
-                user_ = Accounts.objects.get(username=user)
-                notification_to = NotificationTo.objects.create(to=user_,notification=notification)
-                notification_to.save()
-                
-                if request:
-                    SystemLogs.updated_by(request,notification_to)
-                    SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
+            if role == "":
+                for user in user_names:
+                    user_ = Accounts.objects.get(username=user)
+                    notification_to = NotificationTo.objects.create(to=user_,notification=notification)
+                    notification_to.save()
+                    
+                    if request:
+                        SystemLogs.updated_by(request,notification_to)
+                        SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
+            else:
+                for user in user_names:
+                    user_ = Accounts.objects.get(username=user)
+                    if user.admin_role.role.name.lower() == role.lower():
+                        notification_to = NotificationTo.objects.create(to=user_,notification=notification)
+                        notification_to.save()
+                        if request:
+                            SystemLogs.updated_by(request,notification_to)
+                            SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
+
             
             return True, "Nofication created successfully"
 

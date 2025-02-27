@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.db import transaction
 from datetime import timedelta
 import uuid
-from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems
+from orders.models import Order, OrderDetails, OrderShippingAddress, OrderPayment, Cart, CartItems, CancelOrderRequest
 from customer.models import Coupon, CustomerAddress
 from rest_framework.permissions import BasePermission
 from products.product_management import ManageProducts
@@ -247,13 +247,20 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 }
 
-                SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed")
-                notification = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
-                if notification[0]:
-                    print(notification[1])
+                SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed",emails_to=[request.user.email])
+                notification_to_client = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
+                if notification_to_client[0]:
+                    print(notification_to_client[1])
                 else:
-                    print("notification creation failed")
-                #send email to specific admin and notification
+                    print("notification creation failed to client")
+
+                #TODO:send notiication to admin of desire role
+                notification_to_admin = SystemManagement.create_notification(title="A new order has been placed",role="Manage")
+                if notification_to_admin[0]:
+                    print(notification_to_admin[1])
+                else:
+                    print("notification creation failed to admin")
+
                 return Response(data=response, status=status.HTTP_201_CREATED)
 
         except Cart.DoesNotExist:
@@ -299,6 +306,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                         payment.coupon_applied.usage_limit+=1
                         payment.coupon_applied.save()
                         payment.save()
+                    
+                    order.delete()
 
                     return Response(
                         {'message': 'Order cancelled successfully'},
@@ -307,6 +316,23 @@ class OrderViewSet(viewsets.ModelViewSet):
                 else:
                     # Create cancellation request
                     cancellation_reason = serializer.validated_data['reason']
+                    if cancellation_reason:
+                        CancelOrderRequest.objects.create(
+                            order_id = order,
+                            cancellation_reason = cancellation_reason
+                        )
+                    notification_to_client = SystemManagement.create_notification(title="Cancellation Request Sent",user_names=[request.user.username])
+                    if notification_to_client[0]:
+                        print(notification_to_client[1])
+                    else:
+                        print("notification creation failed to client for order cancellation")
+                        
+                    notification_to_admin = SystemManagement.create_notification(title="Request for Order Cancellation",role="Manage")
+                    if notification_to_admin[0]:
+                        print(notification_to_admin[1])
+                    else:
+                        print("notification creation failed to admin for order cancellation")
+
                     # Implement cancellation request workflow here
                     return Response(
                         {'message': 'Cancellation request submitted for approval'},

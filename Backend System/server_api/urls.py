@@ -10,6 +10,7 @@ urlpatterns = [                                                                 
     #system
     path('system/register-permissions/',views.RegisterPermissionsPages.as_view(),name='register_permissions'),
     path('system/has-permissions/',views.CheckPermission.as_view(),name='has_permissions'),
+    path('system/notification/fetch/',views.FetchUserNotifications.as_view(),name='fetch_user_notifications'),
 
     #business admin
     path('business-admin/admin/fetch-all/',views.FetchBusinessAdminUsers.as_view(),name='fetch_all_business_admin_user'),#pass parameters /?admin_user_name= OR admin_unique_id= OR admin_email= OR none to retrieve all
@@ -29,6 +30,7 @@ urlpatterns = [                                                                 
 
     #business admin postion for user
     path('business-admin/admin-position/fetch-position-for-admin/',views.FetchPositionForAdmin.as_view(),name='fetch_position_for_admin'),#post request, no parameter passing, need to send json
+    path('business-admin/admin-extra-position/fetch-extra-position-for-admin/',views.FetchAdminExtraPossitions.as_view(),name="fetch_admin_extra_postions"),
     path('business-admin/admin-position/add-position-for-admin/',views.AddPositionForAdmin.as_view(),name='add_position_for_admin'),
     path('business-admin/admin-position/update-position-for-admin/',views.UpdatePositionForAdmin.as_view(),name='update_position_for_admin'),
     path('business-admin/admin-position/delete-position-for-admin/',views.RemovePositionForAdmin.as_view(),name='delete_position_for_admin'),
@@ -101,6 +103,12 @@ urlpatterns = [                                                                 
     path('product/product-discounts/create/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
     path('product/product-discounts/update/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
 
+    #orders
+    path('order/order-status/fetch/',views.FetchOrderStatusList.as_view(),name="fetch_order_status"),
+    path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or none to fetch all
+    path('order/update-details/<order_id>/',views.UpdateOrderDetails.as_view(),name='update_order_details'),
+    path('order/fetch-cancel-order-requests/',views.FetchOrderCanellationRequests.as_view(),name='cancel_order_requests'),#pass parameters /?order_cancellation_request_pk= OR none to fetch all
+    path('order/update-cancel-order-requests/<order_cancellation_pk>/',views.UpdateOrderCancellationRequest.as_view(),name="update_order_cancellation_request"),
 
     re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
