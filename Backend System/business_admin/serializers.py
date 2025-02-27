@@ -20,8 +20,6 @@ class BusinessAdminUserSerializer(serializers.ModelSerializer):
 
 class AdminUserRoleSerializer(serializers.ModelSerializer):
 
-    
-
     class Meta:
         model = AdminUserRole
         fields = '__all__'
