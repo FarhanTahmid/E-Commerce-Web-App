@@ -30,14 +30,12 @@ const AdminManagementAdminsOperation = () => {
 
     const fetchAdminExtraPermissions = async () => {
         try {
-            console.log(admin_extra_permissions_list);
-            console.log(admin_user_name);
-            console.log(Cookies.get("accessToken"));
             const response = await axios.post(admin_extra_permissions_list, {
                 admin_user_name: admin_user_name
             }, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
             });
+            console.log(response.data.position);
 
             const permissionsOptions = response.data.position.map(permission => ({
                 value: permission.id,
