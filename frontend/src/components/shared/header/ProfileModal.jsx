@@ -77,9 +77,6 @@ const ProfileModal = () => {
                 body: JSON.stringify({ refresh: refreshToken }),
             });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.error}`);
-
-
             // Clear cookies and redirect
             Cookies.remove("accessToken");
             Cookies.remove("refreshToken");
