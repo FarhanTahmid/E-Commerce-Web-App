@@ -2968,12 +2968,12 @@ class FetchExtraPositionsOfAdmin(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
 
 
-            fetch_admin_position,message = AdminManagement.fetch_postion_of_admin(request,admin_user_name)
-            fetch_admin_position_data = AdminPositionSerializer(fetch_admin_position,many=False)
-            if fetch_admin_position:
+            fetch_admin_extra_position,message = AdminManagement.fetch_extra_postions_of_admin(admin_user_name=admin_user_name)
+            fetch_admin_extra_position_data = AdminUserRoleSerializer(fetch_admin_extra_position)
+            if fetch_admin_extra_position:
                 return Response({
                     'message':message,
-                    'position':fetch_admin_position_data.data
+                    'position':fetch_admin_extra_position_data.data
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
