@@ -23,7 +23,8 @@ class AdminUserRoleSerializer(serializers.ModelSerializer):
 
     user = Account_Serialier(read_only=True)
     role = AdminPositionSerializer(read_only=True)
-    
+    extra_permissions = AdminPermissionSerializer(read_only=True,many=True)
+
     class Meta:
         model = AdminUserRole
         fields = '__all__'
