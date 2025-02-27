@@ -214,7 +214,8 @@ class OrderManagement:
             dictionary,message = OrderManagement.fetch_orders_details(order_id=order_id)
             order_list = dictionary[order_id]
             order = order_list[0]
-            order_details = order_list[1]
+            order_details = order_list[1] 
+
 
             if order_date!="":
                 order.order_date = order_date
@@ -241,9 +242,11 @@ class OrderManagement:
                         o.subtotal = new_subtotal
                         o.save()
                         order.save()
+            
 
             SystemLogs.updated_by(request,order)
             SystemLogs.admin_activites(request,f"Order Updated, order_id - {order.order_id} ","Updated")
+            return True, "Updated Sucessfully"
             
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:

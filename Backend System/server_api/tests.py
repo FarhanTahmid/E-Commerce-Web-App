@@ -1200,7 +1200,15 @@ class ServerAPITestCases(APITestCase):
 
         #all
         response = self.client.get(f'/server_api/order/fetch/')
-        print(response.data)
+        # print(response.data)
+    
+    def test_update_order_details(self):
+        
+        data = {
+            'delivery_time_pk':self.delivery_time3.pk
+        }
+        response = self.client.put(f'/server_api/order/update-details/{self.order1.order_id}/',data=data,format='json')
+        self.assertEqual(response.data['message'],"Updated Sucessfully")
 
 
     

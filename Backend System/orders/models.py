@@ -52,7 +52,7 @@ class Order(models.Model):
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending', null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(BusinessAdminUser, null=True, blank=True, on_delete=models.CASCADE, related_name="OrderUpdatedBy")
+    updated_by = models.ForeignKey(Accounts, null=True, blank=True, on_delete=models.CASCADE, related_name="OrderUpdatedBy")
 
     class Meta:
         verbose_name = "Order"
@@ -86,6 +86,7 @@ class OrderDetails(models.Model):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(Accounts, null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Order Detail"
@@ -117,6 +118,7 @@ class OrderShippingAddress(models.Model):
     country = models.CharField(max_length=100, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
     postal_code = models.CharField(max_length=50, null=True, blank=True)
+    updated_by = models.ForeignKey(Accounts, null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Order Shipping Address"
@@ -170,6 +172,7 @@ class OrderPayment(models.Model):
     payment_reference = models.CharField(max_length=100, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(Accounts, null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Order Payment"
@@ -237,6 +240,7 @@ class CancelOrderRequest(models.Model):
     cancellation_status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    updated_by = models.ForeignKey(Accounts, null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Cancel Order"

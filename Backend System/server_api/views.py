@@ -3584,3 +3584,52 @@ class FetchOrderDetails(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+class UpdateOrderDetails(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,order_id,format=None):
+
+        try:
+            order_id = order_id
+
+            order_date = self.request.data.get('order_date',"")
+            delivery_time_pk = self.request.data.get('delivery_time_pk',"")
+            total_amount = self.request.data.get('total_amount',"")
+            order_status = self.request.data.get('order_status',"")#PA SS EITHER 'TRUE' OR 'FALSE'
+            product_sku_pk = self.request.data.get('product_sku_pk',"")
+            quantity = self.request.data.get('quantity',"")
+
+            updated,message = OrderManagement.update_order_details(request,order_id,order_date,delivery_time_pk,total_amount,order_status,product_sku_pk,quantity)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

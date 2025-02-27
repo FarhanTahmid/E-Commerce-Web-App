@@ -105,7 +105,7 @@ urlpatterns = [                                                                 
     #orders
     path('order/order-status/fetch/',views.FetchOrderStatusList.as_view(),name="fetch_order_status"),
     path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or none to fetch all
-
+    path('order/update-details/<order_id>/',views.UpdateOrderDetails.as_view(),name='update_order_details'),
 
     re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
