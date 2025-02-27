@@ -20,11 +20,35 @@ const AdminManagementAdminsOperation = () => {
     const [changePosition, setChangePosition] = useState(false);
 
     const API_BASE_URL = `${BackendUrlMainAPI}server_api/business-admin/admin-position`;
+    const admin_extra_permissions_list = `${BackendUrlMainAPI}server_api/business-admin/admin-extra-position/fetch-extra-position-for-admin/`;
 
     useEffect(() => {
         fetchAdminPosition();
-        fetchPermissions();
+        // fetchPermissions();
+        fetchAdminExtraPermissions();
     }, []);
+
+    const fetchAdminExtraPermissions = async () => {
+        try {
+            console.log(admin_extra_permissions_list);
+            console.log(admin_user_name);
+            console.log(Cookies.get("accessToken"));
+            const response = await axios.post(admin_extra_permissions_list, {
+                admin_user_name: admin_user_name
+            }, {
+                headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+            });
+
+            const permissionsOptions = response.data.position.map(permission => ({
+                value: permission.id,
+                label: permission.permission_name
+            }));
+
+            setExtraPermissions(permissionsOptions);
+        } catch (error) {
+            console.error("Error fetching extra permissions:", error);
+        }
+    };
 
     const fetchAdminPosition = async () => {
         try {
