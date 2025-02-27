@@ -2953,6 +2953,7 @@ class FetchPositionForAdmin(APIView):
             )
         
 class FetchExtraPositionsOfAdmin(APIView):
+    
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
