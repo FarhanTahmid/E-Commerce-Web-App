@@ -1170,6 +1170,7 @@ class AdminManagement:
     def fetch_extra_postions_of_admin(admin_user_name):
 
         try:
+            #sall_permissions,message = AdminManagement.fetch_admin_permissions(exclude=True)
             user = Accounts.objects.get(username = admin_user_name)
             try:
                 admin_user_role = AdminUserRole.objects.get(user = user)
