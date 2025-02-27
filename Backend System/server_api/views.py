@@ -3633,3 +3633,39 @@ class UpdateOrderDetails(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+class FetchOrderCanellationRequests(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,format=None):
+
+        try:
+            order_cancellation_request_pk = self.request.query_params.get('order_cancellation_request_pk',"")
+
+            if order_cancellation_request_pk!="":
+                order_cancellation_request,message = OrderManagement.fetch_order_cancellation_requests(order_cancellation_request_pk=order_cancellation_request_pk)
+                order_cancellation_request_data = 
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+

@@ -6,7 +6,8 @@ from .models import (
     OrderPayment,
     Cart,
     CartItems,
-    DeliveryTime
+    DeliveryTime,
+    CancelOrderRequest,
 )
 
 from customer.models import Accounts,CustomerAddress,Coupon
@@ -239,5 +240,10 @@ class OrderDetailSerializerForAdmin(serializers.ModelSerializer):
             }
 
         return formatted_data
+    
+class OrderCancellationRequestSerializer(serializers.ModelSerializer):
 
+    class Meta:
+        model = CancelOrderRequest
+        fields = '__all__'
     
