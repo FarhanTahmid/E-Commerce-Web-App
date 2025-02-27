@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from system.serializer import *
 
 class AdminPositionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,6 +21,9 @@ class BusinessAdminUserSerializer(serializers.ModelSerializer):
 
 class AdminUserRoleSerializer(serializers.ModelSerializer):
 
+    user = Account_Serialier(read_only=True)
+    role = AdminPositionSerializer(read_only=True)
+    
     class Meta:
         model = AdminUserRole
         fields = '__all__'
