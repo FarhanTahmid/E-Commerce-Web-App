@@ -24,7 +24,7 @@ const AdminManagementAdminsOperation = () => {
 
     useEffect(() => {
         fetchAdminPosition();
-        // fetchPermissions();
+        fetchPermissions();
         fetchAdminExtraPermissions();
     }, []);
 
@@ -42,7 +42,7 @@ const AdminManagementAdminsOperation = () => {
                 label: permission.permission_name
             }));
 
-            setExtraPermissions(permissionsOptions);
+            console.log(permissionsOptions);
         } catch (error) {
             console.error("Error fetching extra permissions:", error);
         }
