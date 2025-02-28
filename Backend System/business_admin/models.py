@@ -108,7 +108,8 @@ class AdminUserRole(models.Model):
     extra_permissions = models.ManyToManyField(AdminPermissions, blank=True, related_name='extra_user_permissions')
 
     def __str__(self):
-        return f"{self.user.email} - {self.role.name}"
+        return f"{self.user.email} - {self.role.name if self.role else 'No Role'}"
+
 
 
 # Audit Log Model
