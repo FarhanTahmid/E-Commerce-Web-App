@@ -139,11 +139,7 @@ const AdminManagementAdminsOperation = () => {
                         <h5>Admin Username: {admin_user_name}</h5>
                         <p>Admin Position: {adminPosition || "Not Assigned"}</p>
 
-                        {adminPosition && !changePosition && (
-                            <button type="button" className="btn btn-warning mb-3" onClick={() => setShowConfirmModal(true)}>
-                                I want to change the position
-                            </button>
-                        )}
+
 
                         {(changePosition || !adminPosition) && (
                             <div className="form-group">
@@ -160,9 +156,18 @@ const AdminManagementAdminsOperation = () => {
                             <Select isMulti options={extraPermissions} value={selectedPermissions} onChange={setSelectedPermissions} />
                         </div>
 
-                        <button type="submit" className="btn btn-primary mt-3">{adminPosition ? 'Update Admin Position' : 'Assign Admin Position'}</button>
-                        {adminPosition && (
-                            <button type="button" className="btn btn-danger mt-3 ml-3" onClick={() => setChangePosition(false)}>Delete Admin Position</button>
+                        <div className='d-flex gap-2 mb-3'>
+                            <button type="submit" className="btn btn-primary mt-3">{adminPosition ? 'Update Admin Position' : 'Assign Admin Position'}</button>
+                            {adminPosition && (
+                                <button type="button" className="btn btn-danger mt-3 ml-3" onClick={() => setChangePosition(false)}>Delete Admin Position</button>
+                            )}
+                        </div>
+
+
+                        {adminPosition && !changePosition && (
+                            <span style={{ cursor: "pointer" }} className="mb-3" onClick={() => setShowConfirmModal(true)}>
+                                Want to change the position? Click here!
+                            </span>
                         )}
                     </form>
                 </div>
