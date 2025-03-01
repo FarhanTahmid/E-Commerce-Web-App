@@ -20,7 +20,7 @@ const AdminManagementAdminsOperation = () => {
     const [changePosition, setChangePosition] = useState(false);
 
     const API_BASE_URL = `${BackendUrlMainAPI}server_api/business-admin/admin-position`;
-    const admin_extra_permissions_list = `${BackendUrlMainAPI}server_api/business-admin/admin-extra-position/fetch-extra-position-for-admin/`;
+    const admin_extra_permissions_list = `${BackendUrlMainAPI}server_api/business-admin/admin-extra-permissions/fetch-extra-permissions-for-admin/`;
 
     useEffect(() => {
         fetchAdminPosition();
