@@ -4,7 +4,7 @@ from django.db import DatabaseError,OperationalError,IntegrityError,ProgrammingE
 from .system_log import SystemLogs
 from django.core.mail import EmailMultiAlternatives
 from e_commerce_app import settings
-from business_admin.models import AdminPermissions
+from business_admin.models import AdminPermissions,AdminUserRole
 
 class SystemManagement:
     
@@ -99,14 +99,14 @@ class SystemManagement:
                         SystemLogs.updated_by(request,notification_to)
                         SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
             else:
-                for user in user_names:
-                    user_ = Accounts.objects.get(username=user)
-                    if user.admin_role.role.name.lower() == role.lower():
-                        notification_to = NotificationTo.objects.create(to=user_,notification=notification)
-                        notification_to.save()
-                        if request:
-                            SystemLogs.updated_by(request,notification_to)
-                            SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
+                role = AdminUserRole.objects.filter(role__name = role)
+                for r in role:
+                    user_ = r.user
+                    notification_to = NotificationTo.objects.create(to=user_,notification=notification)
+                    notification_to.save()
+                    if request:
+                        SystemLogs.updated_by(request,notification_to)
+                        SystemLogs.admin_activites(request,f"Notification created for user {user_.username}, title- {title}","Created")
 
             
             return True, "Nofication created successfully"

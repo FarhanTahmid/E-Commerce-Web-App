@@ -765,6 +765,8 @@ class AdminManagement:
                 business_admin.admin_avatar = admin_avatar
             business_admin.save()
             SystemManagement.send_email(subject=SUBJECT,body=BODY,emails_to=[admin_email])
+            SystemManagement.create_notification(title="Request for Admin Login",role ="Owner")
+            SystemManagement.send_email(subject="New Admin Login Request",body="Login Request",emails_to=[admin_email])
             return True, "Business Admin created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1910,4 +1912,62 @@ class AdminManagement:
             }
 
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin role permission! Please try again later.")
+        
+    
+    def fetch_login_requests(business_admin_user_pk=""):
+        try:
+            if business_admin_user_pk!="":
+                login_request = BusinessAdminUser.objects.get(pk=business_admin_user_pk)
+                return login_request, "Fetched Successfully"
+            else:
+                login_requests = BusinessAdminUser.objects.filter(login_request = False).order_by('-pk')
+                return login_requests, "All Fetched Successfully"
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting admin role permission! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting admin role permission! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting admin role permission! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin role permission! Please try again later.")
+        
+    def update_login_requests(request,business_admin_user_pk,stat=False):
+
+        try:
+            login_request,message = AdminManagement.fetch_login_requests(business_admin_user_pk=business_admin_user_pk)
+            if stat:
+                login_request.login_request = True
+                login_request.save()
+                SystemManagement.send_email(emails_to=[login_request.admin_email],subject="You can now Login IN",request=request,body="..")
+                SystemManagement.create_notification(request=request,user_names=[login_request.admin_user_name],title="Welcome to the System")
+                SystemLogs.updated_by(request,login_request)
+                SystemLogs.admin_activites(request,f"Updated admin login request permission",message="Updated")
+                return True, "Updated Successfully"
+            else:
+                return False, "Not updated"
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while deleting admin role permission! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while deleting admin role permission! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while deleting admin role permission! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin role permission! Please try again later.") 
         

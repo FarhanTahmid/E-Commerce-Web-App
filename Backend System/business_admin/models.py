@@ -36,6 +36,7 @@ class BusinessAdminUser(models.Model):
     admin_account_created_at=models.DateTimeField(null=False,blank=False,auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
+    login_request = models.BooleanField(default=False)
 
     class Meta:
         verbose_name="Admin User"

@@ -191,6 +191,97 @@ class FetchUserNotifications(APIView):
             )
 
 #business admin
+class FetchLoginRequests(APIView):
+        
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @method_decorator(ratelimit(key='ip', rate=None, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+            admin_pk = self.request.query_params.get('admin_pk',"")
+
+            if admin_pk!="":
+                fetched,message = AdminManagement.fetch_login_requests(business_admin_user_pk=admin_pk)
+                fetched_data = BusinessAdminUserSerializer(fetched,many=False)
+            else:
+                fetched,message = AdminManagement.fetch_login_requests()
+                fetched_data = BusinessAdminUserSerializer(fetched,many=True)
+            
+            if fetched:
+                return Response({
+                    'message':message,
+                    'fetched_data':fetched_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+   
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateLoginRequests(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @method_decorator(ratelimit(key='ip', rate=None, method='PUT', block=True))
+    def put(self,request,admin_pk,format=None):
+        try:
+            admin_pk = admin_pk
+            stat = self.request.data.get('status',False)
+
+            fetched,message = AdminManagement.update_login_requests(request,admin_pk,stat)
+            if fetched:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+   
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 class SignupBusinessAdminUser(APIView):
     
     permission_classes = [AllowAny]
@@ -238,7 +329,7 @@ class SignupBusinessAdminUser(APIView):
                                                                                     admin_avatar=admin_avatar,is_superuser=is_superuser,is_staff_user=is_staff)
             if business_admin_user:
                 return Response({
-                    'message':"Business Admin created successfully. Redirecting to login page",
+                    'message':"Business Admin created successfully. Wait for approval from Admin. Redirecting to login page",
                     "redirect_url": "/login-page"
                 },status=status.HTTP_201_CREATED)
             else:
@@ -282,28 +373,59 @@ class LoginInBusinessAdminUser(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            authenticated_user = authenticate(email=email, password=password)
-            if authenticated_user:
-                refresh=RefreshToken.for_user(authenticated_user)
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'message': 'Login successful',
-                    'redirect_url': 'dashoard-link/',
-                    'username': authenticated_user.username,
-                    }, status=status.HTTP_200_OK)
-            else:
-                # Check which input was wrong
-                if Accounts.objects.filter(email=email).exists():
-                    return Response(
-                        {'error': 'Wrong password'},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+            try:
+                admin_user = BusinessAdminUser.objects.get(admin_email = email)
+                if admin_user.login_request:
+                    authenticated_user = authenticate(email=email, password=password)
+                    if authenticated_user:
+                        refresh=RefreshToken.for_user(authenticated_user)
+                        return Response({
+                            'refresh': str(refresh),
+                            'access': str(refresh.access_token),
+                            'message': 'Login successful',
+                            'redirect_url': 'dashoard-link/',
+                            'username': authenticated_user.username,
+                            }, status=status.HTTP_200_OK)
+                    else:
+                        # Check which input was wrong
+                        if Accounts.objects.filter(email=email).exists():
+                            return Response(
+                                {'error': 'Wrong password'},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+                        else:
+                            return Response(
+                                {'error': 'Account with this email does not exist!'},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
                 else:
-                    return Response(
-                        {'error': 'Account with this email does not exist!'},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                    return Response({
+                        'error':'Login Request Not Yet Approved'
+                    },status=status.HTTP_401_UNAUTHORIZED)
+            except:
+                authenticated_user = authenticate(email=email, password=password)
+                if authenticated_user:
+                    refresh=RefreshToken.for_user(authenticated_user)
+                    return Response({
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
+                        'message': 'Login successful',
+                        'redirect_url': 'dashoard-link/',
+                        'username': authenticated_user.username,
+                        }, status=status.HTTP_200_OK)
+                else:
+                    # Check which input was wrong
+                    if Accounts.objects.filter(email=email).exists():
+                        return Response(
+                            {'error': 'Wrong password'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    else:
+                        return Response(
+                            {'error': 'Account with this email does not exist!'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+            
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},

@@ -5,6 +5,7 @@ from business_admin.admin_management import AdminManagement
 from business_admin.models import AdminRolePermission
 import re
 
+OWNER = "Owner"
 # ACTION_KEYWORDS = {
 #     "create": "create",
 #     "update": "update",
@@ -51,6 +52,8 @@ def has_permission(request,user_name,permission_page_name):
             user_role = request.user.admin_role.role #Manager/Owner/Staff
         
             if user_role:
+                if user_role.name == OWNER:
+                    return True
                 admin_role_permissions = AdminRolePermission.objects.filter(role=user_role)
                 for p in admin_role_permissions:
                     if p.permission.permission_name == permission_page_name.split('_')[0]:
