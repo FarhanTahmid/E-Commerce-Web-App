@@ -1387,7 +1387,7 @@ class AdminManagement:
                 SystemLogs.updated_by(request,business_admin)
                 SystemLogs.admin_activites(request,f"Admin position updated, {business_admin.admin_user_name}",message="Admin position updated")
             
-            elif len(extra_permissions_pk_list)>0:
+            elif len(extra_permissions_pk_list)>=0:
                 new_extra_permissions = []
                 for p in extra_permissions_pk_list:
                     permission,message = AdminManagement.fetch_admin_permissions(permission_pk=p)

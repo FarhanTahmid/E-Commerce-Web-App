@@ -251,31 +251,31 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/admin-management/positions",
-                element: <AdminManagementPositions />
+                element: <RequirePermission pageName="view_admin_position"><AdminManagementPositions /></RequirePermission>,
             },
             {
                 path: "/admin-management/positions/create",
-                element: <AdminManagementPositionsCreate />
+                element: <RequirePermission pageName="change_admin_position_create"><AdminManagementPositionsCreate /></RequirePermission>,
             },
             {
                 path: "/admin-management/positions/:id",
-                element: <AdminManagementPositionsUpdate />
+                element: <RequirePermission pageName="change_admin_position_update"><AdminManagementPositionsUpdate /></RequirePermission>,
             },
             {
                 path: "/admin-management/role-permissions",
-                element: <AdminManagementPermissions />
+                element: <RequirePermission pageName="view_admin_role_position"><AdminManagementPermissions /></RequirePermission>,
             },
             {
                 path: "/admin-management/role-permissions/:id",
-                element: <AdminManagementPermissionsUpdate />
+                element: <RequirePermission pageName="change_admin_role_position"><AdminManagementPermissionsUpdate /></RequirePermission>,
             },
             {
                 path: "/admin-management/admins",
-                element: <AdminManagementAdmins />
+                element: <RequirePermission pageName="view_admin"><AdminManagementAdmins /></RequirePermission>,
             },
             {
                 path: "/admin-management/admins/:admin_user_name",
-                element: <AdminManagementAdminsOperation />
+                element: <RequirePermission pageName="change_admin"><AdminManagementAdminsOperation /></RequirePermission>,
             },
             {
                 path: "/403",
