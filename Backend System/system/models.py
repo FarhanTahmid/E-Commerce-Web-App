@@ -350,6 +350,7 @@ class EmailAccounts(models.Model):
     is_active = models.BooleanField(default=True, help_text="Is this account active?")
     
     PURPOSE_CHOICES = [
+        ('default','Default'),
         ('marketing', 'Marketing Emails'),
         ('transactional', 'Transactional Emails'),
         ('notification', 'Notification Emails'),
@@ -373,6 +374,7 @@ class EmailTemplate(models.Model):
     body_html = models.TextField(blank=True, null=True, help_text="HTML email body")
     
     PURPOSE_CHOICES = [
+        ('default','Default'),
         ('marketing', 'Marketing Emails'),
         ('transactional', 'Transactional Emails'),
         ('notification', 'Notification Emails'),
