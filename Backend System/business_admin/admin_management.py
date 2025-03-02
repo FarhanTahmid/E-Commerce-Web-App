@@ -1952,9 +1952,9 @@ class AdminManagement:
             login_request,message = AdminManagement.fetch_login_requests(admin_unique_id=admin_unique_id)  
             login_request.login_request = stat
             login_request.save()
-            is_email_sent=EmailService.send_email(
-                to_emails=[login_request.admin_email],subject="You can now Login IN",text_content="...",purpose='auth'
-            )
+            # is_email_sent=EmailService.send_email(
+            #     to_emails=[login_request.admin_email],subject="You can now Login IN",text_content="...",purpose='auth'
+            # )
             SystemManagement.create_notification(request=request,user_names=[login_request.admin_user_name],title="Welcome to the System")
             SystemLogs.updated_by(request,login_request)
             SystemLogs.admin_activites(request,f"Updated admin login request permission",message="Updated")
