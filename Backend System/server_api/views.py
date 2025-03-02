@@ -296,7 +296,7 @@ class SignupBusinessAdminUser(APIView):
             admin_contact_no = self.request.data.get('admin_contact_no',"")
             admin_avatar = self.request.data.get('admin_avatar',"")
             is_superuser = self.request.data.get('is_superuser',False)
-            is_staff = self.request.data.get('is_superuser',False)
+            is_admin_user = self.request.data.get('is_admin_user',False)
             
 
             missing_fields = []
@@ -326,7 +326,7 @@ class SignupBusinessAdminUser(APIView):
             business_admin_user,message = AdminManagement.create_business_admin_user(admin_full_name=admin_full_name,
                                                                                     password=password,
                                                                                     admin_contact_no=admin_contact_no,admin_email=admin_email,
-                                                                                    admin_avatar=admin_avatar,is_superuser=is_superuser,is_staff_user=is_staff)
+                                                                                    admin_avatar=admin_avatar,is_superuser=is_superuser,is_admin_user=is_admin_user)
             if business_admin_user:
                 return Response({
                     'message':"Business Admin created successfully. Wait for approval from Admin. Redirecting to login page",
@@ -516,7 +516,7 @@ class UpdateBusinessAdminUser(APIView):
             old_password = self.request.data.get('old_password',"")
             password = self.request.data.get('password',"")
             is_superuser = self.request.data.get('is_superuser',False)
-            is_staff_user = self.request.data.get('is_staff_user',False)
+            is_admin_user = self.request.data.get('is_admin_user',False)
             missing_fields = []
 
             if missing_fields:
@@ -527,7 +527,7 @@ class UpdateBusinessAdminUser(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             admin_updated ,message = AdminManagement.update_business_admin_user(request,admin_user_name,admin_full_name,
-                                                                                admin_email,admin_contact_no,admin_avatar,old_password,password,is_superuser,is_staff_user)
+                                                                                admin_email,admin_contact_no,admin_avatar,old_password,password,is_superuser,is_admin_user)
             if admin_updated:
                 return Response({
                     'message':message
