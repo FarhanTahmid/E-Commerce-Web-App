@@ -28,7 +28,7 @@ const AdminManagementLoginRequestsTable = () => {
             const adminsWithRequests = await Promise.all(
                 adminUsers.map(async (admin) => {
                     const loginRequest = await fetchLoginRequest(admin.admin_unique_id);
-                    return { ...admin, login_request_status: loginRequest };
+                    return { ...admin, login_request: loginRequest };
                 })
             );
             setAdmins(adminsWithRequests);
@@ -45,7 +45,7 @@ const AdminManagementLoginRequestsTable = () => {
                     "Content-Type": "application/json"
                 }
             });
-            return response.data.fetched_data?.login_request_status || false;
+            return response.data.fetched_data?.login_request || false;
         } catch (error) {
             console.error(`Error fetching login request for admin ${adminId}:`, error);
             return false;
@@ -68,7 +68,7 @@ const AdminManagementLoginRequestsTable = () => {
     const handleToggleAccess = async (adminId, currentStatus) => {
         try {
             await axios.put(`${BackendUrlMainAPI}server_api/business-admin/login-request/update/${adminId}/`, {
-                status: !currentStatus
+                status: currentStatus ? "False" : "True"
             }, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
@@ -77,7 +77,7 @@ const AdminManagementLoginRequestsTable = () => {
             });
             setAdmins((prevAdmins) =>
                 prevAdmins.map((admin) =>
-                    admin.id === adminId ? { ...admin, login_request_status: !currentStatus } : admin
+                    admin.admin_unique_id === adminId ? { ...admin, login_request: !currentStatus } : admin
                 )
             );
         } catch (error) {
@@ -139,8 +139,8 @@ const AdminManagementLoginRequestsTable = () => {
                                                         <td className="truncate-text">{admin.admin_email}</td>
                                                         <td>
                                                             <Switch
-                                                                checked={admin.login_request_status}
-                                                                onChange={() => handleToggleAccess(admin.id, admin.login_request_status)}
+                                                                checked={admin.login_request}
+                                                                onChange={() => handleToggleAccess(admin.admin_unique_id, admin.login_request)}
                                                             />
                                                         </td>
                                                     </tr>
