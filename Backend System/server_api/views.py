@@ -249,6 +249,10 @@ class UpdateLoginRequests(APIView):
             admin_unique_id = admin_unique_id
             stat = self.request.data.get('status',False)
 
+            if stat == "True":
+                stat = True
+            if stat == "False":
+                stat = False
             fetched,message = AdminManagement.update_login_requests(request,admin_unique_id,stat)
             if fetched:
                 return Response({
