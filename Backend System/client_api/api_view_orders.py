@@ -15,6 +15,7 @@ from products.models import *
 from system.manage_system import SystemManagement
 from orders.order_management import OrderManagement
 from decimal import Decimal
+from system.email_service import EmailService
 
 from orders.serializers import (
     OrderSerializer,
@@ -247,7 +248,9 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 }
 
-                SystemManagement.send_email(subject="Order Placed",body="Dear, your order has been placed",emails_to=[request.user.email])
+                is_email_sent=EmailService.send_email(
+                to_emails=[request.user.email],subject="Order Placed",text_content="Dear, your order has been placed",purpose='auth'
+                )
                 notification_to_client = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
                 if notification_to_client[0]:
                     print(notification_to_client[1])
