@@ -27,7 +27,7 @@ const AdminManagementLoginRequestsTable = () => {
             const adminUsers = response.data.admin_users;
             const adminsWithRequests = await Promise.all(
                 adminUsers.map(async (admin) => {
-                    const loginRequest = await fetchLoginRequest(admin.id);
+                    const loginRequest = await fetchLoginRequest(admin.admin_unique_id);
                     return { ...admin, login_request_status: loginRequest };
                 })
             );
@@ -39,13 +39,13 @@ const AdminManagementLoginRequestsTable = () => {
 
     const fetchLoginRequest = async (adminId) => {
         try {
-            const response = await axios.get(`${BackendUrlMainAPI}server_api/business-admin/login-request/fetch/?admin_pk=${adminId}`, {
+            const response = await axios.get(`${BackendUrlMainAPI}server_api/business-admin/login-request/fetch/?admin_unique_id=${adminId}`, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
                     "Content-Type": "application/json"
                 }
             });
-            return response.data.fetched_data.login_request_status;
+            return response.data.fetched_data?.login_request_status || false;
         } catch (error) {
             console.error(`Error fetching login request for admin ${adminId}:`, error);
             return false;
