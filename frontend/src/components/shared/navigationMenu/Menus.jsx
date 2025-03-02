@@ -111,6 +111,12 @@ const Menus = () => {
                     name: "Role Permissions",
                     path: "/admin-management/role-permissions",
                     subdropdownMenu: false
+                },
+                {
+                    id: 4,
+                    name: "Login Requests",
+                    path: "/admin-management/login-requests",
+                    subdropdownMenu: false
                 }
             ]
         }
