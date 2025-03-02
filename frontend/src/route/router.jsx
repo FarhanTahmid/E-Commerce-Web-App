@@ -102,6 +102,7 @@ import OrderDeliveryTimeUpdate from "@/components/orders/deliveryTime/OrderDeliv
 import RequirePermission from "@/components/RequirePermission";
 import OrderDeliveryTime from "../pages/order-delivery-time";
 import AdminManagementLoginRequest from "../pages/admin-management-login-request";
+import Order from "../pages/order";
 
 
 const parseJwt = (token) => {
@@ -281,6 +282,10 @@ export const router = createBrowserRouter([
             {
                 path: "/admin-management/login-requests/",
                 element: <RequirePermission pageName="change_admin_login_request"><AdminManagementLoginRequest /></RequirePermission>,
+            },
+            {
+                path: "/orders",
+                element: <RequirePermission pageName="view_order"><Order /></RequirePermission>,
             },
             {
                 path: "/403",
