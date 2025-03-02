@@ -11,6 +11,7 @@ urlpatterns = [                                                                 
     path('system/register-permissions/',views.RegisterPermissionsPages.as_view(),name='register_permissions'),
     path('system/has-permissions/',views.CheckPermission.as_view(),name='has_permissions'),
     path('system/notification/fetch/',views.FetchUserNotifications.as_view(),name='fetch_user_notifications'),
+    path('system/track-visitor/',views.TrackVisitors.as_view(),name="track_visitor"),
 
     #business admin
     path('business-admin/login-request/fetch/',views.FetchLoginRequests.as_view(),name='fetch_login_requests'),#pass parameters /?admin_pk = Or none to fetch all
