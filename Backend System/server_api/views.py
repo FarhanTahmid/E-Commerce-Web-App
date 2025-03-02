@@ -198,10 +198,10 @@ class FetchLoginRequests(APIView):
     @method_decorator(ratelimit(key='ip', rate=None, method='GET', block=True))
     def get(self,request,format=None):
         try:
-            admin_pk = self.request.query_params.get('admin_pk',"")
+            admin_unique_id = self.request.query_params.get('admin_unique_id',"")
 
-            if admin_pk!="":
-                fetched,message = AdminManagement.fetch_login_requests(business_admin_user_pk=admin_pk)
+            if admin_unique_id!="":
+                fetched,message = AdminManagement.fetch_login_requests(admin_unique_id=admin_unique_id)
                 fetched_data = BusinessAdminUserSerializer(fetched,many=False)
             else:
                 fetched,message = AdminManagement.fetch_login_requests()
@@ -244,12 +244,12 @@ class UpdateLoginRequests(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     @method_decorator(ratelimit(key='ip', rate=None, method='PUT', block=True))
-    def put(self,request,admin_pk,format=None):
+    def put(self,request,admin_unique_id,format=None):
         try:
-            admin_pk = admin_pk
+            admin_unique_id = admin_unique_id
             stat = self.request.data.get('status',False)
 
-            fetched,message = AdminManagement.update_login_requests(request,admin_pk,stat)
+            fetched,message = AdminManagement.update_login_requests(request,admin_unique_id,stat)
             if fetched:
                 return Response({
                     'message':message,
