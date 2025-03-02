@@ -344,7 +344,7 @@ class EmailAccounts(models.Model):
     smtp_server = models.CharField(max_length=100, help_text="SMTP server address")
     smtp_port = models.IntegerField(default=587, help_text="SMTP server port")
     username = models.CharField(max_length=100, help_text="SMTP username",null=True,blank=True)
-    password = models.CharField(max_length=100, help_text="SMTP password")
+    password = models.CharField(max_length=100, help_text="SMTP password (Use app password for gmail accounts!)")
     use_tls = models.BooleanField(default=True, help_text="Use TLS for connection")
     use_ssl = models.BooleanField(default=False, help_text="Use SSL for connection")
     is_active = models.BooleanField(default=True, help_text="Is this account active?")
@@ -356,8 +356,11 @@ class EmailAccounts(models.Model):
         ('notification', 'Notification Emails'),
         ('support', 'Support Emails'),
         ('auth','Authentication'),
+        ('no-reply','No Reply'),
         ('other', 'Other'),
     ]
+    
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, help_text="Email purpose")
 
     class Meta:
         verbose_name = "Email Account"

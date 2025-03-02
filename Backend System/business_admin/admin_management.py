@@ -5,6 +5,7 @@ from system.system_log import SystemLogs
 from e_commerce_app import settings
 from business_admin.models import *
 from system.manage_system import SystemManagement
+from system.email_service import EmailService
 import os
 
 OWNER = 'Owner'
@@ -760,7 +761,14 @@ class AdminManagement:
             if admin_avatar != "":
                 business_admin.admin_avatar = admin_avatar
             business_admin.save()
-            SystemManagement.send_email(subject=SUBJECT,body=BODY,emails_to=[admin_email])
+            
+            # Send email to admin user.
+            is_email_sent=EmailService.send_email(
+                to_emails=[admin_email],subject=SUBJECT,text_content=BODY,purpose='auth'
+            )
+            
+            print(f"Was email sent: {is_email_sent}")
+                        
             return True, "Business Admin created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1166,60 +1174,60 @@ class AdminManagement:
     def add_user_admin_position(request,admin_user_name,admin_position_pk):
 
         """
-    Assigns an admin position to a user and creates an admin role entry.
+        Assigns an admin position to a user and creates an admin role entry.
 
-    Parameters:
-    ----------
-    request : HttpRequest
-        The request object, used for logging system activities.
-    admin_user_name : str
-        The username of the admin to whom the position should be assigned.
-    admin_position_pk : str
-        The primary key of the admin position to be assigned.
+        Parameters:
+        ----------
+        request : HttpRequest
+            The request object, used for logging system activities.
+        admin_user_name : str
+            The username of the admin to whom the position should be assigned.
+        admin_position_pk : str
+            The primary key of the admin position to be assigned.
 
-    Returns:
-    -------
-    tuple (bool, str)
-        - If the assignment is successful: (True, "Successfully added")
-        - If the user already has a role: (False, "Admin already has a role")
-        - If an error occurs: (False, <error_message>)
+        Returns:
+        -------
+        tuple (bool, str)
+            - If the assignment is successful: (True, "Successfully added")
+            - If the user already has a role: (False, "Admin already has a role")
+            - If an error occurs: (False, <error_message>)
 
-    Raises:
-    ------
-    Handles and logs the following exceptions:
-        - DatabaseError: Raised for unexpected database errors.
-        - OperationalError: Raised for unexpected server errors.
-        - ProgrammingError: Raised for programming-related errors.
-        - IntegrityError: Raised for database integrity constraint violations.
-        - Exception: Catches any other unexpected errors.
+        Raises:
+        ------
+        Handles and logs the following exceptions:
+            - DatabaseError: Raised for unexpected database errors.
+            - OperationalError: Raised for unexpected server errors.
+            - ProgrammingError: Raised for programming-related errors.
+            - IntegrityError: Raised for database integrity constraint violations.
+            - Exception: Catches any other unexpected errors.
 
-    Process:
-    -------
-    1. Fetches the user with `admin_user_name` from the `Accounts` model.
-    2. Checks if the user already has an admin role; if so, returns an error.
-    3. Fetches the business admin record and the admin position using `AdminManagement`.
-    4. Assigns the admin position to the business admin and saves it.
-    5. Logs the activity using `SystemLogs`.
-    6. Creates a new `AdminUserRole` entry linking the user to the admin position.
-    7. Logs the user role assignment activity.
-    8. Returns success or handles errors if encountered.
+        Process:
+        -------
+        1. Fetches the user with `admin_user_name` from the `Accounts` model.
+        2. Checks if the user already has an admin role; if so, returns an error.
+        3. Fetches the business admin record and the admin position using `AdminManagement`.
+        4. Assigns the admin position to the business admin and saves it.
+        5. Logs the activity using `SystemLogs`.
+        6. Creates a new `AdminUserRole` entry linking the user to the admin position.
+        7. Logs the user role assignment activity.
+        8. Returns success or handles errors if encountered.
 
-    Error Handling:
-    --------------
-    - Logs errors in the `ErrorLogs` model with the error type and message.
-    - Returns appropriate user-friendly error messages based on the exception type.
+        Error Handling:
+        --------------
+        - Logs errors in the `ErrorLogs` model with the error type and message.
+        - Returns appropriate user-friendly error messages based on the exception type.
 
-    Example Usage:
-    -------------
-    >>> add_user_admin_position(request, "john_doe", "5")
-    (True, "Successfully added")
+        Example Usage:
+        -------------
+        >>> add_user_admin_position(request, "john_doe", "5")
+        (True, "Successfully added")
 
-    >>> add_user_admin_position(request, "admin_user", "2")
-    (False, "Admin already has a role")
+        >>> add_user_admin_position(request, "admin_user", "2")
+        (False, "Admin already has a role")
 
-    >>> add_user_admin_position(request, "invalid_user", "3")
-    (False, "An unexpected error in Database occurred while adding admin position! Please try again later.")
-    """
+        >>> add_user_admin_position(request, "invalid_user", "3")
+        (False, "An unexpected error in Database occurred while adding admin position! Please try again later.")
+        """
 
         try:
             #getting the admin
@@ -1262,62 +1270,62 @@ class AdminManagement:
     def update_user_admin_position(request,admin_user_name,admin_position_pk=""):
 
         """
-    Updates or removes an admin user's assigned position.
+        Updates or removes an admin user's assigned position.
 
-    Parameters:
-    ----------
-    request : HttpRequest
-        The request object, used for logging system activities.
-    admin_user_name : str
-        The username of the admin whose position needs to be updated.
-    admin_position_pk : str, optional
-        The primary key of the new admin position. If empty (""), the admin position will be removed.
+        Parameters:
+        ----------
+        request : HttpRequest
+            The request object, used for logging system activities.
+        admin_user_name : str
+            The username of the admin whose position needs to be updated.
+        admin_position_pk : str, optional
+            The primary key of the new admin position. If empty (""), the admin position will be removed.
 
-    Returns:
-    -------
-    tuple (bool, str)
-        - If the update is successful: (True, "Successfully updated")
-        - If an error occurs: (False, <error_message>)
+        Returns:
+        -------
+        tuple (bool, str)
+            - If the update is successful: (True, "Successfully updated")
+            - If an error occurs: (False, <error_message>)
 
-    Raises:
-    ------
-    Handles and logs the following exceptions:
-        - DatabaseError: Raised for unexpected database errors.
-        - OperationalError: Raised for unexpected server errors.
-        - ProgrammingError: Raised for programming-related errors.
-        - IntegrityError: Raised for database integrity constraint violations.
-        - Exception: Catches any other unexpected errors.
+        Raises:
+        ------
+        Handles and logs the following exceptions:
+            - DatabaseError: Raised for unexpected database errors.
+            - OperationalError: Raised for unexpected server errors.
+            - ProgrammingError: Raised for programming-related errors.
+            - IntegrityError: Raised for database integrity constraint violations.
+            - Exception: Catches any other unexpected errors.
 
-    Process:
-    -------
-    1. Fetches the user with `admin_user_name` from the `Accounts` model.
-    2. Retrieves the corresponding `AdminUserRole` and `business_admin` details.
-    3. If `admin_position_pk` is empty (""), the admin's role is removed:
-        - Sets `admin_user_role.role` to `None` and saves it.
-        - Logs the removal using `SystemLogs`.
-        - Updates `business_admin.admin_position` to `None` and saves it.
-    4. If a new position is provided and differs from the existing one:
-        - Fetches the `AdminPosition` using `AdminManagement`.
-        - Updates `admin_user_role.role` and `business_admin.admin_position`.
-        - Logs the updates using `SystemLogs`.
-    5. Returns success or handles errors if encountered.
+        Process:
+        -------
+        1. Fetches the user with `admin_user_name` from the `Accounts` model.
+        2. Retrieves the corresponding `AdminUserRole` and `business_admin` details.
+        3. If `admin_position_pk` is empty (""), the admin's role is removed:
+            - Sets `admin_user_role.role` to `None` and saves it.
+            - Logs the removal using `SystemLogs`.
+            - Updates `business_admin.admin_position` to `None` and saves it.
+        4. If a new position is provided and differs from the existing one:
+            - Fetches the `AdminPosition` using `AdminManagement`.
+            - Updates `admin_user_role.role` and `business_admin.admin_position`.
+            - Logs the updates using `SystemLogs`.
+        5. Returns success or handles errors if encountered.
 
-    Error Handling:
-    --------------
-    - Logs errors in the `ErrorLogs` model with the error type and message.
-    - Returns appropriate user-friendly error messages based on the exception type.
+        Error Handling:
+        --------------
+        - Logs errors in the `ErrorLogs` model with the error type and message.
+        - Returns appropriate user-friendly error messages based on the exception type.
 
-    Example Usage:
-    -------------
-    >>> update_user_admin_position(request, "john_doe", "5")
-    (True, "Successfully updated")
+        Example Usage:
+        -------------
+        >>> update_user_admin_position(request, "john_doe", "5")
+        (True, "Successfully updated")
 
-    >>> update_user_admin_position(request, "admin_user")
-    (True, "Successfully updated")  # Removes the admin position
+        >>> update_user_admin_position(request, "admin_user")
+        (True, "Successfully updated")  # Removes the admin position
 
-    >>> update_user_admin_position(request, "invalid_user", "3")
-    (False, "An unexpected error in Database occurred while updating admin position! Please try again later.")
-    """
+        >>> update_user_admin_position(request, "invalid_user", "3")
+        (False, "An unexpected error in Database occurred while updating admin position! Please try again later.")
+        """
 
         try:
             #getting the admin
