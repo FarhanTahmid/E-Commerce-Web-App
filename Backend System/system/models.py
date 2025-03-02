@@ -337,3 +337,57 @@ class NotificationTo(models.Model):
 
     def __str__(self):
         return f"Created By:{self.updated_by} - Created At {self.created_at}"
+
+class EmailAccounts(models.Model):
+    name = models.CharField(max_length=100, help_text="Friendly name for this email account")
+    email_address = models.EmailField(max_length=100, help_text="Email address to send from")
+    smtp_server = models.CharField(max_length=100, help_text="SMTP server address")
+    smtp_port = models.IntegerField(default=587, help_text="SMTP server port")
+    username = models.CharField(max_length=100, help_text="SMTP username",null=True,blank=True)
+    password = models.CharField(max_length=100, help_text="SMTP password (Use app password for gmail accounts!)")
+    use_tls = models.BooleanField(default=True, help_text="Use TLS for connection")
+    use_ssl = models.BooleanField(default=False, help_text="Use SSL for connection")
+    is_active = models.BooleanField(default=True, help_text="Is this account active?")
+    
+    PURPOSE_CHOICES = [
+        ('default','Default'),
+        ('marketing', 'Marketing Emails'),
+        ('transactional', 'Transactional Emails'),
+        ('notification', 'Notification Emails'),
+        ('support', 'Support Emails'),
+        ('auth','Authentication'),
+        ('no-reply','No Reply'),
+        ('other', 'Other'),
+    ]
+    
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, help_text="Email purpose")
+
+    class Meta:
+        verbose_name = "Email Account"
+        verbose_name_plural = "Email Accounts"
+    
+    def __str__(self):
+        return str(self.pk)
+
+class EmailTemplate(models.Model):
+    """Model to store email templates"""
+    name = models.CharField(max_length=100, help_text="Template name")
+    subject = models.CharField(max_length=200, help_text="Email subject")
+    body_text = models.TextField(help_text="Plain text email body")
+    body_html = models.TextField(blank=True, null=True, help_text="HTML email body")
+    
+    PURPOSE_CHOICES = [
+        ('default','Default'),
+        ('marketing', 'Marketing Emails'),
+        ('transactional', 'Transactional Emails'),
+        ('notification', 'Notification Emails'),
+        ('support', 'Support Emails'),
+        ('auth','Authentication'),
+        ('other', 'Other'),
+    ]
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, help_text="Template purpose")
+    
+    def __str__(self):
+        return str(self.pk)
+
+    

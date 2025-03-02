@@ -26,3 +26,15 @@ class ErrorLog(admin.ModelAdmin):
     list_display=[
         'id','timestamp','error_type'
     ]
+@admin.register(EmailAccounts)
+class EmailAccounts(admin.ModelAdmin):
+    
+    list_display = ('name', 'email_address', 'purpose', 'is_active')
+    list_filter = ('purpose', 'is_active')
+    search_fields = ('name', 'email_address','purpose')
+
+@admin.register(EmailTemplate)
+class EmailTemplate(admin.ModelAdmin):
+    list_display = ('name', 'subject', 'purpose')
+    list_filter = ('purpose',)
+    search_fields = ('name', 'subject','purpose')
