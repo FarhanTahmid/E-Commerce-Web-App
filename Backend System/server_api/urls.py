@@ -14,6 +14,7 @@ urlpatterns = [                                                                 
 
     #business admin
     path('business-admin/login-request/fetch/',views.FetchLoginRequests.as_view(),name='fetch_login_requests'),#pass parameters /?admin_pk = Or none to fetch all
+    path('business-admin/login-request/update/<int:admin_pk>/',views.UpdateLoginRequests.as_view(),name="update_login_requests"),
     path('business-admin/admin/fetch-all/',views.FetchBusinessAdminUsers.as_view(),name='fetch_all_business_admin_user'),#pass parameters /?admin_user_name= OR admin_unique_id= OR admin_email= OR none to retrieve all
     path('business-admin/signup/',views.SignupBusinessAdminUser.as_view(),name='create_business_admin_user'),
     path('business-admin/update/<str:admin_user_name>/',views.UpdateBusinessAdminUser.as_view(),name='update_business_admin_user'),

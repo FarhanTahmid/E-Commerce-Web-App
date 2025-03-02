@@ -47,6 +47,9 @@ def has_permission(request,user_name,permission_page_name):
         return True
     
     if request.user.is_admin:
+        return True
+    
+    if request.user.is_staff:
         try:
             #admin user role instance
             user_role = request.user.admin_role.role #Manager/Owner/Staff
