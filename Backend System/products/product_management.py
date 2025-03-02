@@ -1344,7 +1344,7 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product! Please try again later.") 
     
     def fetch_product_with_sku_and_discount(product_pk="",product_brand_pk="",
-                      product_category_pk="",product_sub_category_pk=""):
+                      product_category_pk="",product_sub_category_pk="",min_price="",max_price=""):
         
         try:
             product_with_sku_and_discount = {}
@@ -2302,7 +2302,7 @@ class ManageProducts:
     def fetch_product_discount(product_id="",discount_name="",is_active=False,product_discount_pk="",brand_id="",sub_category_pk="",category_pk="",product_id_pk="",brand_id_pk="",sub_category_id_pk="",category_id_pk="",
                                product_id_pk_all=False,brand_id_pk_all=False,sub_category_id_pk_all=False,category_id_pk_all=False):
 
-        #fetches all active discount if parameters passed, else all discounts are fetched
+        #fetches all active discount if parameters passed for some, else all discounts are fetched
         try:
 
             if product_id!= "":

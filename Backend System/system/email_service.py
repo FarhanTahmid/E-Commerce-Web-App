@@ -70,6 +70,7 @@ class EmailService:
         
         # Send the email
         try:
+            print(f"Email account: {email_account.email_address}")
             # Connect to SMTP server
             if email_account.use_ssl:
                 server = smtplib.SMTP_SSL(email_account.smtp_server, email_account.smtp_port)

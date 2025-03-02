@@ -154,6 +154,7 @@ const ProductCategoryCreate = () => {
         setMessage("All subcategories submitted successfully!");
         setMessageType('success');
         setSubCategories([{ name: '', description: '' }]); // Reset input fields
+        window.location.reload();
     };
 
     return (

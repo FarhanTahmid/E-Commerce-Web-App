@@ -8,10 +8,12 @@ import "react-datepicker/dist/react-datepicker.css";
 import "react-datetime/css/react-datetime.css";
 import NavigationProvider from './contentApi/navigationProvider';
 import SideBarToggleProvider from './contentApi/sideBarToggleProvider';
+import SendRoutes from './SendRoutes';
 
 const App = () => {
   return (
     <>
+      <SendRoutes />
       <NavigationProvider>
         <SideBarToggleProvider>
           <RouterProvider router={router} />

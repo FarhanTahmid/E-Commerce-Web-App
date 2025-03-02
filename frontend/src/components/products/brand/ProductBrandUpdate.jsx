@@ -122,6 +122,7 @@ const ProductBrandUpdate = () => {
             })
             .catch(error => {
                 console.error("Error fetching brand data:", error.response ? error.response.data : error);
+                navigate("/404");
             });
     }, []);
 

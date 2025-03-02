@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ConfirmationModal from '../../ConfirmationModal'; // Import the modal component
+import { BackendUrlMainAPI } from '../../../BackendUrlMainAPI';
 
 const AdminManagementPositionsUpdate = () => {
     const { id } = useParams(); // Get the ID from the URL
@@ -14,7 +15,7 @@ const AdminManagementPositionsUpdate = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false); // Show/hide the delete modal
     const [deleteAction, setDeleteAction] = useState(null); // Store the delete action type
 
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/admin-position'; // Define the API base URL
+    const API_BASE_URL = `${BackendUrlMainAPI}server_api/business-admin/admin-position`; // Define the API base URL
 
     const navigate = useNavigate(); // Initialize the navigate hook
 

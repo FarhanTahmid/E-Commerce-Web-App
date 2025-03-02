@@ -6,7 +6,7 @@ import {
     TablePagination
 } from '@mui/material';
 
-const ProductDeliveryTimeTable = () => {
+const OrderDeliveryTimeTable = () => {
     const [deliveries, setDeliveries] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
@@ -25,6 +25,7 @@ const ProductDeliveryTimeTable = () => {
                     "Content-Type": "application/json"
                 }
             });
+
             console.log(response.data);
 
             if (response.data && response.data.delivery_time_data) {
@@ -100,13 +101,13 @@ const ProductDeliveryTimeTable = () => {
                                                         <tr key={delivery.id} className="single-item chat-single-item">
                                                             <td>{index + 1 + page * rowsPerPage}</td>
                                                             <td className="truncate-text">
-                                                                <Link to={`/products/delivery-time/${delivery.id}`} className="fw-bold">
+                                                                <Link to={`/orders/delivery-time/${delivery.id}`} className="fw-bold">
                                                                     {delivery.delivery_name}
                                                                 </Link>
                                                             </td>
                                                             <td className="truncate-text">
-                                                                <Link to={`/products/delivery-time/${delivery.id}`} className="fw-normal">
-                                                                    {delivery.estimated_time}
+                                                                <Link to={`/orders/delivery-time/${delivery.id}`} className="fw-normal">
+                                                                    {delivery.estimated_delivery_time}
                                                                 </Link>
                                                             </td>
                                                         </tr>
@@ -134,4 +135,4 @@ const ProductDeliveryTimeTable = () => {
     );
 };
 
-export default ProductDeliveryTimeTable;
+export default OrderDeliveryTimeTable;

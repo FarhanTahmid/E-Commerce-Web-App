@@ -16,20 +16,272 @@ from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.exceptions import Ratelimited
 from system.models import *
-from business_admin import serializers
-from system.permissions import IsAdminWithPermission
+from business_admin.serializers import *
 from business_admin.models import *
 from e_commerce_app.settings import MEDIA_URL
 from datetime import datetime
-from orders.serializers import DeliveryTimeSerializer
+from orders.serializers import *
 from orders.order_management import OrderManagement
+from system.manage_system import SystemManagement
+from system.permissions import has_permission
+from system.serializer import *
 
 REFRESH_RATE = '50/m'
 SERVER_API_URL = 'server_api'
 
 # Create your views here.
 
+#system
+class RegisterPermissionsPages(APIView):
+
+    permission_classes = [AllowAny]
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+
+            permission_names_list = self.request.data.get('permission_names_list',[])
+
+            created,message = SystemManagement.register_all_page_permissions(request,permission_names_list)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CheckPermission(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    #PASS PERMISSION PAGE NAME AS 
+    # view_..... OR change_....  (.... == page name)
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+
+            user_name = self.request.data.get('user_name',"")
+            permission_page_name = self.request.data.get('permission_page_name',"")
+
+            if user_name=="":
+                return Response({
+                    'error':"User Name required"
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            permission = has_permission(request,user_name,permission_page_name)
+            if permission:
+                return Response({
+                    'hasPermissions':permission
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'hasPermissions':permission
+                },status=status.HTTP_403_FORBIDDEN)
+
+        except JSONDecodeError as e:
+                return Response(
+                    {'error': 'Invalid JSON format'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class FetchUserNotifications(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=None, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+            
+            #TO GET USER NOTIFICATION PASS USER NAME AND READ= "t" for fetching notifications that are marked read by user
+            #TO GET USER NOTIFICATION PASS USER NAME AND READ= "f" for fetching notifications that are not read by user
+            #TO GET ALL USER NOTIFICATION JUST PASS USER NAME
+            #TO GET SPECIFIC USER NOTIFICATION JUST PASS NOTIFICATION PK
+            #TO GET ALL NOTIIFCAIOTN PASS NOTHING
+            
+            read = self.request.data.get('read',"")
+            user_name = self.request.data.get('user_name',"")
+            notification_pk = self.request.data.get('notification_pk',"")
+
+            if user_name!="" and read!="":
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user(read=read,user_name=user_name)
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=True)
+            elif user_name!="":
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user(user_name=user_name)
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=True)
+            elif notification_pk!="":
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user(notification_pk=notification_pk)
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=False)
+            else:
+                fetch_notification,message = SystemManagement.fetch_notifications_of_user()
+                fetch_notification_data = NotificationTo_Serializer(fetch_notification,many=True)
+
+            if fetch_notification:
+                return Response({
+                    'message':message,
+                    'user_notifications':fetch_notification_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+
+        except JSONDecodeError as e:
+                return Response(
+                    {'error': 'Invalid JSON format'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 #business admin
+class FetchLoginRequests(APIView):
+        
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @method_decorator(ratelimit(key='ip', rate=None, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+            admin_pk = self.request.query_params.get('admin_pk',"")
+
+            if admin_pk!="":
+                fetched,message = AdminManagement.fetch_login_requests(business_admin_user_pk=admin_pk)
+                fetched_data = BusinessAdminUserSerializer(fetched,many=False)
+            else:
+                fetched,message = AdminManagement.fetch_login_requests()
+                fetched_data = BusinessAdminUserSerializer(fetched,many=True)
+            
+            if fetched:
+                return Response({
+                    'message':message,
+                    'fetched_data':fetched_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+   
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateLoginRequests(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    @method_decorator(ratelimit(key='ip', rate=None, method='PUT', block=True))
+    def put(self,request,admin_pk,format=None):
+        try:
+            admin_pk = admin_pk
+            stat = self.request.data.get('status',False)
+
+            fetched,message = AdminManagement.update_login_requests(request,admin_pk,stat)
+            if fetched:
+                return Response({
+                    'message':message,
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+   
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 class SignupBusinessAdminUser(APIView):
     
     permission_classes = [AllowAny]
@@ -77,7 +329,7 @@ class SignupBusinessAdminUser(APIView):
                                                                                     admin_avatar=admin_avatar,is_superuser=is_superuser,is_staff_user=is_staff)
             if business_admin_user:
                 return Response({
-                    'message':"Business Admin created successfully. Redirecting to login page",
+                    'message':"Business Admin created successfully. Wait for approval from Admin. Redirecting to login page",
                     "redirect_url": "/login-page"
                 },status=status.HTTP_201_CREATED)
             else:
@@ -121,28 +373,59 @@ class LoginInBusinessAdminUser(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            authenticated_user = authenticate(email=email, password=password)
-            if authenticated_user:
-                refresh=RefreshToken.for_user(authenticated_user)
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'message': 'Login successful',
-                    'redirect_url': 'dashoard-link/',
-                    'username': authenticated_user.username,
-                    }, status=status.HTTP_200_OK)
-            else:
-                # Check which input was wrong
-                if Accounts.objects.filter(email=email).exists():
-                    return Response(
-                        {'error': 'Wrong password'},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+            try:
+                admin_user = BusinessAdminUser.objects.get(admin_email = email)
+                if admin_user.login_request:
+                    authenticated_user = authenticate(email=email, password=password)
+                    if authenticated_user:
+                        refresh=RefreshToken.for_user(authenticated_user)
+                        return Response({
+                            'refresh': str(refresh),
+                            'access': str(refresh.access_token),
+                            'message': 'Login successful',
+                            'redirect_url': 'dashoard-link/',
+                            'username': authenticated_user.username,
+                            }, status=status.HTTP_200_OK)
+                    else:
+                        # Check which input was wrong
+                        if Accounts.objects.filter(email=email).exists():
+                            return Response(
+                                {'error': 'Wrong password'},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+                        else:
+                            return Response(
+                                {'error': 'Account with this email does not exist!'},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
                 else:
-                    return Response(
-                        {'error': 'Account with this email does not exist!'},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                    return Response({
+                        'error':'Login Request Not Yet Approved'
+                    },status=status.HTTP_401_UNAUTHORIZED)
+            except:
+                authenticated_user = authenticate(email=email, password=password)
+                if authenticated_user:
+                    refresh=RefreshToken.for_user(authenticated_user)
+                    return Response({
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
+                        'message': 'Login successful',
+                        'redirect_url': 'dashoard-link/',
+                        'username': authenticated_user.username,
+                        }, status=status.HTTP_200_OK)
+                else:
+                    # Check which input was wrong
+                    if Accounts.objects.filter(email=email).exists():
+                        return Response(
+                            {'error': 'Wrong password'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    else:
+                        return Response(
+                            {'error': 'Account with this email does not exist!'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+            
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},
@@ -386,16 +669,16 @@ class FetchBusinessAdminUsers(APIView):
 
             if admin_unique_id != "":
                 fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_unique_id=admin_unique_id)
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=False)
             elif admin_email!= "":
                 fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_email=admin_email)
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=False)
             elif admin_user_name!= "":
                 fetched_admin,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_user_name)
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=False)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=False)
             else:
                 fetched_admin,message = AdminManagement.fetch_business_admin_user()
-                fetched_admin_data = serializers.BusinessAdminUserSerializer(fetched_admin,many=True)
+                fetched_admin_data = BusinessAdminUserSerializer(fetched_admin,many=True)
 
             if fetched_admin:
                 return Response({
@@ -428,7 +711,7 @@ class FetchBusinessAdminUsers(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class FetchBusinessAdminAvatar(APIView):
+class GetBusinessAdminAvatar(APIView):
     
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -494,16 +777,16 @@ class FetchBusinessAdminPosition(APIView):
 
             if name!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(name=name)
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=False)
             elif pk!= "":
                 fetched_position,message = AdminManagement.fetch_admin_position(pk=pk)
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=False)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=False)
             elif available:
                 fetched_position,message = AdminManagement.fetch_admin_position(available=True)
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=True)
             else:
                 fetched_position,message = AdminManagement.fetch_admin_position()
-                fetched_position_data = serializers.AdminPositionSerializer(fetched_position,many=True)
+                fetched_position_data = AdminPositionSerializer(fetched_position,many=True)
 
             if fetched_position:
                 return Response({
@@ -681,24 +964,28 @@ class DeleteBusinessAdminPosition(APIView):
 
 #business admin permission
 class FetchBusinessAdminPermission(APIView):
-    # authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,IsAdminWithPermission]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
     def get(self,request,format=None,*args, **kwargs):
         try:
             permission_pk = self.request.query_params.get('permission_pk',"")
             permission_name = self.request.query_params.get('permission_name',"")
+            exclude = self.request.query_params.get('exclude',False)
 
             if permission_pk != "":
                 admin_permission,message = AdminManagement.fetch_admin_permissions(permission_pk=permission_pk)
-                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=False)
             elif permission_name!= "":
                 admin_permission,message = AdminManagement.fetch_admin_permissions(permission_name=permission_name)
-                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=False)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=False)
+            elif exclude:
+                admin_permission,message = AdminManagement.fetch_admin_permissions(exclude=True)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=True)
             else:
                 admin_permission,message = AdminManagement.fetch_admin_permissions()
-                admin_permission_data = serializers.AdminPermissionSerializer(admin_permission,many=True)
+                admin_permission_data = AdminPermissionSerializer(admin_permission,many=True)
             
             if admin_permission:
                 return Response({
@@ -733,8 +1020,8 @@ class FetchBusinessAdminPermission(APIView):
             )    
 
 class CreateBusinessAdminPermission(APIView):
-    #authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated,IsAdminWithPermission]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
     def post(self,request,format=None,*args, **kwargs):
@@ -873,7 +1160,7 @@ class DeleteBusinessAdminPermission(APIView):
             ) 
 
 #product categories
-class FetchProductCategoryView(APIView):
+class FetchProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -917,7 +1204,7 @@ class FetchProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class FetchProductCategoryWithPkView(APIView):
+class FetchProductCategoryWithPk(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -958,7 +1245,7 @@ class FetchProductCategoryWithPkView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class CreateProductCategoryView(APIView):
+class CreateProductCategory(APIView):
    
     
     authentication_classes = [JWTAuthentication]
@@ -1017,7 +1304,7 @@ class CreateProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class UpdateProductCategoryView(APIView):
+class UpdateProductCategory(APIView):
 
     
     authentication_classes = [JWTAuthentication]
@@ -1072,7 +1359,7 @@ class UpdateProductCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class DeleteProductCategoryView(APIView):
+class DeleteProductCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1114,7 +1401,7 @@ class DeleteProductCategoryView(APIView):
             )
         
 #product sub categories
-class FetchProductSubCategoryView(APIView):
+class FetchProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1155,7 +1442,7 @@ class FetchProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class CreateProductSubCategoryView(APIView):
+class CreateProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1209,7 +1496,7 @@ class CreateProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class UpdateProductSubCategoryView(APIView):
+class UpdateProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1268,7 +1555,7 @@ class UpdateProductSubCategoryView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
-class DeleteProductSubCategoryView(APIView):
+class DeleteProductSubCategory(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1780,7 +2067,7 @@ class FetchProduct(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class FetchProductWithSKUAndDiscounts(APIView):
+class FetchProductDetails(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -2754,7 +3041,7 @@ class FetchPositionForAdmin(APIView):
 
 
             fetch_admin_position,message = AdminManagement.fetch_postion_of_admin(request,admin_user_name)
-            fetch_admin_position_data = serializers.AdminPositionSerializer(fetch_admin_position,many=False)
+            fetch_admin_position_data = AdminPositionSerializer(fetch_admin_position,many=False)
             if fetch_admin_position:
                 return Response({
                     'message':message,
@@ -2786,6 +3073,114 @@ class FetchPositionForAdmin(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+# class FetchExtraPositionsOfAdmin(APIView):
+
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [IsAuthenticated]
+
+#     @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+#     def post(self,request,format=None):
+        
+#         try:
+
+#             admin_user_name = self.request.data.get('admin_user_name',"")
+#             print("5456")
+#             if admin_user_name == "":
+#                 return Response({
+#                     'error':"User name needed for fetching position"
+#                 },status=status.HTTP_400_BAD_REQUEST)
+
+
+#             fetch_admin_extra_position,message = AdminManagement.fetch_extra_postions_of_admin(admin_user_name=admin_user_name)
+#             fetch_admin_extra_position_data = AdminUserRoleSerializer(fetch_admin_extra_position,many=True)
+#             print("hereer")
+#             print(fetch_admin_extra_position_data)
+#             print("printeddd")
+#             if fetch_admin_extra_position:
+#                 return Response({
+#                     'message':message,
+#                     'position':fetch_admin_extra_position_data.data
+#                 },status=status.HTTP_200_OK)
+#             else:
+#                 return Response({
+#                     'error':message
+#                 },status=status.HTTP_400_BAD_REQUEST)
+
+#         except JSONDecodeError as e:
+#             return Response(
+#                 {'error': 'Invalid JSON format'},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#         except KeyError as e:
+#             return Response(
+#                 {'error': f'Missing required field: {str(e)}'},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#         except ValueError as e:
+#             return Response(
+#                 {'error': f'Invalid value: {str(e)}'},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+        
+#         except Exception as e:
+#             return Response(
+#                 {'error': f'An unexpected error occurred: {str(e)}'},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             )
+
+class FetchAdminExtraPermissions(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            admin_user_name = self.request.data.get('admin_user_name',"")
+            if admin_user_name == "":
+                return Response({
+                    'error':"User name needed for fetching position"
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+            fetch_admin_extra_permissions,message = AdminManagement.fetch_extra_permissions_of_admin(admin_user_name=admin_user_name)
+            fetch_admin_extra_permissions_data = AdminPermissionSerializer(fetch_admin_extra_permissions,many=True)
+            print(fetch_admin_extra_permissions_data)
+            if fetch_admin_extra_permissions:
+                return Response({
+                    'message':message,
+                    'position':fetch_admin_extra_permissions_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 
 class AddPositionForAdmin(APIView):
 
@@ -2796,6 +3191,8 @@ class AddPositionForAdmin(APIView):
     def post(self,request,format=None):
         try:
             admin_user_name = self.request.data.get('admin_user_name',"")
+            extra_permissions_pk_list = self.request.data.get('extra_permissions_pk_list',[])
+
             if admin_user_name == "":
                 return Response({
                     'error':"User name needed for position"
@@ -2807,7 +3204,8 @@ class AddPositionForAdmin(APIView):
                     'error':"Postion needed"
                 },status=status.HTTP_400_BAD_REQUEST)
             
-            added,message = AdminManagement.add_user_admin_position(request,admin_user_name,position_pk)
+            
+            added,message = AdminManagement.add_user_admin_position(request,admin_user_name,position_pk,extra_permissions_pk_list)
             if added:
                 return Response({
                     'message':message,
@@ -2848,6 +3246,7 @@ class UpdatePositionForAdmin(APIView):
     def put(self,request,format=None):
         try:
             admin_user_name = self.request.data.get('admin_user_name',"")
+            extra_permissions_pk_list = self.request.data.get('extra_permissions_pk_list',[])
             if admin_user_name == "":
                 return Response({
                     'error':"User name needed for position"
@@ -2856,7 +3255,7 @@ class UpdatePositionForAdmin(APIView):
             position_pk = self.request.data.get('position_pk',"")
 
             
-            updated,message = AdminManagement.update_user_admin_position(request,admin_user_name,position_pk)
+            updated,message = AdminManagement.update_user_admin_position(request,admin_user_name,position_pk,extra_permissions_pk_list)
             if updated:
                 return Response({
                     'message':message,
@@ -2950,16 +3349,16 @@ class FetchBusinessAdminRolePermission(APIView):
 
             if admin_role_permission_pk!= "":
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_role_permission_pk=admin_role_permission_pk)
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=False)
+                admin_role_permission_data = AdminRolePermissionSerializer(admin_role_permission,many=False)
             elif admin_position_pk!= "":
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_position_pk=admin_position_pk)
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+                admin_role_permission_data =AdminRolePermissionSerializer(admin_role_permission,many=True)
             elif admin_permission_pk!= "":
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission(admin_permission_pk=admin_permission_pk)
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+                admin_role_permission_data = AdminRolePermissionSerializer(admin_role_permission,many=True)
             else:
                 admin_role_permission,message = AdminManagement.fetch_admin_role_permission()
-                admin_role_permission_data = serializers.AdminRolePermissionSerializer(admin_role_permission,many=True)
+                admin_role_permission_data = AdminRolePermissionSerializer(admin_role_permission,many=True)
             
             if admin_role_permission:
                 return Response({
@@ -3148,12 +3547,12 @@ class FetchDeliveryTime(APIView):
                 delivery_time_data = DeliveryTimeSerializer(delivery_time,many=False)
             else:
                 delivery_time,message = OrderManagement.fetch_delivery_time()
-                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True).data
+                delivery_time_data = DeliveryTimeSerializer(delivery_time,many=True)
             
             if delivery_time:
                 return Response({
                     'message':message,
-                    'delivery_time_data':delivery_time_data
+                    'delivery_time_data':delivery_time_data.data
                 },status=status.HTTP_200_OK)
             else:
                 return Response({
@@ -3298,6 +3697,244 @@ class DeleteDeliveryTime(APIView):
                     'error':message
                 },status=status.HTTP_400_BAD_REQUEST)
             
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+#orders
+class FetchOrderStatusList(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+
+            order_status = OrderManagement.fetch_order_status_list()
+            return Response({
+                'list':order_status
+            },status=status.HTTP_200_OK)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class FetchOrderDetails(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+        try:
+
+            order_id = self.request.query_params.get('order_id',"")
+            user_name = self.request.query_params.get('user_name',"")
+            order_pk = self.request.query_params.get('order_pk',"")
+
+            if order_id!="":
+                order_details,message = OrderManagement.fetch_orders_details(order_id=order_id)
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+            elif user_name!="":
+                order_details,message = OrderManagement.fetch_orders_details(user_name=user_name)
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+            elif order_pk!="":
+                order_details,message = OrderManagement.fetch_orders_details(order_pk=order_pk)
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+            else:
+                order_details,message = OrderManagement.fetch_orders_details()
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+
+            if order_details:
+                return Response({
+                    'message':message,
+                    'order_details':order_details_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateOrderDetails(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,order_id,format=None):
+
+        try:
+            order_id = order_id
+
+            order_date = self.request.data.get('order_date',"")
+            delivery_time_pk = self.request.data.get('delivery_time_pk',"")
+            total_amount = self.request.data.get('total_amount',"")
+            order_status = self.request.data.get('order_status',"")#PA SS EITHER 'TRUE' OR 'FALSE'
+            product_sku_pk = self.request.data.get('product_sku_pk',"")
+            quantity = self.request.data.get('quantity',"")
+
+            updated,message = OrderManagement.update_order_details(request,order_id,order_date,delivery_time_pk,total_amount,order_status,product_sku_pk,quantity)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class FetchOrderCanellationRequests(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+
+        try:
+            order_cancellation_request_pk = self.request.query_params.get('order_cancellation_request_pk',"")
+
+            if order_cancellation_request_pk!="":
+                order_cancellation_request,message = OrderManagement.fetch_order_cancellation_requests(order_cancellation_request_pk=order_cancellation_request_pk)
+                order_cancellation_request_data = OrderCancellationRequestSerializer(order_cancellation_request,many=False)
+            else:
+                order_cancellation_request,message = OrderManagement.fetch_order_cancellation_requests()
+                order_cancellation_request_data = OrderCancellationRequestSerializer(order_cancellation_request,many=True)
+
+            if order_cancellation_request:
+                return Response({
+                    'message':message,
+                    'order_cancellation_data':order_cancellation_request_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class UpdateOrderCancellationRequest(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,order_cancellation_pk,format=None):
+
+        try:
+
+            order_cancellation_pk = order_cancellation_pk
+            stat = self.request.data.get('status',False)
+
+            updated,message = OrderManagement.update_order_cancellation_request(request,order_cancellation_pk,stat)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
         except JSONDecodeError as e:
             return Response(
                 {'error': 'Invalid JSON format'},

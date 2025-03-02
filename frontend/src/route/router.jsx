@@ -97,9 +97,10 @@ import ProductImage from "../pages/product-image";
 import ProductImageUpdate from "@/components/products/image/ProductImageUpdate";
 import AdminManagementPermissions from "../pages/admin-management-permissions";
 import AdminManagementPermissionsUpdate from "@/components/admin-management/permissions/AdminManagementPermissionsUpdate";
-import ProductDeliveryTime from "../pages/product-delivery-time";
-import ProductDeliveryTimeCreate from "@/components/products/deliveryTime/ProductDeliveryTimeCreate";
-import ProductDeliveryTimeUpdate from "@/components/products/deliveryTime/ProductDeliveryTimeUpdate";
+import OrderDeliveryTimeCreate from "@/components/orders/deliveryTime/OrderDeliveryTimeCreate";
+import OrderDeliveryTimeUpdate from "@/components/orders/deliveryTime/OrderDeliveryTimeUpdate";
+import RequirePermission from "@/components/RequirePermission";
+import OrderDeliveryTime from "../pages/order-delivery-time";
 
 
 const parseJwt = (token) => {
@@ -157,6 +158,133 @@ export const router = createBrowserRouter([
                 element: <Analytics />
             },
             {
+                path: "/profile/details",
+                element: <CustomersView />
+            },
+            {
+                path: "/products",
+                element: <RequirePermission pageName="view_product"><Product /></RequirePermission>,
+            },
+            {
+                path: "/products/create",
+                element: <RequirePermission pageName="change_product_create"><ProductCreate /></RequirePermission>,
+            },
+            {
+                path: "/products/:id",
+                element: <RequirePermission pageName="change_product_update"><ProductUpdate /></RequirePermission>,
+            },
+            {
+                path: "/products/sku",
+                element: <RequirePermission pageName="view_product_sku"><ProductSKUTable /></RequirePermission>,
+            },
+            {
+                path: "/products/sku/create/:product_id",
+                element: <RequirePermission pageName="change_product_sku_create"><ProductSKUCreate /></RequirePermission>,
+            },
+            {
+                path: "/products/sku/:product_id",
+                element: <RequirePermission pageName="view_each_product_sku"><ProductSKU /></RequirePermission>,
+            },
+            {
+                path: "/products/sku/:product_id/:id",
+                element: <RequirePermission pageName="change_product_sku_update"><ProductSKUUpdate /></RequirePermission>,
+            },
+            {
+                path: "/products/image",
+                element: <RequirePermission pageName="view_product_image"><ProductImage /></RequirePermission>,
+            },
+            {
+                path: "/products/image/:id",
+                element: <RequirePermission pageName="change_product_image_update"><ProductImageUpdate /></RequirePermission>,
+            },
+            {
+                path: "/products/image/:id/create",
+                element: <RequirePermission pageName="change_product_image_create"><ProductImageCreate /></RequirePermission>,
+            },
+            {
+                path: "/products/category",
+                element: <RequirePermission pageName="view_product_category"><ProductCategory /></RequirePermission>,
+            },
+            {
+                path: "/products/category/create",
+                element: <RequirePermission pageName="change_product_category_create"><ProductCategoryCreate /></RequirePermission>,
+            },
+            {
+                path: "/products/category/:id",
+                element: <RequirePermission pageName="change_product_category_update_delete"><ProductCategoryUpdate /></RequirePermission>,
+            },
+            {
+                path: "/products/brand",
+                element: <RequirePermission pageName="view_product_brand"><ProductBrand /></RequirePermission>,
+            },
+            {
+                path: "/products/brand/create",
+                element: <RequirePermission pageName="change_product_brand_create"><ProductBrandCreate /></RequirePermission>,
+            },
+            {
+                path: "/products/brand/:id",
+                element: <RequirePermission pageName="change_product_brand_update"><ProductBrandUpdate /></RequirePermission>,
+            },
+            {
+                path: "/products/flavour",
+                element: <RequirePermission pageName="view_product_flavour"><ProductFlavour /></RequirePermission>,
+            },
+            {
+                path: "/products/flavour/create",
+                element: <RequirePermission pageName="change_product_flavour_create"><ProductFlavourCreate /></RequirePermission>,
+            },
+            {
+                path: "/products/flavour/:id",
+                element: <RequirePermission pageName="change_product_flavour_update"><ProductFlavourUpdate /></RequirePermission>,
+            },
+            {
+                path: "/orders/delivery-time",
+                element: <RequirePermission pageName="view_delivery_time"><OrderDeliveryTime /></RequirePermission>,
+            },
+            {
+                path: "/orders/delivery-time/create",
+                element: <RequirePermission pageName="change_delivery_time_create"><OrderDeliveryTimeCreate /></RequirePermission>,
+            },
+            {
+                path: "/orders/delivery-time/:id",
+                element: <RequirePermission pageName="change_delivery_time_update"><OrderDeliveryTimeUpdate /></RequirePermission>,
+            },
+            {
+                path: "/admin-management/positions",
+                element: <RequirePermission pageName="view_admin_position"><AdminManagementPositions /></RequirePermission>,
+            },
+            {
+                path: "/admin-management/positions/create",
+                element: <RequirePermission pageName="change_admin_position_create"><AdminManagementPositionsCreate /></RequirePermission>,
+            },
+            {
+                path: "/admin-management/positions/:id",
+                element: <RequirePermission pageName="change_admin_position_update"><AdminManagementPositionsUpdate /></RequirePermission>,
+            },
+            {
+                path: "/admin-management/role-permissions",
+                element: <RequirePermission pageName="view_admin_role_position"><AdminManagementPermissions /></RequirePermission>,
+            },
+            {
+                path: "/admin-management/role-permissions/:id",
+                element: <RequirePermission pageName="change_admin_role_position"><AdminManagementPermissionsUpdate /></RequirePermission>,
+            },
+            {
+                path: "/admin-management/admins",
+                element: <RequirePermission pageName="view_admin"><AdminManagementAdmins /></RequirePermission>,
+            },
+            {
+                path: "/admin-management/admins/:admin_user_name",
+                element: <RequirePermission pageName="change_admin"><AdminManagementAdminsOperation /></RequirePermission>,
+            },
+            {
+                path: "/403",
+                element: <AccessError />
+            },
+
+
+            // Not Used
+            {
                 path: "/reports/sales",
                 element: <ReportsSales />
             },
@@ -203,10 +331,6 @@ export const router = createBrowserRouter([
             {
                 path: "/customers/list",
                 element: <CustomersList />
-            },
-            {
-                path: "/profile/details",
-                element: <CustomersView />
             },
             {
                 path: "/customers/create",
@@ -260,126 +384,6 @@ export const router = createBrowserRouter([
                 path: "/help/knowledgebase",
                 element: <HelpKnowledgebase />
             },
-            {
-                path: "/products",
-                element: <Product />
-            },
-            {
-                path: "/products/create",
-                element: <ProductCreate />
-            },
-            {
-                path: "/products/:id",
-                element: <ProductUpdate />
-            },
-            {
-                path: "/products/sku",
-                element: <ProductSKUTable />
-            },
-            {
-                path: "/products/sku/create/:product_id",
-                element: <ProductSKUCreate />
-            },
-            {
-                path: "/products/sku/:product_id",
-                element: <ProductSKU />
-            },
-            {
-                path: "/products/sku/:product_id/:id",
-                element: <ProductSKUUpdate />
-            },
-            {
-                path: "/products/image",
-                element: <ProductImage />
-            },
-            {
-                path: "/products/image/:id",
-                element: <ProductImageUpdate />
-            },
-            {
-                path: "/products/image/:id/create",
-                element: <ProductImageCreate />
-            },
-            {
-                path: "/products/category",
-                element: <ProductCategory />
-            },
-            {
-                path: "/products/category/create",
-                element: <ProductCategoryCreate />
-            },
-            {
-                path: "/products/category/:id",
-                element: <ProductCategoryUpdate />
-            },
-            {
-                path: "/products/brand",
-                element: <ProductBrand />
-            },
-            {
-                path: "/products/brand/create",
-                element: <ProductBrandCreate />
-            },
-            {
-                path: "/products/brand/:id",
-                element: <ProductBrandUpdate />
-            },
-            {
-                path: "/products/flavour",
-                element: <ProductFlavour />
-            },
-            {
-                path: "/products/flavour/create",
-                element: <ProductFlavourCreate />
-            },
-            {
-                path: "/products/flavour/:id",
-                element: <ProductFlavourUpdate />
-            },
-            {
-                path: "/products/delivery-time",
-                element: <ProductDeliveryTime />
-            },
-            {
-                path: "/products/delivery-time/create",
-                element: <ProductDeliveryTimeCreate />
-            },
-            {
-                path: "/products/delivery-time/:id",
-                element: <ProductDeliveryTimeUpdate />
-            },
-            {
-                path: "/admin-management/positions",
-                element: <AdminManagementPositions />
-            },
-            {
-                path: "/admin-management/positions/create",
-                element: <AdminManagementPositionsCreate />
-            },
-            {
-                path: "/admin-management/positions/:id",
-                element: <AdminManagementPositionsUpdate />
-            },
-            {
-                path: "/admin-management/role-permissions",
-                element: <AdminManagementPermissions />
-            },
-            {
-                path: "/admin-management/role-permissions/:id",
-                element: <AdminManagementPermissionsUpdate />
-            },
-            {
-                path: "/admin-management/admins",
-                element: <AdminManagementAdmins />
-            },
-            {
-                path: "/admin-management/admins/:admin_user_name",
-                element: <AdminManagementAdminsOperation />
-            },
-            {
-                path: "/403",
-                element: <AccessError />
-            }
 
         ],
         errorElement: <ErrorBoundary /> // Use error boundary for 403 handling
@@ -477,11 +481,11 @@ export const router = createBrowserRouter([
         element: <LayoutAuth />,
         children: [
             {
-                path: "/authentication/login/minimal",
+                path: "/authentication/login",
                 element: <PublicRoute><LoginMinimal /></PublicRoute>
             },
             {
-                path: "/authentication/register/minimal",
+                path: "/authentication/register",
                 element: <PublicRoute><RegisterMinimal /></PublicRoute>
             },
             {
@@ -489,7 +493,7 @@ export const router = createBrowserRouter([
                 element: <ResetMinimal />
             },
             {
-                path: "/authentication/404/minimal",
+                path: "/404",
                 element: <ErrorMinimal />
             },
             {

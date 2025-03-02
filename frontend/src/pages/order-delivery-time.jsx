@@ -1,19 +1,19 @@
 import React from 'react'
 import PageHeader from '@/components/shared/pageHeader/PageHeader'
 import Footer from '@/components/shared/Footer'
-import ProductDeliveryTimeHeader from '@/components/products/deliveryTime/ProductDeliveryTimeHeader'
-import ProductDeliveryTimeTable from '@/components/products/deliveryTime/ProductDeliveryTimeTable'
+import OrderDeliveryTimeHeader from '@/components/orders/deliveryTime/OrderDeliveryTimeHeader'
+import OrderDeliveryTimeTable from '@/components/orders/deliveryTime/OrderDeliveryTimeTable'
 
 
-const ProductDeliveryTime = () => {
+const OrderDeliveryTime = () => {
     return (
         <>
             <PageHeader>
-                <ProductDeliveryTimeHeader />
+                <OrderDeliveryTimeHeader />
             </PageHeader>
             <div className='main-content'>
                 <div className='row'>
-                    <ProductDeliveryTimeTable />
+                    <OrderDeliveryTimeTable />
                 </div>
             </div>
             <Footer />
@@ -21,4 +21,4 @@ const ProductDeliveryTime = () => {
     )
 }
 
-export default ProductDeliveryTime
+export default OrderDeliveryTime

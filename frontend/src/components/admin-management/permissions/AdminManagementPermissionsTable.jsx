@@ -5,13 +5,15 @@ import Cookies from 'js-cookie';
 import {
     TablePagination
 } from '@mui/material';
+import { BackendUrlMainAPI } from '../../../BackendUrlMainAPI';
+
 
 const AdminManagementPermissionsTable = () => {
     const [positions, setPositions] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/admin-position';
+    const API_BASE_URL = `${BackendUrlMainAPI}server_api/business-admin/admin-position`;
 
     useEffect(() => {
         fetchCategories();

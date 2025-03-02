@@ -72,16 +72,24 @@ const Menus = () => {
                     path: "/products/image",
                     subdropdownMenu: false
                 },
+            ]
+        },
+        {
+            id: 2,
+            name: "orders",
+            path: "#",
+            icon: 'feather-users',
+            dropdownMenu: [
                 {
-                    id: 7,
-                    name: "Product Delivery Time",
-                    path: "/products/delivery-time",
+                    id: 1,
+                    name: "Delivery Time",
+                    path: "/orders/delivery-time",
                     subdropdownMenu: false
                 },
             ]
         },
         {
-            id: 2,
+            id: 3,
             name: "admin-management",
             path: "#",
             icon: 'feather-users',

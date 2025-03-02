@@ -68,10 +68,10 @@ const ProductFlavourUpdate = () => {
             params: { pk: id }
         })
             .then(response => {
-                setFlavourName(response.data.product_flavours_data.product_flavour_name || '');
+                setFlavourName(response.data.product_flavours_data.product_flavour_name);
             })
             .catch(error => {
-                console.error("Error fetching Flavour data:", error.response ? error.response.data : error);
+                navigate("/404");
             });
     }, []);
 
@@ -101,8 +101,7 @@ const ProductFlavourUpdate = () => {
             setMessage("Flavour Updated Successfully!");
             setMessageType('success');
         } catch (error) {
-            console.error("Error Updating Flavour:", error.response ? error.response.data : error.message);
-            setMessage("Failed to update the Flavour.");
+            setMessage(error.response.data.error);
             setMessageType('danger');
         }
     };

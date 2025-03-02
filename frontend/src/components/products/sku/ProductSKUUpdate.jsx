@@ -58,6 +58,9 @@ const ProductSKUUpdate = () => {
             if (selectedProduct) {
                 setProducts(selectedProduct.label);
             }
+            else {
+                navigate("/404");
+            }
         } catch (error) {
             console.error("Error fetching products:", error);
         }
@@ -107,6 +110,7 @@ const ProductSKUUpdate = () => {
 
         } catch (error) {
             console.error("Error fetching product details:", error);
+            navigate("/404");
         }
     };
 

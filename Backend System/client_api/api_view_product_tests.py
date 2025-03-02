@@ -1,45 +1,22 @@
-from django.test import TestCase,RequestFactory
+from django.test import TestCase
 from django.contrib.auth import get_user_model
-from .models import *
-from .order_management import OrderManagement
-from .models import Accounts
-from decimal import Decimal
+from products.models import *
+from orders.models import *
+import json
+from django.utils import timezone
+from customer.models import *
 import datetime
+from rest_framework_simplejwt.tokens import AccessToken
 from products.models import *
 
+
+now = timezone.now()
 User = get_user_model()
 
-class OrderTest(TestCase):
+class ProductAPITests(TestCase):
 
     def setUp(self):
-        self.factory = RequestFactory()
-        self.user1 = User.objects.create_user(
-            email='user1@test.com',
-            username='user1',
-            password='testpass123'
-        )
-
-        self.delivery_time1 = DeliveryTime.objects.create(
-            delivery_name= "Inside dhaka",
-            estimated_delivery_time = "7 days"
-        )
-        self.delivery_time2 = DeliveryTime.objects.create(
-            delivery_name= "Outside dhaka",
-            estimated_delivery_time = "10 days"
-        )
-        self.delivery_time3 = DeliveryTime.objects.create(
-            delivery_name= "Internation",
-            estimated_delivery_time = "1 months"
-        )
-
-        self.customer1 = Accounts.objects.create(username="customer1", email="customer1@example.com")
-        self.customer2 = Accounts.objects.create(username="customer2", email="customer2@example.com")
-        self.customer3 = Accounts.objects.create(username="customer3", email="customer3@example.com")
-        
-
-        # Create product SKUs
         now = timezone.now()
-        # Create categories
         self.category_skincare = Product_Category.objects.create(category_name="Skincare", description="Products for skincare", created_at=now)
         self.category_makeup = Product_Category.objects.create(category_name="Makeup", description="Products for makeup", created_at=now)
         self.category_haircare = Product_Category.objects.create(category_name="Haircare", description="Products for haircare", created_at=now)
@@ -118,9 +95,11 @@ class OrderTest(TestCase):
         #creating product sku
         self.product_sku1 = Product_SKU.objects.create(product_id=self.product1,product_color="white",product_price=25.3,product_stock=100,created_at=now)
         self.product_sku2 = Product_SKU.objects.create(product_id=self.product1,product_color="silver",product_price=50,product_stock=50,created_at=now)
+        self.product_sku3 = Product_SKU.objects.create(product_id=self.product2,product_color="silver",product_price=50,product_stock=50,created_at=now)
 
         self.product_sku1.product_flavours.set([self.product_flavour1])
         self.product_sku2.product_flavours.set([self.product_flavour2])
+        self.product_sku3.product_flavours.set([self.product_flavour1,self.product_flavour2])
 
         self.active_discount = Product_Discount.objects.create(
             discount_name="Active Discount",
@@ -158,210 +137,72 @@ class OrderTest(TestCase):
         self.future_discount.product_id.add(self.product3)
         self.future_discount.save()
 
-        # Create test orders
-        self.order1 = Order.objects.create(
-            order_id="ORD001",
-            customer_id=self.customer1,
-            delivery_time=self.delivery_time1,
-            total_amount=Decimal("90.50"),
-            order_status="pending",
-        )
-
-        self.order2 = Order.objects.create(
-            order_id="ORD002",
-            customer_id=self.customer2,
-            delivery_time=self.delivery_time2,
-            total_amount=Decimal("150.00"),
-            order_status="shipped",
-        )
-
-        self.order3 = Order.objects.create(
-            order_id="ORD003",
-            customer_id=self.customer3,
-            delivery_time=self.delivery_time1,
-            total_amount=Decimal("50.75"),
-            order_status="delivered",
-        )
-
-        # Create order details
-        self.order_details1 = OrderDetails.objects.create(
-            order_id=self.order1,
-            product_sku=self.product_sku1,
-            quantity=2,
-            units=1,
-            subtotal=Decimal("60.00")
-        )
-
-        self.order_details2 = OrderDetails.objects.create(
-            order_id=self.order2,
-            product_sku=self.product_sku2,
-            quantity=3,
-            units=1,
-            subtotal=Decimal("136.50")
-        )
-
-        self.order_details3 = OrderDetails.objects.create(
-            order_id=self.order3,
-            product_sku=self.product_sku2,
-            quantity=1,
-            units=1,
-            subtotal=Decimal("20.75")
-        )
-
-        # Create shipping addresses
-        self.shipping1 = OrderShippingAddress.objects.create(
-            order_id=self.order1,
-            address_line1="123 Main St",
-            city="New York",
-            country="USA",
-            postal_code="10001"
-        )
-
-        self.shipping2 = OrderShippingAddress.objects.create(
-            order_id=self.order2,
-            address_line1="456 Elm St",
-            city="Los Angeles",
-            country="USA",
-            postal_code="90001"
-        )
-
-        self.shipping3 = OrderShippingAddress.objects.create(
-            order_id=self.order3,
-            address_line1="789 Oak St",
-            city="Chicago",
-            country="USA",
-            postal_code="60601"
-        )
-
-        # Create coupons
-        self.coupon1 = Coupon.objects.create(
-            coupon_code = 'UNIQUE1',
-            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[0][0],#percentage
-            discount_percentage=30,
-            maximum_discount_amount=100,
-            start_date = now,
-            end_date = now + datetime.timedelta(days=10),
-            customer_id = self.customer1,
-            created_at = now
-
-        )
-
-        self.coupon2 = Coupon.objects.create(
-            coupon_code = 'UNIQUE2',
-            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[1][1],#fixed
-            discount_amount=50,
-            usage_limit=1,
-            maximum_discount_amount=100,
-            start_date = now + datetime.timedelta(days=-5),
-            end_date = now + datetime.timedelta(days=20),
-            customer_id = self.customer2,
-            created_at = now
-
-        )
-
-        # Create payments
-        self.payment1 = OrderPayment.objects.create(
-            order_id=self.order1,
-            coupon_applied=self.coupon1,
-            payment_mode="credit_card",
-            payment_status="success",
-            payment_amount=Decimal("81.45"),
-            payment_reference="PAY123"
-        )
-
-        self.payment2 = OrderPayment.objects.create(
-            order_id=self.order2,
-            coupon_applied=self.coupon2,
-            payment_mode="paypal",
-            payment_status="success",
-            payment_amount=Decimal("142.50"),
-            payment_reference="PAY456"
-        )
-
-        self.payment3 = OrderPayment.objects.create(
-            order_id=self.order3,
-            coupon_applied=None,  # No coupon applied
-            payment_mode="debit_card",
-            payment_status="pending",
-            payment_amount=Decimal("50.75"),
-            payment_reference="PAY789"
-        )
-
-        self.cancelorder1= CancelOrderRequest.objects.create(
-            order_id = self.order1,
-            cancellation_reason = "yyy"
-        )
-
-    def _create_mock_dev_user(self):
-        """ Helper method to create a mock user """
-        return Accounts.objects.create(
-            email='user@example.com',
-            username='user',
-            is_superuser = True,
-            password='1234',
-        )
+    def get_auth_header(self, user):
+        token = AccessToken.for_user(user)
+        return {'HTTP_AUTHORIZATION': f'Bearer {token}'}
     
-    def test_fetch_delivery_time(self):
+    def test_fetch_product(self):
 
-        request = self.factory.get('/delivery/fetch/')
-        request.user = self._create_mock_dev_user()
-        success,message = OrderManagement.fetch_delivery_time(delivery_pk=self.delivery_time1.pk)
-        self.assertTrue(success,"Fetched")
-        self.assertEqual(message,"Fetched Successfully")
+        #gll product search
+        # data = {
+        #     'search':'40'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_search/',data=data,format='json')
+        # print(response.data)
 
-    def test_create_delivery_time(self):
+        #with brand
+        # data={
+        #     'brand_name':'Dove'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_brand/',data=data,format='json')
+        # print(response.data)
 
-        request = self.factory.get('/delivery/fetch/')
-        request.user = self._create_mock_dev_user()
-        success,message = OrderManagement.create_delivery_time(request,"Inside dhaka","5 days")
-        self.assertFalse(success,"Not created")
-        self.assertEqual(message, "Delivery Time with this name already exists")
+        #with category
+        # data={
+        #     'category_name':'Skincare'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_category/',data=data,format='json')
+        # print(response.data)
 
-        success,message = OrderManagement.create_delivery_time(request,"Outside omar","pp")
-        self.assertTrue(success,"Created")
+        #with sub_category
+        # data={
+        #     'sub_category_name':'Cleansers'
+        # }
+        # response = self.client.get('/client_api/fetch/fetch_product_with_sub_category/',data=data,format='json')
+        # print(response.data)
 
-    def test_update_delivery_time(self):
+        #with price
 
-        request = self.factory.get('/delivery/fetch/')
-        request.user = self._create_mock_dev_user()
-        success,message = OrderManagement.update_delivery_time(request,self.delivery_time3.pk,"Indianaa","opop")
-        self.assertTrue(success,"Updated")
+        data={
+            'min_price':'40',
+            'max_price':'50'
+        }
+        response = self.client.get('/client_api/fetch/fetch_product_with_price/',data=data,format='json')
+        # print(response.data)
 
-    def test_delete_delivery_time(self):
+    def test_fetch_brand(self):
 
-        request = self.factory.get('/delivery/fetch/')
-        request.user = self._create_mock_dev_user()
-        success,message = OrderManagement.delete_delivery_time(request,self.delivery_time2.pk)
-        self.assertTrue(success,"Deleted")
+        data={
+            'brand_name':'Dove'
+        }
+        response = self.client.get('/client_api/fetch/fetch_brands/',data=data,format='json')
+        # print(response.data)
 
-    #order test
-    def test_fetch_order_details(self):
+    def test_fetch_category(self):
 
-        request = self.factory.get('/order/fetch/')
-        request.user = self._create_mock_dev_user()
-        success,message = OrderManagement.fetch_orders_details(order_id='ORD001')
-        self.assertTrue(success,"Fetched successfully")
-        self.assertEqual(message,"Order Fetched Successfully")
+        response = self.client.get('/client_api/fetch/fetch_categories/',format='json')
+        # print(response.data)
+
+    def test_fetch_sub_categories(self):
+
+        response = self.client.get('/client_api/fetch/fetch_sub_categories/',format='json')
+        # print(response.data)
+
+    def test_fetch_product_with_flavour(self):
+
+        data = {
+            'flavour_name':'Vanilla'
+        }
         
-        #username
-        success,message = OrderManagement.fetch_orders_details(user_name=self.customer2.username)
-        self.assertTrue(success,"Fetched successfully")
-        
-        #all
-        success,message = OrderManagement.fetch_orders_details()
-        self.assertTrue(success,"Fetched successfully")
-
-    def test_fetch_cancellation_reason(self):
-
-        request = self.factory.get('/order/fetch/')
-        request.user = self._create_mock_dev_user()
-        success,message = OrderManagement.fetch_order_cancellation_requests(order_cancellation_request_pk=self.cancelorder1.pk)
-        print(success)
-
-    def test_order_cancellation_request(self):
-
-        request = self.factory.get('/order/fetch/')
-        request.user = self._create_mock_dev_user()
-        success,message = OrderManagement.order_cancellation_request(request,self.cancelorder1.pk,True)
-        
-    
+        response = self.client.get('/client_api/fetch/fetch_product_with_flavour/',data=data,format='json')
+        print(response.data)

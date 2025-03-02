@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Link } from 'react-router-dom';
+import { BackendUrlMainAPI } from '../../../BackendUrlMainAPI';
 
 const AdminManagementPositionsCreate = () => {
     const [positionName, setPositionName] = useState('');
@@ -9,7 +10,7 @@ const AdminManagementPositionsCreate = () => {
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState(''); // 'success' or 'danger'
 
-    const API_BASE_URL = 'http://127.0.0.1:8000/server_api/business-admin/admin-position';
+    const API_BASE_URL = `${BackendUrlMainAPI}server_api/business-admin/admin-position`;
 
 
     const handleSubmitCategory = (e) => {

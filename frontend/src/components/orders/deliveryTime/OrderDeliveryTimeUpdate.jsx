@@ -8,9 +8,8 @@ import Select from "react-select";
 import { set } from 'date-fns';
 
 
-const ProductDeliveryTimeUpdate = () => {
+const OrderDeliveryTimeUpdate = () => {
     const { id } = useParams(); // Get the ID from the URL
-    const [flavourName, setFlavourName] = useState(''); // Initialize the flavour name state
     const [deliveryName, setDeliveryName] = useState('');
     const [estimatedTime, setEstimatedTime] = useState('');
     const [message, setMessage] = useState('');
@@ -23,12 +22,12 @@ const ProductDeliveryTimeUpdate = () => {
     const navigate = useNavigate(); // Initialize the navigate hook
 
     const handleDeleteflavour = () => {
-        setDeleteAction({ type: 'flavour' });
+        setDeleteAction({ type: 'delivery' });
         setShowDeleteModal(true);
     };
 
     const confirmDelete = () => {
-        if (deleteAction.type === 'flavour') {
+        if (deleteAction.type === 'delivery') {
             fetch(`${API_BASE_URL}/delete/${id}/`, {
                 method: 'DELETE',
                 headers: {
@@ -38,13 +37,13 @@ const ProductDeliveryTimeUpdate = () => {
             })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Failed to delete flavour');
+                        throw new Error('Failed to delete delivery time');
                     }
-                    setMessage('Flavour deleted successfully!');
+                    setMessage('Delivery time deleted successfully!');
                     setMessageType('success');
 
                     // Redirect to the flavour list page after deletion
-                    navigate('/products/flavour');
+                    navigate('/orders/delivery-time');
                 })
                 .catch(error => {
                     setMessage(error.message);
@@ -70,12 +69,12 @@ const ProductDeliveryTimeUpdate = () => {
             params: { delivery_pk: id }
         })
             .then(response => {
-                console.log(response.data);
-                setDeliveryName(response.data.delivery_time_data.delivery_name || '');
-                setEstimatedTime(response.data.delivery_time_data.estimated_delivery_time || '');
+                setDeliveryName(response.data.delivery_time_data.delivery_name);
+                setEstimatedTime(response.data.delivery_time_data.estimated_delivery_time);
             })
             .catch(error => {
-                console.error("Error fetching Flavour data:", error.response ? error.response.data : error);
+                console.error("Error fetching Delivery time data:", error.response ? error.response.data : error);
+                navigate("/404");
             });
     }, []);
 
@@ -85,15 +84,10 @@ const ProductDeliveryTimeUpdate = () => {
     const handleSubmitCategory = async (e) => {
         e.preventDefault();
 
-        // Validate input fields
-        if (!flavourName.trim()) {
-            alert("Flavour name is required!");
-            return;
-        }
-
         try {
             const response = await axios.put(`${API_BASE_URL}/update/${id}/`, {
-                product_flavour_name: flavourName
+                delivery_name: deliveryName,
+                estimated_time: estimatedTime
             }, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get('accessToken')}`,
@@ -101,12 +95,10 @@ const ProductDeliveryTimeUpdate = () => {
                 },
             });
 
-            setFlavourName(response.data.name);
-            setMessage("Flavour Updated Successfully!");
+            setMessage("Delivery Time Updated Successfully!");
             setMessageType('success');
         } catch (error) {
-            console.error("Error Updating Flavour:", error.response ? error.response.data : error.message);
-            setMessage("Failed to update the Flavour.");
+            setMessage(error.response.data.message);
             setMessageType('danger');
         }
     };
@@ -134,45 +126,45 @@ const ProductDeliveryTimeUpdate = () => {
             )}
             <div className="card invoice-container">
                 <div className="card-header">
-                    <h5>Flavour Update & Deletion</h5>
-                    <Link to="/products/delivery-time" className="btn btn-primary">← Back</Link>
+                    <h5>Delivery Time Update & Deletion</h5>
+                    <Link to="/orders/delivery-time" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleSubmitCategory}>
                         <div className="px-4 py-4 row justify-content-between">
                             <div className="col-xl-6">
                                 <div className="form-group mb-3 mt-3">
-                                    <label htmlFor="flavourName" className="form-label">Flavour Name</label>
+                                    <label htmlFor="deliveryName" className="form-label">Delivery Name</label>
                                     <input
                                         type="text"
                                         className="form-control mb-2"
-                                        id="flavourName"
-                                        placeholder="Flavour Name"
+                                        id="deliveryName"
+                                        placeholder="Delivery Name (e.g. Inside Dhaka)"
                                         value={deliveryName}
                                         onChange={(e) => setDeliveryName(e.target.value)}
                                         required
                                     />
                                 </div>
                                 <div className="form-group mb-3 mt-3">
-                                    <label htmlFor="flavourName" className="form-label">Flavour Name</label>
+                                    <label htmlFor="estimatedTime" className="form-label">Estimated Time</label>
                                     <input
                                         type="text"
                                         className="form-control mb-2"
-                                        id="flavourName"
-                                        placeholder="Flavour Name"
+                                        id="estimatedTime"
+                                        placeholder="Estimated Time (e.g. 1-2 days)"
                                         value={estimatedTime}
                                         onChange={(e) => setEstimatedTime(e.target.value)}
                                         required
                                     />
                                 </div>
                                 <div className='d-flex gap-2'>
-                                    <button type="submit" className="btn btn-success">Update Product Flavour</button>
+                                    <button type="submit" className="btn btn-success">Update Delivery Time</button>
                                     <button
                                         type="button"
                                         className="btn btn-danger"
                                         onClick={handleDeleteflavour}  // Call the function here
                                     >
-                                        Delete Product Flavour
+                                        Delete Delivery Time
                                     </button>
                                 </div>
                             </div>
@@ -183,7 +175,7 @@ const ProductDeliveryTimeUpdate = () => {
                         show={showDeleteModal}
                         onClose={cancelDelete}
                         onConfirm={confirmDelete}
-                        message={`Are you sure you want to delete this flavour?`}
+                        message={`Are you sure you want to delete?`}
                     />
                 </div>
             </div>
@@ -191,4 +183,4 @@ const ProductDeliveryTimeUpdate = () => {
     );
 }
 
-export default ProductDeliveryTimeUpdate;
+export default OrderDeliveryTimeUpdate;
