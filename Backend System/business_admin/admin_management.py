@@ -675,7 +675,7 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin users! Please try again later.")
     
     def create_business_admin_user(admin_full_name,password,
-                                   admin_email,admin_contact_no="",admin_avatar="",is_superuser=False,is_staff_user=False):
+                                   admin_email,admin_contact_no="",admin_avatar="",is_superuser=False,is_admin_user=False):
     
         """
         Create a new business admin user with detailed exception handling.
@@ -747,12 +747,12 @@ class AdminManagement:
                                                               )
             business_admin.save()
             #creating admin account
-            new_business_admin_user = Accounts(email = admin_email,username = admin_user_name,is_admin=True)
+            new_business_admin_user = Accounts(email = admin_email,username = admin_user_name,is_staff=True)
             new_business_admin_user.set_password(password)
             new_business_admin_user.save()
 
-            if is_staff_user:
-                new_business_admin_user.is_staff = True
+            if is_admin_user:
+                new_business_admin_user.is_admin = True
             if is_superuser:
                 new_business_admin_user.is_superuser = True
             new_business_admin_user.save()
@@ -788,7 +788,7 @@ class AdminManagement:
 
     def update_business_admin_user(request,admin_username,admin_full_name="",admin_email="",
                                    admin_contact_no="",admin_avatar="",old_password="",
-                                   password="",is_superuser=False,is_staff_user=False):
+                                   password="",is_superuser=False,is_admin_user=False):
         
         """
         Update an existing business admin user with detailed exception handling.
@@ -847,8 +847,8 @@ class AdminManagement:
             business_admin_user,message = AdminManagement.fetch_business_admin_user(admin_user_name=admin_username)
             all_business_admin_user,message = AdminManagement.fetch_business_admin_user()
             user = Accounts.objects.get(username=business_admin_user.admin_user_name)
-            if user.is_staff == False and is_staff_user == True:
-                user.is_staff = True
+            if user.is_admin == False and is_admin_user == True:
+                user.is_admin = True
             if user.is_superuser == False and is_superuser == True:
                 user.is_superuser = True
             user.save()
