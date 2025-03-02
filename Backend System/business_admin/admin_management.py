@@ -771,7 +771,7 @@ class AdminManagement:
                 to_emails=[admin_email],subject=SUBJECT,text_content=BODY,purpose='auth'
             )
             
-            print(f"Was email sent: {is_email_sent}")
+            # print(f"Was email sent: {is_email_sent}")
                         
             SystemManagement.create_notification(title="Request for Admin Login",role ="Owner")
             SystemManagement.send_email(subject="New Admin Login Request",body="Login Request",emails_to=[admin_email])
@@ -1922,13 +1922,13 @@ class AdminManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin role permission! Please try again later.")
         
     
-    def fetch_login_requests(business_admin_user_pk=""):
+    def fetch_login_requests(admin_unique_id=""):
         try:
-            if business_admin_user_pk!="":
-                login_request = BusinessAdminUser.objects.get(pk=business_admin_user_pk)
+            if admin_unique_id!="":
+                login_request = BusinessAdminUser.objects.get(admin_unique_id=admin_unique_id)
                 return login_request, "Fetched Successfully"
             else:
-                login_requests = BusinessAdminUser.objects.filter(login_request = False).order_by('-pk')
+                login_requests = BusinessAdminUser.objects.all().order_by('-pk')
                 return login_requests, "All Fetched Successfully"
         
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1948,10 +1948,10 @@ class AdminManagement:
 
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting admin role permission! Please try again later.")
         
-    def update_login_requests(request,business_admin_user_pk,stat=False):
+    def update_login_requests(request,admin_unique_id,stat=False):
 
         try:
-            login_request,message = AdminManagement.fetch_login_requests(business_admin_user_pk=business_admin_user_pk)
+            login_request,message = AdminManagement.fetch_login_requests(admin_unique_id=admin_unique_id)
             if stat:
                 login_request.login_request = True
                 login_request.save()
