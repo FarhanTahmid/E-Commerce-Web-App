@@ -771,10 +771,8 @@ class AdminManagement:
                 to_emails=[admin_email],subject=SUBJECT,text_content=BODY,purpose='auth'
             )
             
-            # print(f"Was email sent: {is_email_sent}")
-                        
+            # print(f"Was email sent: {is_email_sent}")         
             SystemManagement.create_notification(title="Request for Admin Login",role ="Owner")
-            SystemManagement.send_email(subject="New Admin Login Request",body="Login Request",emails_to=[admin_email])
             return True, "Business Admin created successfully"
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
@@ -1951,17 +1949,15 @@ class AdminManagement:
     def update_login_requests(request,admin_unique_id,stat=False):
 
         try:
-            login_request,message = AdminManagement.fetch_login_requests(admin_unique_id=admin_unique_id)
-            if stat:
-                login_request.login_request = True
-                login_request.save()
-                SystemManagement.send_email(emails_to=[login_request.admin_email],subject="You can now Login IN",request=request,body="..")
-                SystemManagement.create_notification(request=request,user_names=[login_request.admin_user_name],title="Welcome to the System")
-                SystemLogs.updated_by(request,login_request)
-                SystemLogs.admin_activites(request,f"Updated admin login request permission",message="Updated")
-                return True, "Updated Successfully"
-            else:
-                return False, "Not updated"
+            login_request,message = AdminManagement.fetch_login_requests(admin_unique_id=admin_unique_id)  
+            login_request.login_request = True
+            login_request.save()
+            SystemManagement.send_email(emails_to=[login_request.admin_email],subject="You can now Login IN",request=request,body="..")
+            SystemManagement.create_notification(request=request,user_names=[login_request.admin_user_name],title="Welcome to the System")
+            SystemLogs.updated_by(request,login_request)
+            SystemLogs.admin_activites(request,f"Updated admin login request permission",message="Updated")
+            return True, "Updated Successfully"
+
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
