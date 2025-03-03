@@ -3,11 +3,13 @@ from .views import *
 from .api_view_cart import *
 from .api_view_orders import *
 from .api_view_product import *
+from .api_view_wishlist import *
 from rest_framework.routers import DefaultRouter
 
 app_name='client_api'
 
 router=DefaultRouter()
+router.register(r'customer-wishlist',UserWishlistViewSet,basename='customer_wishlist')
 router.register(r'customer-cart',UserCartViewSet,basename='customer_cart')
 router.register(r'customer-order',OrderViewSet,basename='customer_order')
 router.register(r'fetch',FetchViewSet,basename='fetch')
