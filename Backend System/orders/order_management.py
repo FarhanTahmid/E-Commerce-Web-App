@@ -4,6 +4,7 @@ from system.system_log import SystemLogs
 from system.models import ErrorLogs
 from products.product_management import ManageProducts
 from system.manage_system import SystemManagement
+from system.email_service import EmailService
 
 class OrderManagement:
 
@@ -314,7 +315,9 @@ class OrderManagement:
                 print("cancelled")
             SystemLogs.updated_by(request,order_cancel.order_id)
             SystemLogs.admin_activites(request,f"Order Cancelled, order_id - {(order_cancel.order_id)} ","Cancelled")
-            SystemManagement.send_email("Order Cancelled","Your Order has been cancelled",[order_cancel.order_id.customer_id.email],[],"","",request)
+            is_email_sent=EmailService.send_email(
+                to_emails=[order_cancel.order_id.customer_id.email],subject="Order Cancelled",text_content="Your Order has been cancelled",purpose='auth'
+            )
             SystemManagement.create_notification(title="Order Cancelled",user_names=[order_cancel.order_id.customer_id.username],description="Your Order has been cancelled",request=request)
             order_cancel.order_id.delete()
             

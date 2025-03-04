@@ -76,9 +76,31 @@ class FetchViewSet(viewsets.ViewSet):
     def get_permissions(self):
         
         if self.action in ['fetch_product_with_search','fetch_product_with_brand','fetch_product_with_category','fetch_product_with_sub_category',
-                           'fetch_product_with_price','fetch_all_product','fetch_brands','fetch_categories','fetch_sub_categories','fetch_product_with_flavour']:
+                           'fetch_product_with_price','fetch_all_product','fetch_brands','fetch_categories','fetch_sub_categories','fetch_product_with_flavour',
+                           'fetch_product_details']:
             return [AllowAny()]
         return super().get_permissions()
+    
+    @action(detail=False, methods=['GET'])
+    def fetch_product_details(self,request,product_sku_pk):
+    
+        try:
+            with transaction.atomic():
+                queryset = Product_SKU.objects.get(pk=product_sku_pk)
+
+                serializer = self.serializer_class(queryset, many=False)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except ProductNotFound as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (PermissionDenied, DRFPermissionDenied):
+            raise  # 403
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to add product to cart'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
     
     @action(detail=False, methods=['GET'])
     def fetch_all_product(self, request):

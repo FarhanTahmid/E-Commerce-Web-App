@@ -32,6 +32,59 @@ SERVER_API_URL = 'server_api'
 # Create your views here.
 
 #system
+class TrackVisitors(APIView):
+    permission_classes = [AllowAny]
+    @method_decorator(ratelimit(key='ip', method='POST', block=True))
+    def post(self,request,format=None):
+        try:
+            """API endpoint to receive visitor data from frontend"""
+            session_id = request.data.get('session_id')
+            page_url = request.data.get('page_url')
+            referrer = request.data.get('referrer')
+            user_agent = request.data.get('user_agent')
+            # More fields as needed
+            
+            # Create or update visitor record
+            visitor, created = SiteVisitor.objects.get_or_create(
+                session_id=session_id,
+                defaults={
+                    'ip_address': request.data.get('ip_address'),
+                    'user_agent': user_agent,
+                    'referrer': referrer,
+                    # Other fields
+                }
+            )
+            
+            # Create page view
+            PageView.objects.create(
+                visitor=visitor,
+                page_url=page_url,
+                page_title=request.data.get('page_title')
+            )
+            
+            return Response({'status': 'success'})
+        
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 class RegisterPermissionsPages(APIView):
 
     permission_classes = [AllowAny]

@@ -42,6 +42,7 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
         ('returned', 'Returned'),
         ('refunded', 'Refunded'),
+        ('success','Success'),
     ]
     
     order_id = models.CharField(max_length=100, unique=True, null=False, blank=False)

@@ -5,6 +5,8 @@ from .system_log import SystemLogs
 from django.core.mail import EmailMultiAlternatives
 from e_commerce_app import settings
 from business_admin.models import AdminPermissions,AdminUserRole
+from django.db.models import Count
+import datetime
 
 class SystemManagement:
     
@@ -127,46 +129,6 @@ class SystemManagement:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating notifications! Please try again later.")
         
-    def send_email(subject,body,emails_to=[],files=[],cc="",bcc="",request=None):
-
-        try:
-
-            email_from = settings.EMAIL_HOST_USER
-            send_email = EmailMultiAlternatives(
-                from_email=email_from,
-                to=emails_to,
-                body=body,
-                subject=subject,
-            )
-            if files:
-                send_email.attachments = files
-            if cc:
-                send_email.cc = cc
-            if bcc:
-                send_email.bcc = bcc
-            send_email.send()
-
-            if request:
-                SystemLogs.admin_activites(request,f"Email sent, by {request.user.username} at {timezone.now()}")
-            else:
-                SystemLogs.admin_activites(request,f"Email sent, by system at {timezone.now()}")
-
-        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
-            # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
-            error_message = str(error)
-            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
-            print(f"{error_type} occurred: {error_message}")
-
-            # Return appropriate messages based on the error type
-            error_messages = {
-                "DatabaseError": "An unexpected error in Database occurred while sending email! Please try again later.",
-                "OperationalError": "An unexpected error in server occurred while sending email! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while sending email! Please try again later.",
-                "IntegrityError": "Same type exists in Database!",
-            }
-            return False, error_messages.get(error_type, "An unexpected error occurred while sending email! Please try again later.")
-        
     def register_all_page_permissions(request,permission_page_name_list = []):
 
         try:
@@ -193,3 +155,67 @@ class SystemManagement:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while register permission pages! Please try again later.")
+        
+    def get_visitors_stats(days=30):
+        """
+        Get visitor statistics for a specified period.
+        
+        Args:
+            days (int): Number of days to look back
+            
+        Returns:
+            dict: Statistics about site visitors
+        """
+        cutoff_date = timezone.now() - datetime.timedelta(days=days)
+        
+        visitors = SiteVisitor.objects.filter(visit_datetime__gte=cutoff_date)
+        
+        # Total visitors
+        total_visitors = visitors.count()
+        
+        # Unique visitors (by IP)
+        unique_visitors = visitors.values('ip_address').distinct().count()
+        
+        # New vs returning visitors
+        new_visitors = visitors.filter(visit_count=1).count()
+        returning_visitors = total_visitors - new_visitors
+        
+        # Device breakdown
+        device_breakdown = {
+            'mobile': visitors.filter(is_mobile=True).count(),
+            'tablet': visitors.filter(is_tablet=True).count(),
+            'desktop': visitors.filter(is_pc=True).count(),
+        }
+        
+        # Daily visitors over the period
+        daily_visitors = visitors.extra(
+            select={'day': "DATE(visit_datetime)"}
+        ).values('day').annotate(count=Count('id')).order_by('day')
+        
+        # Page views
+        total_page_views = PageView.objects.filter(
+            view_datetime__gte=cutoff_date
+        ).count()
+        
+        # Average pages per visit
+        avg_pages_per_visit = total_page_views / total_visitors if total_visitors > 0 else 0
+        
+        # Bounce rate (visitors with only one page view)
+        bounce_views = PageView.objects.filter(
+            view_datetime__gte=cutoff_date,
+            is_bounce=True
+        ).count()
+        bounce_rate = (bounce_views / total_visitors * 100) if total_visitors > 0 else 0
+        
+        return {
+            'period_days': days,
+            'total_visitors': total_visitors,
+            'unique_visitors': unique_visitors,
+            'new_visitors': new_visitors,
+            'returning_visitors': returning_visitors,
+            'device_breakdown': device_breakdown,
+            'daily_visitors': list(daily_visitors),
+            'total_page_views': total_page_views,
+            'avg_pages_per_visit': round(avg_pages_per_visit, 2),
+            'bounce_rate': round(bounce_rate, 2)
+        }
