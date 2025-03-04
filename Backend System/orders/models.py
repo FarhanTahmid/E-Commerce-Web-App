@@ -234,6 +234,70 @@ class CartItems(models.Model):
     def __str__(self):
         return str(self.pk)
 
+class Wishlist(models.Model):
+    """
+    Stores customer wishlist data for saving products they're interested in.
+
+    Attributes:
+        device_ip (GenericIPAddressField): The IP address of the customer's device for tracking guest users.
+        customer_id (ForeignKey): A reference to the logged-in customer (if available).
+        created_at (DateTimeField): The timestamp when the wishlist was created.
+        updated_at (DateTimeField): The timestamp when the wishlist was last updated.
+
+    Meta:
+        verbose_name (str): A human-readable name for the model (singular).
+        verbose_name_plural (str): A human-readable name for the model (plural).
+    """
+    device_ip = models.GenericIPAddressField(verbose_name="Device IP", null=True, blank=True)
+    customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, related_name="Wishlist", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Customer Wishlist"
+        verbose_name_plural = "Customer Wishlists"
+        # Add a unique constraint to prevent multiple wishlists per customer or IP
+        constraints = [
+            models.UniqueConstraint(
+                fields=['customer_id'], 
+                condition=models.Q(customer_id__isnull=False),
+                name='unique_customer_wishlist'
+            ),
+            models.UniqueConstraint(
+                fields=['device_ip'],
+                condition=models.Q(customer_id__isnull=True, device_ip__isnull=False),
+                name='unique_device_wishlist'
+            ),
+        ]
+
+    def __str__(self):
+        if self.customer_id:
+            return f"Wishlist of {self.customer_id}"
+        return f"Guest Wishlist ({self.device_ip})"
+
+
+class WishlistItem(models.Model):
+    """
+    Represents individual items in a customer's wishlist.
+
+    Attributes:
+        wishlist (ForeignKey): A reference to the related wishlist.
+        product_sku (ForeignKey): A reference to the product SKU added to the wishlist.
+        created_at (DateTimeField): The timestamp when the record was created.
+        updated_at (DateTimeField): The timestamp when the record was last updated.
+    """
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name="wishlist_items")
+    product_sku = models.ForeignKey(Product_SKU, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        # Prevent duplicate products in the same wishlist
+        unique_together = ('wishlist', 'product_sku')
+
+    def __str__(self):
+        return f"Item {self.pk} in {self.wishlist}"
+
 class CancelOrderRequest(models.Model):
 
     order_id = models.ForeignKey(Order,on_delete=models.CASCADE, null=False, blank=False,related_name="cancel_order")
