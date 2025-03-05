@@ -56,6 +56,12 @@ urlpatterns = [                                                                 
     path('business-admin/delivery-time/update/<int:delivery_time_pk>/',views.UpdateDeliveryTime.as_view(),name="update_delivery_time"),
     path('business-admin/delivery-time/delete/<int:delivery_time_pk>/',views.DeleteDeliveryTime.as_view(),name="delete_delivery_time"),
 
+    #delivery partner
+    path('business-admin/delivery-partner/fetch/',views.FetchDeliveryPartner.as_view(),name="fetch_delivery_partner"),#pass parameters /?delivery_partner_pk= OR delivery_partner_name= OR none to fech all
+    path('business-admin/delivery-partner/create/',views.CreateDeliveryPartner.as_view(),name="create_delivery_partner"),
+    path('business-admin/delivery-partner/update/<int:delivery_partner_pk>/',views.UpdateDeliveryPartner.as_view(),name="update_delivery_partner"),
+    path('business-admin/delivery-partner/delete/<int:delivery_partner_pk>/',views.DeleteDeliveryPartner.as_view(),name="delete_delivery_partner"),
+
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategory.as_view(), name='create_product_categories'),
     path('product/categories/fetch-all/',views.FetchProductCategory.as_view(),name='fetch_all_product_categories'),#pass parameters /?pk = OR no paramter to fetch all

@@ -3776,6 +3776,192 @@ class DeleteDeliveryTime(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
+#delivery partner
+class FetchDeliveryPartner(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None):
+
+        try:
+            delivery_partner_pk = self.request.query_params.get('delivery_partner_pk',"")
+            delivery_partner_name = self.request.query_params.get('delivery_partner_name',"")
+
+            if delivery_partner_pk!="":
+                delivery_partner,message = OrderManagement.fetch_delivery_partner(delivery_partner_pk=delivery_partner_pk)
+                delivery_partner_data = DeliveryPartnerSerializer(delivery_partner,many=False)
+            elif delivery_partner_name!="":
+                delivery_partner,message = OrderManagement.fetch_delivery_partner(delivery_partner_name=delivery_partner_name)
+                delivery_partner_data= DeliveryPartnerSerializer(delivery_partner,many=False)
+            else:
+                delivery_partner,message = OrderManagement.fetch_delivery_partner()
+                delivery_partner_data = DeliveryPartnerSerializer(delivery_partner,many=True)
+            
+            if delivery_partner:
+                return Response({
+                    'message':message,
+                    'delivery_partner_data':delivery_partner_data.data
+                },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class CreateDeliveryPartner(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='POST', block=True))
+    def post(self,request,format=None):
+
+        try:
+
+            delivery_partner_name = self.request.data.get('delivery_partner_name',"")
+            
+            if delivery_partner_name == "":
+                return Response({
+                    'error': 'Delivery Partner Name Required'
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+            created,message = OrderManagement.create_delivery_partner(request,delivery_partner_name)
+            if created:
+                return Response({
+                    'message':message
+                },status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+class UpdateDeliveryPartner(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='PUT', block=True))
+    def put(self,request,delivery_partner_pk,format=None):
+
+        try:
+            delivery_partner_pk=delivery_partner_pk
+            delivery_partner_name = self.request.data.get('delivery_partner_name',"")
+
+            updated,message = OrderManagement.update_delivery_partner(request,delivery_partner_pk,delivery_partner_name)
+            if updated:
+                return Response({
+                    'message':message
+                },status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {'message':message}
+                ,status=status.HTTP_400_BAD_REQUEST)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class DeleteDeliveryPartner(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='DELETE', block=True))
+    def delete(self,request,delivery_partner_pk,format=None):
+
+        try:
+            delivery_partner_pk=delivery_partner_pk
+            deleted,message = OrderManagement.delete_delivery_partner(request,delivery_partner_pk)
+            if deleted:
+                return Response({
+                    'message':message
+                },status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'error':message
+                },status=status.HTTP_400_BAD_REQUEST)
+            
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
 #orders
 class FetchOrderStatusList(APIView):
 

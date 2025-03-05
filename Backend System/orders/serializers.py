@@ -10,6 +10,7 @@ from .models import (
     DeliveryTime,
     CancelOrderRequest,
     Wishlist,WishlistItem,
+    DeliveryPartner,
 )
 
 from customer.models import Accounts,CustomerAddress,Coupon
@@ -274,3 +275,9 @@ class WishlistSerializer(serializers.ModelSerializer):
         model = Wishlist
         fields = ['id', 'items', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+class DeliveryPartnerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DeliveryPartner
+        fields = '__all__'
