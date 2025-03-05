@@ -249,7 +249,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 }
 
                 is_email_sent=EmailService.send_email(
-                to_emails=[request.user.email],subject="Order Placed",text_content="Dear, your order has been placed",purpose='auth'
+                to_emails=[request.user.email],subject="Order Placed. Waiting for confirmation",text_content="Dear, your order has been placed. "
                 )
                 notification_to_client = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
                 if notification_to_client[0]:

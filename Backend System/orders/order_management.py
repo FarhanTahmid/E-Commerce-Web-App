@@ -316,7 +316,7 @@ class OrderManagement:
             SystemLogs.updated_by(request,order_cancel.order_id)
             SystemLogs.admin_activites(request,f"Order Cancelled, order_id - {(order_cancel.order_id)} ","Cancelled")
             is_email_sent=EmailService.send_email(
-                to_emails=[order_cancel.order_id.customer_id.email],subject="Order Cancelled",text_content="Your Order has been cancelled",purpose='auth'
+                to_emails=[order_cancel.order_id.customer_id.email],subject="Order Cancelled",text_content="Your Order has been cancelled"
             )
             SystemManagement.create_notification(title="Order Cancelled",user_names=[order_cancel.order_id.customer_id.username],description="Your Order has been cancelled",request=request)
             order_cancel.order_id.delete()
