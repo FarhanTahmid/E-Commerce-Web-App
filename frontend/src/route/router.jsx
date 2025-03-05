@@ -103,6 +103,9 @@ import RequirePermission from "@/components/RequirePermission";
 import OrderDeliveryTime from "../pages/order-delivery-time";
 import AdminManagementLoginRequest from "../pages/admin-management-login-request";
 import Order from "../pages/order";
+import ProductDiscount from "../pages/product-discount";
+import ProductDiscountCreate from "@/components/products/discount/ProductDiscountCreate";
+import ProductDiscountUpdate from "@/components/products/discount/ProductDiscountUpdate";
 
 
 const parseJwt = (token) => {
@@ -238,6 +241,18 @@ export const router = createBrowserRouter([
             {
                 path: "/products/flavour/:id",
                 element: <RequirePermission pageName="change_product_flavour_update"><ProductFlavourUpdate /></RequirePermission>,
+            },
+            {
+                path: "/products/discount",
+                element: <RequirePermission pageName="view_product_discount"><ProductDiscount /></RequirePermission>,
+            },
+            {
+                path: "/products/discount/create",
+                element: <RequirePermission pageName="change_product_discount_create"><ProductDiscountCreate /></RequirePermission>,
+            },
+            {
+                path: "/products/discount/:id",
+                element: <RequirePermission pageName="change_product_discount_update"><ProductDiscountUpdate /></RequirePermission>,
             },
             {
                 path: "/orders/delivery-time",
