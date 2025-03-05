@@ -46,8 +46,11 @@ class SystemLogs:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
         try:
-            user =  Accounts.objects.get(username = request.user)
-            return user
+            if request:
+                user =  Accounts.objects.get(username = request.user.username)
+                return user
+            else:
+                return None
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
             error_type = type(error).__name__  # Get the name of the error as a string
@@ -104,47 +107,54 @@ class SystemLogs:
         #checking type of user
         try:
             user = SystemLogs.get_logged_in_user(request)
-            user_type = {}
-            if user.is_superuser and not user.is_admin:
-                user_type = {
-                "user_type": " Developer - Superuser",
-                "username": request.user.username,
-                "date": timezone.now().isoformat() 
-                }
-            elif user.is_staff and not user.is_admin:
-                user_type = {
-                "user_type": " Developer - Staff",
-                "username": request.user.username,
-                "date": timezone.now().isoformat() 
-                }
-            elif user.is_superuser and user.is_admin:
-                user_type = {
-                "user_type": " Admin - Superuser",
-                "username": request.user.username,
-                "date": timezone.now().isoformat() 
-                }
-            elif user.is_admin and user.is_staff:
-                user_type = {
-                "user_type": " Admin - Staff",
-                "username": request.user.username,
-                "date": timezone.now().isoformat() 
-                }
-            elif user.is_admin:
-                user_type = {
-                "user_type": " Admin",
-                "username": request.user.username,
-                "date": timezone.now().isoformat() 
-                }
-            
-            current_data = model_instance.updated_by
-            if not isinstance(current_data, list):
-                current_data = [] if not current_data else [current_data]  
+            if user:
+                user_type = {}
+                if user.is_superuser and not user.is_admin:
+                    user_type = {
+                    "user_type": "Developer - Superuser",
+                    "username": request.user.username,
+                    "date": timezone.now().isoformat() 
+                    }
+                elif user.is_staff and not user.is_admin:
+                    user_type = {
+                    "user_type": "Developer - Staff",
+                    "username": request.user.username,
+                    "date": timezone.now().isoformat() 
+                    }
+                elif user.is_superuser and user.is_admin:
+                    user_type = {
+                    "user_type": "Admin - Superuser",
+                    "username": request.user.username,
+                    "date": timezone.now().isoformat() 
+                    }
+                elif user.is_admin and user.is_staff:
+                    user_type = {
+                    "user_type": "Admin - Staff",
+                    "username": request.user.username,
+                    "date": timezone.now().isoformat() 
+                    }
+                elif user.is_admin:
+                    user_type = {
+                    "user_type": "Admin",
+                    "username": request.user.username,
+                    "date": timezone.now().isoformat() 
+                    }
+                elif user.is_staff:
+                    user_type = {
+                    "user_type": "Staff",
+                    "username": request.user.username,
+                    "date": timezone.now().isoformat() 
+                    }
+                
+                current_data = model_instance.updated_by
+                if not isinstance(current_data, list):
+                    current_data = [] if not current_data else [current_data]  
 
-            # Append new entry
-            current_data.append(user_type)
+                # Append new entry
+                current_data.append(user_type)
 
-            model_instance.updated_by = current_data
-            model_instance.save()
+                model_instance.updated_by = current_data
+                model_instance.save()
    
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
@@ -203,29 +213,31 @@ class SystemLogs:
             - The function ensures that all errors are logged in `ErrorLogs` for debugging and analysis.
         """
         try:
-            user = SystemLogs.get_logged_in_user(request)
-            try:
-                try:
-                    admin = BusinessAdminUser.objects.get(admin_email = user.email)
-                    activity = ActivityLog.objects.create(activity_done_by_business_admin=admin,action=action)
-                except:
-                    admin = Accounts.objects.get(email=user.email)
-                    activity = ActivityLog.objects.create(activity_done_by_dev_admin=admin,action=action)
-                activity.save()
-                details = {
-                    'action':action,
-                    'message':message
-                }
-                current_data = activity.details or {}
-                if isinstance(current_data, dict):
-                    current_data.update(details)
-                else:
-                    current_data =details
-                activity.details = current_data
-                activity.save()
 
-            except:
-                print("Error while updating admin acitivities")
+            user = SystemLogs.get_logged_in_user(request)
+            if user:
+                try:
+                    try:
+                        admin = BusinessAdminUser.objects.get(admin_email = user.email)
+                        activity = ActivityLog.objects.create(activity_done_by_business_admin=admin,action=action)
+                    except:
+                        admin = Accounts.objects.get(email=user.email)
+                        activity = ActivityLog.objects.create(activity_done_by_dev_admin=admin,action=action)
+                    activity.save()
+                    details = {
+                        'action':action,
+                        'message':message
+                    }
+                    current_data = activity.details or {}
+                    if isinstance(current_data, dict):
+                        current_data.update(details)
+                    else:
+                        current_data =details
+                    activity.details = current_data
+                    activity.save()
+
+                except:
+                    print("Error while updating admin acitivities")
 
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error

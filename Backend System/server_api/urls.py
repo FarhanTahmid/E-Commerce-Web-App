@@ -108,7 +108,7 @@ urlpatterns = [                                                                 
 
     #orders
     path('order/order-status/fetch/',views.FetchOrderStatusList.as_view(),name="fetch_order_status"),
-    path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or none to fetch all
+    path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or order_status= OR  none to fetch all
     path('order/update-details/<order_id>/',views.UpdateOrderDetails.as_view(),name='update_order_details'),
     path('order/fetch-cancel-order-requests/',views.FetchOrderCanellationRequests.as_view(),name='cancel_order_requests'),#pass parameters /?order_cancellation_request_pk= OR none to fetch all
     path('order/update-cancel-order-requests/<order_cancellation_pk>/',views.UpdateOrderCancellationRequest.as_view(),name="update_order_cancellation_request"),

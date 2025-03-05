@@ -3825,6 +3825,7 @@ class FetchOrderDetails(APIView):
             order_id = self.request.query_params.get('order_id',"")
             user_name = self.request.query_params.get('user_name',"")
             order_pk = self.request.query_params.get('order_pk',"")
+            order_status = self.request.query_params.get('order_status',"")
 
             if order_id!="":
                 order_details,message = OrderManagement.fetch_orders_details(order_id=order_id)
@@ -3834,6 +3835,9 @@ class FetchOrderDetails(APIView):
                 order_details_data = OrderDetailSerializerForAdmin(order_details)
             elif order_pk!="":
                 order_details,message = OrderManagement.fetch_orders_details(order_pk=order_pk)
+                order_details_data = OrderDetailSerializerForAdmin(order_details)
+            elif order_status!="":
+                order_details,message = OrderManagement.fetch_orders_details(order_status=order_status)
                 order_details_data = OrderDetailSerializerForAdmin(order_details)
             else:
                 order_details,message = OrderManagement.fetch_orders_details()
@@ -3884,12 +3888,13 @@ class UpdateOrderDetails(APIView):
 
             order_date = self.request.data.get('order_date',"")
             delivery_time_pk = self.request.data.get('delivery_time_pk',"")
+            delivery_partner_pk = self.request.data.get('delivery_partner_pk',"")
             total_amount = self.request.data.get('total_amount',"")
-            order_status = self.request.data.get('order_status',"")#PA SS EITHER 'TRUE' OR 'FALSE'
+            order_status = self.request.data.get('order_status',"")#PASS FROM LIST OF ORDER STATUS, THE NAMES NOT THE PK, EXAMPLE- confimed OR refunded
             product_sku_pk = self.request.data.get('product_sku_pk',"")
             quantity = self.request.data.get('quantity',"")
 
-            updated,message = OrderManagement.update_order_details(request,order_id,order_date,delivery_time_pk,total_amount,order_status,product_sku_pk,quantity)
+            updated,message = OrderManagement.update_order_details(request,order_id,order_date,delivery_time_pk,delivery_partner_pk,total_amount,order_status,product_sku_pk,quantity)
             if updated:
                 return Response({
                     'message':message
