@@ -16,6 +16,8 @@ from system.manage_system import SystemManagement
 from orders.order_management import OrderManagement
 from decimal import Decimal
 from system.email_service import EmailService
+from business_admin.admin_management import AdminManagement
+from business_admin.models import * 
 
 from orders.serializers import (
     OrderSerializer,
@@ -26,6 +28,8 @@ from orders.serializers import (
 )
 
 CANCELLATION_TIME = 2
+ORDER_CREATION_NOTIFY = "Manager"
+OWNER = 'Owner'
 
 def generate_order_id(username, cart_pk):
     return f"#ORD-{username[:4]}-{cart_pk}-{uuid.uuid4().hex[:4].upper()}"
@@ -249,16 +253,22 @@ class OrderViewSet(viewsets.ModelViewSet):
                 }
 
                 is_email_sent=EmailService.send_email(
-                to_emails=[request.user.email],subject="Order Placed",text_content="Dear, your order has been placed",purpose='auth'
+                to_emails=[request.user.email],subject="Order Placed. Waiting for confirmation",text_content="Dear, your order has been placed. "
                 )
-                notification_to_client = SystemManagement.create_notification(title="Your Order has been placed",user_names=[request.user.username])
+                notification_to_client = SystemManagement.create_notification(title="Your Order has been placed. Waiting for confirmation",user_names=[request.user.username])
                 if notification_to_client[0]:
                     print(notification_to_client[1])
                 else:
                     print("notification creation failed to client")
 
                 #TODO:send notiication to admin of desire role
-                notification_to_admin = SystemManagement.create_notification(title="A new order has been placed",role="Manage")
+                #sending email to desire role
+                email_of_users_for_a_role = AdminManagement.fetch_users_by_role(ORDER_CREATION_NOTIFY)
+                for user in email_of_users_for_a_role:
+                    is_email_sent=EmailService.send_email(
+                    to_emails=[user.email],subject="A new order has been placed. Please confirm",text_content="A new order has been placed. Please confirm"
+                    )
+                notification_to_admin = SystemManagement.create_notification(title="A new order has been placed. Please confirm",role=ORDER_CREATION_NOTIFY)
                 if notification_to_admin[0]:
                     print(notification_to_admin[1])
                 else:

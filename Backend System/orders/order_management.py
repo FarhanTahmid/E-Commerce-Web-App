@@ -8,6 +8,123 @@ from system.email_service import EmailService
 
 class OrderManagement:
 
+    def fetch_delivery_partner(delivery_partner_pk="",delivery_partner_name=""):
+
+        try:
+            if delivery_partner_pk!="":
+                delivery = DeliveryPartner.objects.get(pk=delivery_partner_pk)
+                return delivery, "Fetched Successfully"
+            elif delivery_partner_name!="":
+                delivery = DeliveryPartner.objects.filter(delivery_partner_name=delivery_partner_name).order_by('-pk')
+                return delivery, "Fetched Successfully" if len(delivery)>0 else "No delivery partner found"
+            else:
+                delivery = DeliveryPartner.objects.all().order_by('-pk')
+                return delivery, "Fetched Successfully" if len(delivery)>0 else "No delivery partner found"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching delivery partner! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching delivery partner! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching delivery partner! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching delivery partner! Please try again later.")
+        
+    def create_delivery_partner(request,delivery_partner_name):
+
+        try:
+            all_delivery_partners ,message = OrderManagement.fetch_delivery_partner()
+            if any((p.delivery_partner_name.lower() == delivery_partner_name.lower()) for p in all_delivery_partners):
+                return False, "Delivery Partner with this name already exists"
+            delivery_parnter = DeliveryPartner.objects.create(
+                delivery_partner_name = delivery_partner_name
+            )
+            delivery_parnter.save()
+            SystemLogs.updated_by(request,delivery_parnter)
+            SystemLogs.admin_activites(request,f"Delivery Partner Created, title - {delivery_parnter} ","Created")
+            return True, "Created Successfully"
+
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while creating delivery partner! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while creating delivery partner! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while creating delivery partner! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while creating delivery partner! Please try again later.")
+        
+    def update_delivery_partner(request,delivery_partner_pk,delivery_partner_name=""):
+
+        try:
+            #getting delivery partner
+            delivery_partner,message = OrderManagement.fetch_delivery_partner(delivery_partner_pk=delivery_partner_pk)
+            all_delivery_partners,message = OrderManagement.fetch_delivery_partner()
+
+            if delivery_partner_name!="":
+                if any(p!=delivery_partner and p.delivery_partner_name.lower() == delivery_partner_name.lower() for p in all_delivery_partners):
+                    return False, "Delivery Partner with this name already exists"
+                delivery_partner.delivery_partner_name = delivery_partner_name
+                delivery_partner.save()
+
+            SystemLogs.updated_by(request,delivery_partner)
+            SystemLogs.admin_activites(request,f"Delivery Partner Updated, title - {delivery_partner.delivery_partner_name} ","Updated")
+
+            return True, "Updated Successfully"
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating delivery partner! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating delivery partner! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating delivery partner! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating delivery partner! Please try again later.")
+        
+    def delete_delivery_partner(request,delivery_partner_pk):
+
+        try:
+            
+            delivery_partner,message = OrderManagement.fetch_delivery_partner(delivery_partner_pk=delivery_partner_pk)
+            delivery_partner.delete()
+            return True, "Deleted Successfully"
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while updating delivery partner! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while updating delivery partner! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while updating delivery partner! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while updating delivery partner! Please try again later.")
+
     def fetch_delivery_time(delivery_pk="",delivery_name=""):
 
         try:
@@ -32,7 +149,7 @@ class OrderManagement:
             error_messages = {
                 "DatabaseError": "An unexpected error in Database occurred while fetching delivery time! Please try again later.",
                 "OperationalError": "An unexpected error in server occurred while fetching delivery time! Please try again later.",
-                "ProgrammingError": "An unexpected error in server occurred while fetching delivery timee! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching delivery time! Please try again later.",
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching delivery time! Please try again later.")
@@ -155,7 +272,7 @@ class OrderManagement:
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching order status list! Please try again later.")
         
 
-    def fetch_orders_details(order_id="",user_name="",order_pk=""):
+    def fetch_orders_details(order_id="",user_name="",order_pk="",order_status=""):
 
         try:
             dic = {}
@@ -177,6 +294,13 @@ class OrderManagement:
                 return dic, "Orders Fetched Successfully" if len(orders)>0 else "No Orders found"
             elif order_pk!="":
                 order = Order.objects.get(pk=order_pk)
+                order_details = OrderDetails.objects.filter(order_id = order)
+                order_shipping_address = OrderShippingAddress.objects.get(order_id=order)
+                order_payment = OrderPayment.objects.get(order_id=order)
+                dic[order.order_id] = [order,order_details,order_shipping_address,order_payment]
+                return dic, "Order Fetched Successfully"
+            elif order_status!="":
+                order = Order.objects.filter(order_status=order_status)
                 order_details = OrderDetails.objects.filter(order_id = order)
                 order_shipping_address = OrderShippingAddress.objects.get(order_id=order)
                 order_payment = OrderPayment.objects.get(order_id=order)
@@ -207,7 +331,7 @@ class OrderManagement:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching orders! Please try again later.")
     
-    def update_order_details(request,order_id,order_date="",delivery_time_pk="",total_amount="",order_status="",product_sku_pk="",quantity=""):
+    def update_order_details(request,order_id,order_date="",delivery_time_pk="",delivery_partner_pk="",total_amount="",order_status="",product_sku_pk="",quantity=""):
 
         try:
             
@@ -217,6 +341,36 @@ class OrderManagement:
             order = order_list[0]
             order_details = order_list[1] 
 
+            #if order status changed to confirmed must choose delivery partner
+            if order_status!="":
+                order.order_status = order_status
+
+                if order_status == 'confirmed':
+                    if delivery_partner_pk == "":
+                        return False, "No delivery Partner Selected"
+                    
+                    #send notification and email to user
+                    is_email_sent=EmailService.send_email(
+                    to_emails=[order.customer_id.email],subject="Your Order has been placed. Happy Shopping",text_content="Your Order has been placed. Happy Shopping"
+                    )
+                    notification_to_client = SystemManagement.create_notification(title="Your Order has been placed. Happy Shopping",user_names=[order.customer_id.username])
+                    if notification_to_client[0]:
+                        print(notification_to_client[1])
+                    else:
+                        print("notification creation failed to client")
+                    delivery_partner,message = OrderManagement.fetch_delivery_partner(delivery_partner_pk=delivery_partner_pk)
+                    order.delivery_partner = delivery_partner
+                
+                if order_status == 'cancelled':
+                    is_email_sent=EmailService.send_email(
+                    to_emails=[order.customer_id.email],subject="Your Order has been cancelled. Please contact for futher details",text_content="Your Order has been cancelled. Please contact for futher details"
+                    )
+                    notification_to_client = SystemManagement.create_notification(title="Your Order has been cancelled. Please contact for futher details",user_names=[order.customer_id.username])
+                    if notification_to_client[0]:
+                        print(notification_to_client[1])
+                    else:
+                        print("notification creation failed to client")
+                order.save()
 
             if order_date!="":
                 order.order_date = order_date
@@ -225,8 +379,6 @@ class OrderManagement:
                 order.delivery_time = delivery_time
             if total_amount!="":
                 order.total_amount = total_amount
-            if order_status!="":
-                order.order_status = order_status
 
             if product_sku_pk!="":
                 product_sku ,message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
@@ -316,7 +468,7 @@ class OrderManagement:
             SystemLogs.updated_by(request,order_cancel.order_id)
             SystemLogs.admin_activites(request,f"Order Cancelled, order_id - {(order_cancel.order_id)} ","Cancelled")
             is_email_sent=EmailService.send_email(
-                to_emails=[order_cancel.order_id.customer_id.email],subject="Order Cancelled",text_content="Your Order has been cancelled",purpose='auth'
+                to_emails=[order_cancel.order_id.customer_id.email],subject="Order Cancelled",text_content="Your Order has been cancelled"
             )
             SystemManagement.create_notification(title="Order Cancelled",user_names=[order_cancel.order_id.customer_id.username],description="Your Order has been cancelled",request=request)
             order_cancel.order_id.delete()

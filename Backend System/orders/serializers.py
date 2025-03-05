@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from products.models import Product_SKU
 from .models import (
     Order,
     OrderDetails,
@@ -8,6 +9,8 @@ from .models import (
     CartItems,
     DeliveryTime,
     CancelOrderRequest,
+    Wishlist,WishlistItem,
+    DeliveryPartner,
 )
 
 from customer.models import Accounts,CustomerAddress,Coupon
@@ -246,4 +249,35 @@ class OrderCancellationRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = CancelOrderRequest
         fields = '__all__'
+
+class ProductSkuDetailSerializer(serializers.ModelSerializer):
+    """Serializer for Product SKU details needed in wishlist items"""
+    name = serializers.CharField(source='product_id.product_name')
     
+    class Meta:
+        model = Product_SKU
+        fields = ['id', 'name', 'product_sku', 'product_color', 'product_size', 'product_price']
+
+class WishlistItemSerializer(serializers.ModelSerializer):
+    """Serializer for items in a wishlist"""
+    product_details = ProductSkuDetailSerializer(source='product_sku', read_only=True)
+    
+    class Meta:
+        model = WishlistItem
+        fields = ['id', 'product_sku', 'product_details', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+class WishlistSerializer(serializers.ModelSerializer):
+    """Serializer for the wishlist with detailed items"""
+    items = WishlistItemSerializer(source='wishlist_items', many=True, read_only=True)
+    
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'items', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class DeliveryPartnerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DeliveryPartner
+        fields = '__all__'

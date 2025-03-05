@@ -14,6 +14,32 @@ OWNER = 'Owner'
 class AdminManagement:
 
     #admin position
+    def fetch_users_by_role(role):
+        try:
+            user = []
+            role,message = AdminManagement.fetch_admin_position(name=role)
+            users = AdminUserRole.objects.filter(role = role)
+            for i in users:
+                user.append(i.user)
+
+            return user
+        
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching admin user! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching admin user! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching admin user! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching admin user! Please try again later.")
     def fetch_admin_position(pk="",name="",available=False):
 
         """
@@ -1953,7 +1979,7 @@ class AdminManagement:
             login_request.login_request = stat
             login_request.save()
             is_email_sent=EmailService.send_email(
-                to_emails=[login_request.admin_email],subject="You can now log in",text_content="LOG INNN",purpose='auth'
+                to_emails=[login_request.admin_email],subject="You can now log in",text_content="LOG INNN"
             )
             SystemManagement.create_notification(request=request,user_names=[login_request.admin_user_name],title="Welcome to the System")
             SystemLogs.updated_by(request,login_request)

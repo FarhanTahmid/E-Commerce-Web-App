@@ -56,6 +56,12 @@ urlpatterns = [                                                                 
     path('business-admin/delivery-time/update/<int:delivery_time_pk>/',views.UpdateDeliveryTime.as_view(),name="update_delivery_time"),
     path('business-admin/delivery-time/delete/<int:delivery_time_pk>/',views.DeleteDeliveryTime.as_view(),name="delete_delivery_time"),
 
+    #delivery partner
+    path('business-admin/delivery-partner/fetch/',views.FetchDeliveryPartner.as_view(),name="fetch_delivery_partner"),#pass parameters /?delivery_partner_pk= OR delivery_partner_name= OR none to fech all
+    path('business-admin/delivery-partner/create/',views.CreateDeliveryPartner.as_view(),name="create_delivery_partner"),
+    path('business-admin/delivery-partner/update/<int:delivery_partner_pk>/',views.UpdateDeliveryPartner.as_view(),name="update_delivery_partner"),
+    path('business-admin/delivery-partner/delete/<int:delivery_partner_pk>/',views.DeleteDeliveryPartner.as_view(),name="delete_delivery_partner"),
+
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategory.as_view(), name='create_product_categories'),
     path('product/categories/fetch-all/',views.FetchProductCategory.as_view(),name='fetch_all_product_categories'),#pass parameters /?pk = OR no paramter to fetch all
@@ -108,7 +114,7 @@ urlpatterns = [                                                                 
 
     #orders
     path('order/order-status/fetch/',views.FetchOrderStatusList.as_view(),name="fetch_order_status"),
-    path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or none to fetch all
+    path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or order_status= OR  none to fetch all
     path('order/update-details/<order_id>/',views.UpdateOrderDetails.as_view(),name='update_order_details'),
     path('order/fetch-cancel-order-requests/',views.FetchOrderCanellationRequests.as_view(),name='cancel_order_requests'),#pass parameters /?order_cancellation_request_pk= OR none to fetch all
     path('order/update-cancel-order-requests/<order_cancellation_pk>/',views.UpdateOrderCancellationRequest.as_view(),name="update_order_cancellation_request"),
