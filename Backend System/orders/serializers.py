@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from products.models import Product_SKU
 from .models import (
     Order,
     OrderDetails,
@@ -6,7 +7,10 @@ from .models import (
     OrderPayment,
     Cart,
     CartItems,
-    DeliveryTime
+    DeliveryTime,
+    CancelOrderRequest,
+    Wishlist,WishlistItem,
+    DeliveryPartner,
 )
 
 from customer.models import Accounts,CustomerAddress,Coupon
@@ -216,4 +220,64 @@ class CouponApplySerializer(serializers.Serializer):
 class DeliveryTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model= DeliveryTime
+        fields = '__all__'
+
+class OrderDetailSerializerForAdmin(serializers.ModelSerializer):
+
+    order = OrderSerializer(many=True,read_only=True)
+    order_details = OrderDetailsSerializer(many=True,read_only=True)
+    shipping_address = OrderShippingAddressSerializer(many=True,read_only=True)
+    payment_details = OrderPaymentSerializer(many=True,read_only=True)
+
+    def to_representation(self, instance):
+        """Manually format the dictionary data into JSON"""
+        formatted_data = {}
+        for order_id, data_list in instance.items():
+            order_instance, order_details, shipping_address, payment_details = data_list
+
+            formatted_data[order_id] = {
+                "order": OrderSerializer(order_instance).data,
+                "order_details": OrderDetailsSerializer(order_details, many=True).data,
+                "shipping_address": OrderShippingAddressSerializer(shipping_address).data,
+                "payment_details": OrderPaymentSerializer(payment_details).data
+            }
+
+        return formatted_data
+    
+class OrderCancellationRequestSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CancelOrderRequest
+        fields = '__all__'
+
+class ProductSkuDetailSerializer(serializers.ModelSerializer):
+    """Serializer for Product SKU details needed in wishlist items"""
+    name = serializers.CharField(source='product_id.product_name')
+    
+    class Meta:
+        model = Product_SKU
+        fields = ['id', 'name', 'product_sku', 'product_color', 'product_size', 'product_price']
+
+class WishlistItemSerializer(serializers.ModelSerializer):
+    """Serializer for items in a wishlist"""
+    product_details = ProductSkuDetailSerializer(source='product_sku', read_only=True)
+    
+    class Meta:
+        model = WishlistItem
+        fields = ['id', 'product_sku', 'product_details', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+class WishlistSerializer(serializers.ModelSerializer):
+    """Serializer for the wishlist with detailed items"""
+    items = WishlistItemSerializer(source='wishlist_items', many=True, read_only=True)
+    
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'items', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class DeliveryPartnerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DeliveryPartner
         fields = '__all__'

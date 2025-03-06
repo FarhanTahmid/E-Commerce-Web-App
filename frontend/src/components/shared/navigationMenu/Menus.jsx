@@ -72,6 +72,12 @@ const Menus = () => {
                     path: "/products/image",
                     subdropdownMenu: false
                 },
+                {
+                    id: 7,
+                    name: "Product Discount",
+                    path: "/products/discount",
+                    subdropdownMenu: false
+                }
             ]
         },
         {
@@ -82,6 +88,12 @@ const Menus = () => {
             dropdownMenu: [
                 {
                     id: 1,
+                    name: "Orders",
+                    path: "/orders",
+                    subdropdownMenu: false
+                },
+                {
+                    id: 2,
                     name: "Delivery Time",
                     path: "/orders/delivery-time",
                     subdropdownMenu: false
@@ -110,6 +122,12 @@ const Menus = () => {
                     id: 3,
                     name: "Role Permissions",
                     path: "/admin-management/role-permissions",
+                    subdropdownMenu: false
+                },
+                {
+                    id: 4,
+                    name: "Login Requests",
+                    path: "/admin-management/login-requests",
                     subdropdownMenu: false
                 }
             ]

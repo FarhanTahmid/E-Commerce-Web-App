@@ -10,8 +10,12 @@ urlpatterns = [                                                                 
     #system
     path('system/register-permissions/',views.RegisterPermissionsPages.as_view(),name='register_permissions'),
     path('system/has-permissions/',views.CheckPermission.as_view(),name='has_permissions'),
+    path('system/notification/fetch/',views.FetchUserNotifications.as_view(),name='fetch_user_notifications'),
+    path('system/track-visitor/',views.TrackVisitors.as_view(),name="track_visitor"),
 
     #business admin
+    path('business-admin/login-request/fetch/',views.FetchLoginRequests.as_view(),name='fetch_login_requests'),#pass parameters /?admin_pk = Or none to fetch all
+    path('business-admin/login-request/update/<admin_unique_id>/',views.UpdateLoginRequests.as_view(),name="update_login_requests"),
     path('business-admin/admin/fetch-all/',views.FetchBusinessAdminUsers.as_view(),name='fetch_all_business_admin_user'),#pass parameters /?admin_user_name= OR admin_unique_id= OR admin_email= OR none to retrieve all
     path('business-admin/signup/',views.SignupBusinessAdminUser.as_view(),name='create_business_admin_user'),
     path('business-admin/update/<str:admin_user_name>/',views.UpdateBusinessAdminUser.as_view(),name='update_business_admin_user'),
@@ -35,6 +39,7 @@ urlpatterns = [                                                                 
 
     #business admin permissions
     path('business-admin/admin-permissions/fetch-admin-permissions/',views.FetchBusinessAdminPermission.as_view(),name='fetch_business_admin_permissions'),#pass parameter /?permission_pk= OR permission_name= OR none to retrieve all permissions
+    path('business-admin/admin-extra-permissions/fetch-extra-permissions-for-admin/',views.FetchAdminExtraPermissions.as_view(),name="fetch_admin_extra_postions"),
     path('business-admin/admin-permissions/create/',views.CreateBusinessAdminPermission.as_view(),name='create_business_admin_permissions'),
     path('business-admin/admin-permissions/update/<int:admin_permission_pk>/',views.UpdateBusinessAdminPermission.as_view(),name='update_business_admin_permissions'),
     path('business-admin/admin-permissions/delete/<int:admin_permission_pk>/',views.DeleteBusinessAdminPermission.as_view(),name='delete_business_admin_permissions'),
@@ -50,6 +55,12 @@ urlpatterns = [                                                                 
     path('business-admin/delivery-time/create/',views.CreateDeliveryTime.as_view(),name="create_delivery_time"),
     path('business-admin/delivery-time/update/<int:delivery_time_pk>/',views.UpdateDeliveryTime.as_view(),name="update_delivery_time"),
     path('business-admin/delivery-time/delete/<int:delivery_time_pk>/',views.DeleteDeliveryTime.as_view(),name="delete_delivery_time"),
+
+    #delivery partner
+    path('business-admin/delivery-partner/fetch/',views.FetchDeliveryPartner.as_view(),name="fetch_delivery_partner"),#pass parameters /?delivery_partner_pk= OR delivery_partner_name= OR none to fech all
+    path('business-admin/delivery-partner/create/',views.CreateDeliveryPartner.as_view(),name="create_delivery_partner"),
+    path('business-admin/delivery-partner/update/<int:delivery_partner_pk>/',views.UpdateDeliveryPartner.as_view(),name="update_delivery_partner"),
+    path('business-admin/delivery-partner/delete/<int:delivery_partner_pk>/',views.DeleteDeliveryPartner.as_view(),name="delete_delivery_partner"),
 
     #product categories CRUD
     path('product/categories/create/', views.CreateProductCategory.as_view(), name='create_product_categories'),
@@ -101,6 +112,12 @@ urlpatterns = [                                                                 
     path('product/product-discounts/create/',views.CreateProductDiscount.as_view(),name='create_product_dicount'),
     path('product/product-discounts/update/',views.UpdateProductDiscount.as_view(),name='update_product_discount'),
 
+    #orders
+    path('order/order-status/fetch/',views.FetchOrderStatusList.as_view(),name="fetch_order_status"),
+    path('order/fetch/',views.FetchOrderDetails.as_view(),name="fetch_order_details"), #pass paramters /?order_id= OR user_name= OR  order_pk= Or order_status= OR  none to fetch all
+    path('order/update-details/<order_id>/',views.UpdateOrderDetails.as_view(),name='update_order_details'),
+    path('order/fetch-cancel-order-requests/',views.FetchOrderCanellationRequests.as_view(),name='cancel_order_requests'),#pass parameters /?order_cancellation_request_pk= OR none to fetch all
+    path('order/update-cancel-order-requests/<order_cancellation_pk>/',views.UpdateOrderCancellationRequest.as_view(),name="update_order_cancellation_request"),
 
     re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),

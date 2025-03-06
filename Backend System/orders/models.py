@@ -3,6 +3,18 @@ from customer.models import Accounts,Coupon
 from products.models import Product_SKU
 from business_admin.models import BusinessAdminUser
 
+class DeliveryPartner(models.Model):
+
+    delivery_partner_name = models.CharField(max_length=1000,null=False,blank=False)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
+    class Meta:
+        verbose_name = "Delivery Partner"
+
+    def __str__(self):
+        return str(self.delivery_partner_name)
+
 class DeliveryTime(models.Model):
 
     delivery_name = models.CharField(max_length=1000,null=False,blank=False)
@@ -42,17 +54,19 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
         ('returned', 'Returned'),
         ('refunded', 'Refunded'),
+        ('confirmed','Confirmed')
     ]
     
     order_id = models.CharField(max_length=100, unique=True, null=False, blank=False)
     customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, null=False, blank=False)
     order_date = models.DateTimeField(auto_now_add=True)
-    delivery_time = models.ForeignKey(DeliveryTime,on_delete=models.CASCADE,related_name='delivery_time')
+    delivery_time = models.ForeignKey(DeliveryTime,on_delete=models.SET_NULL,related_name='delivery_time',null=True)
+    delivery_partner = models.ForeignKey(DeliveryPartner,on_delete=models.SET_NULL,related_name='delivery_time',null=True,blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending', null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(BusinessAdminUser, null=True, blank=True, on_delete=models.CASCADE, related_name="OrderUpdatedBy")
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name = "Order"
@@ -80,12 +94,13 @@ class OrderDetails(models.Model):
         verbose_name_plural (str): A human-readable name for the model (plural).
     """
     order_id = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False,related_name="items")
-    product_sku = models.ForeignKey(Product_SKU, on_delete=models.CASCADE, null=False, blank=False)
+    product_sku = models.ForeignKey(Product_SKU, on_delete=models.SET_NULL, null=True, blank=False)
     quantity = models.PositiveIntegerField(null=False, blank=False)
     units = models.PositiveIntegerField(null=False, blank=False, default=1)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name = "Order Detail"
@@ -117,6 +132,7 @@ class OrderShippingAddress(models.Model):
     country = models.CharField(max_length=100, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
     postal_code = models.CharField(max_length=50, null=True, blank=True)
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name = "Order Shipping Address"
@@ -170,6 +186,7 @@ class OrderPayment(models.Model):
     payment_reference = models.CharField(max_length=100, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name = "Order Payment"
@@ -229,5 +246,85 @@ class CartItems(models.Model):
 
     def __str__(self):
         return str(self.pk)
+
+class Wishlist(models.Model):
+    """
+    Stores customer wishlist data for saving products they're interested in.
+
+    Attributes:
+        device_ip (GenericIPAddressField): The IP address of the customer's device for tracking guest users.
+        customer_id (ForeignKey): A reference to the logged-in customer (if available).
+        created_at (DateTimeField): The timestamp when the wishlist was created.
+        updated_at (DateTimeField): The timestamp when the wishlist was last updated.
+
+    Meta:
+        verbose_name (str): A human-readable name for the model (singular).
+        verbose_name_plural (str): A human-readable name for the model (plural).
+    """
+    device_ip = models.GenericIPAddressField(verbose_name="Device IP", null=True, blank=True)
+    customer_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, related_name="Wishlist", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Customer Wishlist"
+        verbose_name_plural = "Customer Wishlists"
+        # Add a unique constraint to prevent multiple wishlists per customer or IP
+        constraints = [
+            models.UniqueConstraint(
+                fields=['customer_id'], 
+                condition=models.Q(customer_id__isnull=False),
+                name='unique_customer_wishlist'
+            ),
+            models.UniqueConstraint(
+                fields=['device_ip'],
+                condition=models.Q(customer_id__isnull=True, device_ip__isnull=False),
+                name='unique_device_wishlist'
+            ),
+        ]
+
+    def __str__(self):
+        if self.customer_id:
+            return f"Wishlist of {self.customer_id}"
+        return f"Guest Wishlist ({self.device_ip})"
+
+
+class WishlistItem(models.Model):
+    """
+    Represents individual items in a customer's wishlist.
+
+    Attributes:
+        wishlist (ForeignKey): A reference to the related wishlist.
+        product_sku (ForeignKey): A reference to the product SKU added to the wishlist.
+        created_at (DateTimeField): The timestamp when the record was created.
+        updated_at (DateTimeField): The timestamp when the record was last updated.
+    """
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name="wishlist_items")
+    product_sku = models.ForeignKey(Product_SKU, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        # Prevent duplicate products in the same wishlist
+        unique_together = ('wishlist', 'product_sku')
+
+    def __str__(self):
+        return f"Item {self.pk} in {self.wishlist}"
+
+class CancelOrderRequest(models.Model):
+
+    order_id = models.ForeignKey(Order,on_delete=models.CASCADE, null=False, blank=False,related_name="cancel_order")
+    cancellation_reason = models.TextField(null=False,blank=False)
+    cancellation_status = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    updated_by = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Cancel Order"
+
+    def __str__(self):
+        return f"Order-ID:{self.order_id.order_id} - Reason:{self.cancellation_reason}, Status - {self.cancellation_status}"
+    
 
 

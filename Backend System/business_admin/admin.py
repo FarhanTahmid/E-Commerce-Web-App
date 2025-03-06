@@ -11,3 +11,16 @@ class AdminPermissionsAdmin(admin.ModelAdmin):
 @admin.register(AdminUserRole)
 class AdminUserRoleAdmin(admin.ModelAdmin):
     list_display = ['user','role','updated_by']
+
+@admin.register(AdminPositions)
+class AdminPositionAdmin(admin.ModelAdmin):
+    list_display = ['name','description']
+
+@admin.register(BusinessAdminUser)
+class BusinessAdminUserAdmin(admin.ModelAdmin):
+    list_display = ['admin_full_name',
+                    'admin_user_name',
+                    'admin_position',
+                    'admin_email',
+                    'login_request',
+                    ]

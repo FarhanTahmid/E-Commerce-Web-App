@@ -93,7 +93,7 @@ const RegisterForm = ({ path }) => {
             setLoading(false);
             setSuccess('Registration successful! Redirecting to login...');
             setTimeout(() => {
-                navigate('/authentication/login/minimal');
+                navigate('/authentication/login');
             }, 2000);
         } catch (err) {
             setLoading(false);

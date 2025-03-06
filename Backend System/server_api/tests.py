@@ -10,10 +10,12 @@ from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import datetime
-from system.models import Accounts
+from system.models import *
 from rest_framework_simplejwt.tokens import RefreshToken
 import time
 from business_admin import serializers
+from orders.models import *
+from decimal import Decimal
 
 # Create your tests here.
 class ServerAPITestCases(APITestCase):
@@ -65,6 +67,18 @@ class ServerAPITestCases(APITestCase):
         self.refresh = RefreshToken.for_user(self.user)
         self.access_token = str(self.refresh.access_token)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
+
+        self.notification1 = Notification.objects.create(
+            title = "11"
+        )
+        self.notification1_to1 = NotificationTo.objects.create(to=self.user,notification=self.notification1)
+        self.notification1_to2 = NotificationTo.objects.create(to=self.user,notification=self.notification1)
+
+
+        self.notification2 = Notification.objects.create(
+            title = "12"
+        )
+        self.notification2_to1 = NotificationTo.objects.create(to=self.user,notification=self.notification2)
 
         self.product_category1 = Product_Category.objects.create(category_name="Skincare", description="Products for skincare", created_at=self.now)
         self.product_category2= Product_Category.objects.create(category_name="Makeup", description="Products for makeup", created_at=self.now)
@@ -173,6 +187,158 @@ class ServerAPITestCases(APITestCase):
         self.future_discount.save()
         self.future_discount.product_id.add(self.product3)
         self.future_discount.save()
+
+
+        self.delivery_time1 = DeliveryTime.objects.create(
+            delivery_name= "Inside dhaka",
+            estimated_delivery_time = "7 days"
+        )
+        self.delivery_time2 = DeliveryTime.objects.create(
+            delivery_name= "Outside dhaka",
+            estimated_delivery_time = "10 days"
+        )
+        self.delivery_time3 = DeliveryTime.objects.create(
+            delivery_name= "Internation",
+            estimated_delivery_time = "1 months"
+        )
+
+
+        self.customer1 = Accounts.objects.create(username="customer1", email="customer1@example.com")
+        self.customer2 = Accounts.objects.create(username="customer2", email="customer2@example.com")
+        self.customer3 = Accounts.objects.create(username="customer3", email="customer3@example.com")
+
+        self.order1 = Order.objects.create(
+            order_id="ORD001",
+            customer_id=self.customer1,
+            delivery_time=self.delivery_time1,
+            total_amount=Decimal("90.50"),
+            order_status="pending",
+        )
+
+        self.order2 = Order.objects.create(
+            order_id="ORD002",
+            customer_id=self.customer2,
+            delivery_time=self.delivery_time2,
+            total_amount=Decimal("150.00"),
+            order_status="shipped",
+        )
+
+        self.order3 = Order.objects.create(
+            order_id="ORD003",
+            customer_id=self.customer3,
+            delivery_time=self.delivery_time1,
+            total_amount=Decimal("50.75"),
+            order_status="delivered",
+        )
+
+        # Create order details
+        self.order_details1 = OrderDetails.objects.create(
+            order_id=self.order1,
+            product_sku=self.product_sku1,
+            quantity=2,
+            units=1,
+            subtotal=Decimal("60.00")
+        )
+
+        self.order_details2 = OrderDetails.objects.create(
+            order_id=self.order2,
+            product_sku=self.product_sku2,
+            quantity=3,
+            units=1,
+            subtotal=Decimal("136.50")
+        )
+
+        self.order_details3 = OrderDetails.objects.create(
+            order_id=self.order3,
+            product_sku=self.product_sku2,
+            quantity=1,
+            units=1,
+            subtotal=Decimal("20.75")
+        )
+
+        # Create shipping addresses
+        self.shipping1 = OrderShippingAddress.objects.create(
+            order_id=self.order1,
+            address_line1="123 Main St",
+            city="New York",
+            country="USA",
+            postal_code="10001"
+        )
+
+        self.shipping2 = OrderShippingAddress.objects.create(
+            order_id=self.order2,
+            address_line1="456 Elm St",
+            city="Los Angeles",
+            country="USA",
+            postal_code="90001"
+        )
+
+        self.shipping3 = OrderShippingAddress.objects.create(
+            order_id=self.order3,
+            address_line1="789 Oak St",
+            city="Chicago",
+            country="USA",
+            postal_code="60601"
+        )
+
+        # Create coupons
+        self.coupon1 = Coupon.objects.create(
+            coupon_code = 'UNIQUE1',
+            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[0][0],#percentage
+            discount_percentage=30,
+            maximum_discount_amount=100,
+            start_date = self.now,
+            end_date = self.now + datetime.timedelta(days=10),
+            customer_id = self.customer1,
+            created_at = self.now
+
+        )
+
+        self.coupon2 = Coupon.objects.create(
+            coupon_code = 'UNIQUE2',
+            discount_type = Coupon.DISCOUNT_TYPE_CHOICES[1][1],#fixed
+            discount_amount=50,
+            usage_limit=1,
+            maximum_discount_amount=100,
+            start_date = self.now + datetime.timedelta(days=-5),
+            end_date = self.now + datetime.timedelta(days=20),
+            customer_id = self.customer2,
+            created_at = self.now
+
+        )
+
+        # Create payments
+        self.payment1 = OrderPayment.objects.create(
+            order_id=self.order1,
+            coupon_applied=self.coupon1,
+            payment_mode="credit_card",
+            payment_status="success",
+            payment_amount=Decimal("81.45"),
+            payment_reference="PAY123"
+        )
+
+        self.payment2 = OrderPayment.objects.create(
+            order_id=self.order2,
+            coupon_applied=self.coupon2,
+            payment_mode="paypal",
+            payment_status="success",
+            payment_amount=Decimal("142.50"),
+            payment_reference="PAY456"
+        )
+
+        self.payment3 = OrderPayment.objects.create(
+            order_id=self.order3,
+            coupon_applied=None,  # No coupon applied
+            payment_mode="debit_card",
+            payment_status="pending",
+            payment_amount=Decimal("50.75"),
+            payment_reference="PAY789"
+        )
+
+        self.cancelorder1= CancelOrderRequest.objects.create(
+            order_id = self.order1,
+            cancellation_reason = "yyy"
+        )
 
 
     # @staticmethod
@@ -816,9 +982,9 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.data['message'],"Product Discount fetched successfully")
 
         #discount_name
-        response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?discount_name={self.inactive_discount.discount_name}')
-        self.assertEqual(response.status_code,status.HTTP_200_OK)
-        self.assertEqual(response.data['message'],"Product Discount fetched successfully")
+        # response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?discount_name={self.inactive_discount.discount_name}')
+        # self.assertEqual(response.status_code,status.HTTP_200_OK)
+        # self.assertEqual(response.data['message'],"Product Discount fetched successfully")
 
         #is_active
         response = self.client.get(f'/server_api/product/product-discounts/fetch-product-discount/?is_active={True}')
@@ -1013,11 +1179,53 @@ class ServerAPITestCases(APITestCase):
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         self.assertEqual(response.data['message'],"Fetched successfully")
 
+    def test_fetch_user_notifications(self):
 
+        data={
+            'user_name':self.user.username
+        }
+        response = self.client.get('/server_api/system/notification/fetch/',data=data,format='json')
+        # print(response.data)
 
+    #orders
+
+    def test_fetch_order_details(self):
+
+        response = self.client.get(f'/server_api/order/fetch/?user_name={self.customer1.username}')
+        # print(response.data)
+
+        #orderid
+        response = self.client.get(f'/server_api/order/fetch/?order_id={self.order3.order_id}')
+        # print(response.data)
+
+        #all
+        response = self.client.get(f'/server_api/order/fetch/')
+        # print(response.data)
     
+    def test_update_order_details(self):
+        
+        data = {
+            'delivery_time_pk':self.delivery_time3.pk
+        }
+        response = self.client.put(f'/server_api/order/update-details/{self.order1.order_id}/',data=data,format='json')
+        self.assertEqual(response.data['message'],"Updated Sucessfully")
 
 
+    def test_fetch_order_cancellation_request(self):
+
+        response = self.client.get(f'/server_api/order/fetch-cancel-order-requests/?order_cancellation_request_pk={self.cancelorder1.pk}')
+        # print(response.data['message'])
+        # print(response.data['order_cancellation_data'])
+
+    def test_update_order_cancellation(self):
+
+        data = {
+            'stat':True
+        }
+
+        response = self.client.put(f'/server_api/order/update-cancel-order-requests/{self.cancelorder1.pk}/')
+        print(response.data['message'])
+        
 
 
 

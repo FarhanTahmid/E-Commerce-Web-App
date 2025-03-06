@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser,BaseUserManager
 from django_resized import ResizedImageField
+from django.utils import timezone
 
 # Create your models here.
 
@@ -337,3 +338,141 @@ class NotificationTo(models.Model):
 
     def __str__(self):
         return f"Created By:{self.updated_by} - Created At {self.created_at}"
+
+class EmailAccounts(models.Model):
+    name = models.CharField(max_length=100, help_text="Friendly name for this email account")
+    email_address = models.EmailField(max_length=100, help_text="Email address to send from")
+    smtp_server = models.CharField(max_length=100, help_text="SMTP server address")
+    smtp_port = models.IntegerField(default=587, help_text="SMTP server port")
+    username = models.CharField(max_length=100, help_text="SMTP username",null=True,blank=True)
+    password = models.CharField(max_length=100, help_text="SMTP password (Use app password for gmail accounts!)")
+    use_tls = models.BooleanField(default=True, help_text="Use TLS for connection")
+    use_ssl = models.BooleanField(default=False, help_text="Use SSL for connection")
+    is_active = models.BooleanField(default=True, help_text="Is this account active?")
+    
+    PURPOSE_CHOICES = [
+        ('default','Default'),
+        ('marketing', 'Marketing Emails'),
+        ('transactional', 'Transactional Emails'),
+        ('notification', 'Notification Emails'),
+        ('support', 'Support Emails'),
+        ('auth','Authentication'),
+        ('no-reply','No Reply'),
+        ('other', 'Other'),
+    ]
+    
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, help_text="Email purpose")
+
+    class Meta:
+        verbose_name = "Email Account"
+        verbose_name_plural = "Email Accounts"
+    
+    def __str__(self):
+        return str(self.pk)
+
+class EmailTemplate(models.Model):
+    """Model to store email templates"""
+    name = models.CharField(max_length=100, help_text="Template name")
+    subject = models.CharField(max_length=200, help_text="Email subject")
+    body_text = models.TextField(help_text="Plain text email body")
+    body_html = models.TextField(blank=True, null=True, help_text="HTML email body")
+    
+    PURPOSE_CHOICES = [
+        ('default','Default'),
+        ('marketing', 'Marketing Emails'),
+        ('transactional', 'Transactional Emails'),
+        ('notification', 'Notification Emails'),
+        ('support', 'Support Emails'),
+        ('auth','Authentication'),
+        ('other', 'Other'),
+    ]
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, help_text="Template purpose")
+    
+    def __str__(self):
+        return str(self.pk)
+    
+
+class SiteVisitor(models.Model):
+    """
+    Tracks visitors to the website, both authenticated and anonymous.
+    
+    Attributes:
+        user (ForeignKey): Reference to the user account if authenticated, null if anonymous
+        session_id (CharField): Unique session identifier
+        ip_address (GenericIPAddressField): IP address of the visitor
+        user_agent (TextField): Browser and device information
+        referrer (TextField): The referring URL, if available
+        landing_page (CharField): First page visited in this session
+        visit_datetime (DateTimeField): When the visit occurred
+        is_mobile (BooleanField): Whether visitor is on a mobile device
+        is_tablet (BooleanField): Whether visitor is on a tablet
+        is_pc (BooleanField): Whether visitor is on a PC/desktop
+        browser (CharField): Browser name
+        os (CharField): Operating system
+        country (CharField): Country based on IP geolocation
+        city (CharField): City based on IP geolocation
+        visit_count (PositiveIntegerField): Number of page views in this session
+        duration_seconds (PositiveIntegerField): Session duration in seconds
+    """
+    user = models.ForeignKey(Accounts, on_delete=models.SET_NULL, null=True, blank=True)
+    session_id = models.CharField(max_length=255, blank=False)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, null=True)
+    referrer = models.TextField(blank=True, null=True)
+    landing_page = models.CharField(max_length=255, blank=True, null=True)
+    visit_datetime = models.DateTimeField(default=timezone.now)
+    is_mobile = models.BooleanField(default=False)
+    is_tablet = models.BooleanField(default=False)
+    is_pc = models.BooleanField(default=False)
+    browser = models.CharField(max_length=100, blank=True, null=True)
+    os = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    visit_count = models.PositiveIntegerField(default=1)
+    duration_seconds = models.PositiveIntegerField(default=0, null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "Site Visitor"
+        verbose_name_plural = "Site Visitors"
+        indexes = [
+            models.Index(fields=['visit_datetime']),
+            models.Index(fields=['session_id']),
+            models.Index(fields=['ip_address']),
+        ]
+    
+    def __str__(self):
+        if self.user:
+            return f"Visit by {self.user.username} on {self.visit_datetime}"
+        return f"Anonymous visit from {self.ip_address} on {self.visit_datetime}"
+    
+class PageView(models.Model):
+    """
+    Tracks individual page views within a visitor session.
+    
+    Attributes:
+        visitor (ForeignKey): Reference to the SiteVisitor record
+        page_url (CharField): The URL of the viewed page
+        page_title (CharField): The title of the viewed page
+        view_datetime (DateTimeField): When the page view occurred
+        time_on_page (PositiveIntegerField): Seconds spent on this page
+        is_bounce (BooleanField): Whether this was the only page viewed in the session
+    """
+    visitor = models.ForeignKey(SiteVisitor, on_delete=models.CASCADE, related_name='page_views')
+    page_url = models.CharField(max_length=255)
+    page_title = models.CharField(max_length=255, blank=True, null=True)
+    view_datetime = models.DateTimeField(default=timezone.now)
+    time_on_page = models.PositiveIntegerField(default=0, null=True, blank=True)
+    is_bounce = models.BooleanField(default=False)
+    
+    class Meta:
+        verbose_name = "Page View"
+        verbose_name_plural = "Page Views"
+        indexes = [
+            models.Index(fields=['view_datetime']),
+            models.Index(fields=['page_url']),
+        ]
+    
+    def __str__(self):
+        return f"View of {self.page_url} on {self.view_datetime}"
+
+    
