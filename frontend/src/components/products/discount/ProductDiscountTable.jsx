@@ -100,7 +100,7 @@ const ProductDiscountTable = () => {
                                                     <tr key={category.id} className='single-item chat-single-item'>
                                                         <td>{index + 1 + page * rowsPerPage}</td> {/* Serial Number */}
                                                         <td className="truncate-text">
-                                                            <Link to={`/products/category/${category.id}`} className='fw-bold'>
+                                                            <Link to={`/products/discount/${category.id}`} className='fw-bold'>
                                                                 {category.discount_name}
                                                             </Link>
                                                         </td>
