@@ -3009,8 +3009,10 @@ class UpdateProductDiscount(APIView):
             # is_active = self.request.data.get('is_active',"")
             delete = self.request.data.get('delete',False)
 
-            start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S.%f")
-            end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S.%f")
+            if start_date != "":
+                start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S.%f")
+            if end_date !="":
+                end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S.%f")
 
             #getting optional parametes, MUST have one
             brand_id = self.request.data.get('brand_id',"")
@@ -3019,8 +3021,6 @@ class UpdateProductDiscount(APIView):
             product_id = self.request.data.get('product_id',"")
 
             missing_fields = []
-            if product_id == "":
-                missing_fields.append("Product")
             if discount_name == "":
                 missing_fields.append("Discount name")
             if discount_amount == "":
@@ -3047,6 +3047,10 @@ class UpdateProductDiscount(APIView):
             elif product_discount_category_id_pk!="" and product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_product_id_pk=="":
                 updated,message = ManageProducts.update_product_discount_for_category(request,product_discount_category_id_pk,discount_name,discount_amount,start_date,end_date,category_id,False,delete)
             elif product_discount_product_id_pk!="" and  product_discount_brand_id_pk=="" and product_discount_sub_category_id_pk=="" and product_discount_category_id_pk=="":
+                if product_id == "":
+                    return Response({
+                        'error':"Product id needed for updating discount for product"
+                    },status=status.HTTP_400_BAD_REQUEST)
                 updated, message = ManageProducts.update_product_discount_for_product(request,product_discount_product_id_pk,discount_name,discount_amount,start_date,end_date,product_id,False,delete)
            
             if updated:
