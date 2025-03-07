@@ -100,7 +100,7 @@ class InvoiceGenerator:
         """
         try:
             context = InvoiceGenerator.get_invoice_context(order)
-            pdf = render_to_pdf(f'orders/invoice_template.html', context)
+            pdf = render_to_pdf(f'templates/invoice_template.html', context)
             return pdf
         except Exception as e:
             # Log error
@@ -124,7 +124,7 @@ class InvoiceGenerator:
         """
         try:
             context = InvoiceGenerator.get_invoice_context(order, for_email=True)
-            template = get_template('orders/invoice_email_template.html')
+            template = get_template('templates/invoice_email_template.html')
             html = template.render(context)
             return html
         except Exception as e:
