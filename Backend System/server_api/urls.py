@@ -2,7 +2,7 @@ from django.urls import path,re_path
 from django.views.static import serve
 from . import views
 from e_commerce_app import settings
-
+from business_admin.api_view_admin_invoice_generation import *
 app_name='server_api'
 
 urlpatterns = [                                                                                                       #NOTE: FOR FRONTEND DEV TO CONNECT APIS
@@ -118,7 +118,16 @@ urlpatterns = [                                                                 
     path('order/update-details/<order_id>/',views.UpdateOrderDetails.as_view(),name='update_order_details'),
     path('order/fetch-cancel-order-requests/',views.FetchOrderCanellationRequests.as_view(),name='cancel_order_requests'),#pass parameters /?order_cancellation_request_pk= OR none to fetch all
     path('order/update-cancel-order-requests/<order_cancellation_pk>/',views.UpdateOrderCancellationRequest.as_view(),name="update_order_cancellation_request"),
+    path('orders/<str:order_id>/generate-invoice/', AdminGenerateInvoiceView.as_view(), name='admin_generate_invoice'),
 
+    # Invoice
+    path('invoices/', AdminInvoiceListView.as_view(), name='admin_invoice_list'),
+    path('invoices/<int:invoice_id>/download/', AdminInvoiceDownloadView.as_view(), name='admin_invoice_download'),
+    path('invoices/bulk-download/', AdminBulkInvoiceDownloadView.as_view(), name='admin_bulk_invoice_download'),
+    path('customers/<int:customer_id>/invoices/', AdminCustomerInvoicesView.as_view(), name='admin_customer_invoices'),
+
+    
+    
     re_path(r'^media_files/(?P<path>.*)$', serve,{'document_root': settings.MEDIA_ROOT}), 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]

@@ -2,6 +2,7 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 from django.template import Template, Context
 from django.conf import settings
 from .models import EmailAccounts, EmailTemplate
@@ -35,7 +36,8 @@ class EmailService:
     
     @classmethod
     def send_email(cls, to_emails, subject, text_content, html_content=None, purpose='default', 
-                  template_name=None, context_data=None, from_email=None, reply_to=None):
+                  template_name=None, context_data=None, from_email=None, reply_to=None, 
+                  attachments=None):
         
         if isinstance(to_emails, str):
             to_emails = [to_emails]
@@ -68,6 +70,14 @@ class EmailService:
         if html_content:
             msg.attach(MIMEText(html_content, 'html'))
         
+        # Add file attachments if provided
+        if attachments:
+            for attachment in attachments:
+                if isinstance(attachment, dict) and 'filename' in attachment and 'content' in attachment:
+                    part = MIMEApplication(attachment['content'])
+                    part.add_header('Content-Disposition', 'attachment', filename=attachment['filename'])
+                    msg.attach(part)
+        
         # Send the email
         try:
             print(f"Email account: {email_account.email_address}")
@@ -90,4 +100,56 @@ class EmailService:
             return True
             
         except Exception as e:
+            print(f"Email error: {str(e)}")
+            return False
+    
+    @classmethod
+    def send_order_confirmation_email(cls, order, invoice_pdf=None):
+        """
+        Send order confirmation email with invoice
+        
+        Args:
+            order: Order model instance
+            invoice_pdf: Optional PDF data to attach
+        
+        Returns:
+            Boolean indicating success/failure
+        """
+        try:
+            # Import here to avoid circular imports
+            from orders.invoice_generator import InvoiceGenerator
+            
+            # Generate invoice HTML for email content
+            html_content = InvoiceGenerator.generate_html_invoice(order)
+            
+            if not html_content:
+                return False
+            
+            # Setup attachments
+            attachments = []
+            if invoice_pdf:
+                attachments.append({
+                    'filename': f"Invoice_{order.order_id}.pdf",
+                    'content': invoice_pdf
+                })
+            
+            # Send the email
+            subject = f"Order Confirmation - {order.order_id}"
+            text_content = f"Thank you for your order! Your order (ID: {order.order_id}) has been confirmed and is being processed."
+            
+            return cls.send_email(
+                to_emails=order.customer_id.email,
+                subject=subject,
+                text_content=text_content,
+                html_content=html_content,
+                purpose='transactional',
+                attachments=attachments
+            )
+            
+        except Exception as e:
+            from system.models import ErrorLogs
+            ErrorLogs.objects.create(
+                error_type="OrderConfirmationEmailError",
+                error_message=f"Error sending order confirmation email: {str(e)}"
+            )
             return False

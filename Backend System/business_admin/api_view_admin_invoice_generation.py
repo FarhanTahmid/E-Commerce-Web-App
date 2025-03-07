@@ -4,15 +4,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
 from zipfile import ZipFile
 from io import BytesIO
-import logging
-import json
 from datetime import datetime
 from customer.models import Accounts
 from orders.order_management import OrderManagement
-from .models import Order
 from orders.invoice_generator import InvoiceGenerator
 from orders.models import Invoice
 from system.models import ErrorLogs
@@ -148,11 +144,70 @@ class AdminInvoiceListView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+class AdminInvoiceDownloadView(APIView):
+    """
+    Admin endpoint to download a single invoice
+    
+    GET /api/admin/invoices/{invoice_id}/download/
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, invoice_id):
+        # Check permissions
+            
+        try:
+            # Get the invoice
+            invoice = get_object_or_404(Invoice, id=invoice_id)
+            
+            # If invoice has a file, return it
+            if invoice.invoice_file:
+                with open(invoice.invoice_file.path, 'rb') as f:
+                    pdf_data = f.read()
+                
+                # Create response
+                response = HttpResponse(pdf_data, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+                
+                # Log the download
+                SystemLogs.admin_activites(request, f"Admin downloaded invoice {invoice.invoice_number}", "Downloaded")
+                
+                return response
+            
+            # Otherwise, generate a new PDF
+            order = invoice.order
+            pdf = InvoiceGenerator.generate_pdf_invoice(order, save_to_db=True, request=request)
+            
+            if not pdf:
+                return Response(
+                    {"error": "Failed to generate invoice PDF"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create response
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+            
+            # Log the download
+            SystemLogs.admin_activites(request, f"Admin downloaded invoice {invoice.invoice_number}", "Downloaded")
+            
+            return response
+            
+        except Exception as e:
+            error_msg = f"Error downloading admin invoice: {str(e)}"
+            ErrorLogs.objects.create(
+                error_type="AdminInvoiceDownloadError",
+                error_message=error_msg
+            )
+            return Response(
+                {"error": "An unexpected error occurred while downloading the invoice"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
 class AdminBulkInvoiceDownloadView(APIView):
     """
     Admin endpoint to download multiple invoices as a ZIP file
     
-    POST /api/admin/invoices/bulk-download/
+    POST /invoices/bulk-download/
     
     Request body:
     {

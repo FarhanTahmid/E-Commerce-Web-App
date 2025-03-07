@@ -356,23 +356,18 @@ class OrderManagement:
                     delivery_partner, message = OrderManagement.fetch_delivery_partner(delivery_partner_pk=delivery_partner_pk)
                     order.delivery_partner = delivery_partner
                     
-                    # Generate invoice HTML for email
+                    # Generate invoice PDF for attachment
                     try:
-                        invoice_html = InvoiceGenerator.generate_html_invoice(order)
+                        invoice_pdf = InvoiceGenerator.generate_pdf_invoice(order, save_to_db=True, request=request)
                         
                         # Send confirmation email with invoice
-                        is_email_sent = EmailService.send_email(
-                            to_emails=[order.customer_id.email], 
-                            subject=f"Your Order {order.order_id} has been confirmed",
-                            text_content="Your order has been confirmed. Please see the attached invoice for details.",
-                            html_content=invoice_html
-                        )
+                        is_email_sent = EmailService.send_order_confirmation_email(order, invoice_pdf)
                         
                         # Create notification for the customer
                         notification_to_client = SystemManagement.create_notification(
                             title=f"Your Order {order.order_id} has been confirmed", 
                             user_names=[order.customer_id.username],
-                            description="Your order has been confirmed and is being processed.",
+                            description="Your order has been confirmed and is being processed. You can download your invoice from the order details page.",
                             request=request
                         )
                         
@@ -427,6 +422,16 @@ class OrderManagement:
                         description="Your order has been cancelled. Please contact customer support for further details.",
                         request=request
                     )
+                
+                # Generate a new invoice to reflect status change
+                if order_status in ['cancelled', 'shipped', 'delivered']:
+                    try:
+                        InvoiceGenerator.generate_pdf_invoice(order, save_to_db=True, request=request)
+                    except Exception as e:
+                        ErrorLogs.objects.create(
+                            error_type="StatusChangeInvoiceError",
+                            error_message=f"Error generating updated invoice for order {order.order_id} after status change: {str(e)}"
+                        )
                 
                 # Log the status change
                 SystemLogs.admin_activites(
@@ -484,6 +489,8 @@ class OrderManagement:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating orders! Please try again later.")
+
+    
     @staticmethod
     def generate_invoice_pdf(order_id):
         """
@@ -505,15 +512,15 @@ class OrderManagement:
             order_list = dictionary[order_id]
             order = order_list[0]
             
-            # Generate PDF
-            pdf = InvoiceGenerator.generate_pdf_invoice(order)
+            # Get or generate invoice
+            invoice, pdf_data = InvoiceGenerator.get_or_generate_invoice(order)
             
-            if not pdf:
+            if not pdf_data:
                 return False, "Failed to generate invoice PDF"
             
             # Create HTTP response with PDF content
-            invoice_filename = f"Invoice_{order_id}.pdf"
-            response = HttpResponse(pdf, content_type='application/pdf')
+            invoice_filename = f"Invoice_{invoice.invoice_number}.pdf"
+            response = HttpResponse(pdf_data, content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{invoice_filename}"'
             
             # Log the invoice download
@@ -529,6 +536,7 @@ class OrderManagement:
             print(f"{error_type} occurred: {error_message}")
             
             return False, f"An unexpected error occurred while generating invoice: {error_message}"
+
 
     @staticmethod
     def get_invoice_html(order_id):
