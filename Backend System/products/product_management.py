@@ -2471,7 +2471,7 @@ class ManageProducts:
             product_discount = Product_Discount.objects.get(brand_id_pk = product_discount_brand_id_pk)
             if delete:
                 product_discount.delete()
-                SystemLogs.admin_activites(request,f"DEleted Product Discount",message="Deleted Product Discount")
+                SystemLogs.admin_activites(request,f"Deleted Product Discount",message="Deleted Product Discount")
                 return True, "Deleted Successfully"
             
             # if is_active != "":
