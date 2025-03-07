@@ -227,9 +227,46 @@ const ProductDiscountUpdate = () => {
     };
 
     const confirmDelete = () => {
-        axios.put(`${API_BASE_URL}/product-discounts/update/`, {
-            delete: true
-        }, {
+        // Format dates correctly without "Z"
+        const formattedStartDate = new Date(startDate).toISOString().replace("Z", "");
+        const formattedEndDate = new Date(endDate).toISOString().replace("Z", "");
+
+        // Create request data
+        const requestData = {
+            discount_name: discountName,
+            discount_amount: parseFloat(discountAmount),
+            start_date: formattedStartDate,
+            end_date: formattedEndDate,
+            delete: true,
+        };
+
+        // Add the appropriate ID fields based on the discount type
+        if (productDiscountProductIdPk) requestData.product_discount_product_id_pk = productDiscountProductIdPk;
+        if (productDiscountBrandIdPk) requestData.product_discount_brand_id_pk = productDiscountBrandIdPk;
+        if (productDiscountCategoryIdPk) requestData.product_discount_category_id_pk = productDiscountCategoryIdPk;
+        if (productDiscountSubCategoryIdPk) requestData.product_discount_sub_category_id_pk = productDiscountSubCategoryIdPk;
+
+        // Add the new target ID
+        switch (selectedType) {
+            case "product":
+                requestData.product_id = selectedId;
+                break;
+            case "brand":
+                requestData.brand_id = selectedId;
+                break;
+            case "category":
+                requestData.category_id = selectedId;
+                break;
+            case "sub_category":
+                requestData.sub_category_id = selectedId;
+                break;
+            default:
+                break;
+        }
+
+        console.log("Update request data:", requestData);
+
+        axios.put(`${API_BASE_URL}/product-discounts/update/`, requestData, {
             headers: {
                 Authorization: `Bearer ${Cookies.get("accessToken")}`,
                 "Content-Type": "application/json"
