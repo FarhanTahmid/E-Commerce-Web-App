@@ -6,6 +6,9 @@ from django.conf import settings
 import os
 from datetime import datetime
 from decimal import Decimal
+from .models import *
+from django.core.files.base import ContentFile
+
 
 def render_to_pdf(template_src, context_dict={}):
     """
@@ -18,7 +21,6 @@ def render_to_pdf(template_src, context_dict={}):
     if not pdf.err:
         return result.getvalue()
     return None
-
 class InvoiceGenerator:
     
     @staticmethod
@@ -88,20 +90,51 @@ class InvoiceGenerator:
             raise e
 
     @staticmethod
-    def generate_pdf_invoice(order):
+    def generate_pdf_invoice(order, save_to_db=True, request=None):
         """
         Generate PDF invoice for an order
         
         Args:
             order: Order model instance
+            save_to_db: Whether to save the invoice to the database
+            request: The request object for logging the user who generated the invoice
             
         Returns:
             BytesIO object containing PDF data
         """
         try:
             context = InvoiceGenerator.get_invoice_context(order)
-            pdf = render_to_pdf(f'templates/invoice_template.html', context)
-            return pdf
+            pdf_data = render_to_pdf('templates/invoice_template.html', context)
+            
+            if pdf_data and save_to_db:
+                # Generate invoice number
+                invoice_number = InvoiceGenerator.generate_invoice_number(order)
+                
+                # Check if invoice already exists
+                invoice, created = Invoice.objects.get_or_create(
+                    order=order,
+                    invoice_number=invoice_number,
+                    defaults={'is_finalized': order.order_status in ['delivered', 'shipped']}
+                )
+                
+                # Create filename
+                filename = f"Invoice_{invoice_number}.pdf"
+                
+                # Save PDF to FileField
+                invoice.invoice_file.save(filename, ContentFile(pdf_data), save=True)
+                
+                # Save updated_by info if request is provided
+                if request and hasattr(request, 'user') and request.user.is_authenticated:
+                    updated_by = {
+                        'user_id': request.user.id,
+                        'username': request.user.username,
+                        'email': request.user.email,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    invoice.updated_by = updated_by
+                    invoice.save()
+            
+            return pdf_data
         except Exception as e:
             # Log error
             from system.models import ErrorLogs
@@ -135,3 +168,45 @@ class InvoiceGenerator:
                 error_message=f"Error generating HTML invoice: {str(e)}"
             )
             return None
+    
+    @staticmethod
+    def get_or_generate_invoice(order, request=None):
+        """
+        Get an existing invoice or generate a new one
+        
+        Args:
+            order: Order model instance
+            request: Optional request object for tracking who generated the invoice
+            
+        Returns:
+            Invoice model instance and PDF data
+        """
+        try:
+            # Generate invoice number
+            invoice_number = InvoiceGenerator.generate_invoice_number(order)
+            
+            # Check if invoice already exists
+            invoice = Invoice.objects.filter(order=order).order_by('-created_at').first()
+            
+            if invoice and invoice.invoice_file:
+                # Return existing invoice if it exists and has a file
+                with open(invoice.invoice_file.path, 'rb') as f:
+                    pdf_data = f.read()
+                return invoice, pdf_data
+            else:
+                # Generate new invoice
+                pdf_data = InvoiceGenerator.generate_pdf_invoice(order, save_to_db=True, request=request)
+                
+                if not invoice:
+                    # If no invoice exists yet, get the newly created one
+                    invoice = Invoice.objects.filter(order=order).order_by('-created_at').first()
+                    
+                return invoice, pdf_data
+        except Exception as e:
+            # Log error
+            from system.models import ErrorLogs
+            ErrorLogs.objects.create(
+                error_type="InvoiceRetrievalError",
+                error_message=f"Error retrieving/generating invoice: {str(e)}"
+            )
+            return None, None

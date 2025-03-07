@@ -5,6 +5,9 @@ from system.models import ErrorLogs
 from products.product_management import ManageProducts
 from system.manage_system import SystemManagement
 from system.email_service import EmailService
+from .invoice_generator import InvoiceGenerator
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 class OrderManagement:
 
@@ -331,80 +334,144 @@ class OrderManagement:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching orders! Please try again later.")
     
-    def update_order_details(request,order_id,order_date="",delivery_time_pk="",delivery_partner_pk="",total_amount="",order_status="",product_sku_pk="",quantity=""):
-
+    @staticmethod
+    def update_order_details(request, order_id, order_date="", delivery_time_pk="", delivery_partner_pk="", total_amount="", order_status="", product_sku_pk="", quantity=""):
         try:
-            
-            #getting user order
-            dictionary,message = OrderManagement.fetch_orders_details(order_id=order_id)
+            # getting user order
+            dictionary, message = OrderManagement.fetch_orders_details(order_id=order_id)
             order_list = dictionary[order_id]
             order = order_list[0]
-            order_details = order_list[1] 
+            order_details = order_list[1]
 
-            #if order status changed to confirmed must choose delivery partner
-            if order_status!="":
+            # if order status changed to confirmed must choose delivery partner
+            if order_status != "":
+                previous_status = order.order_status
                 order.order_status = order_status
 
                 if order_status == 'confirmed':
                     if delivery_partner_pk == "":
                         return False, "No delivery Partner Selected"
                     
-                    #send notification and email with invoice to user
-                    is_email_sent=EmailService.send_email(
-                    to_emails=[order.customer_id.email],subject="Your Order has been placed. Happy Shopping",text_content="Your Order has been placed. Happy Shopping"
-                    )
-                    notification_to_client = SystemManagement.create_notification(title="Your Order has been placed. Happy Shopping",user_names=[order.customer_id.username])
-                    if notification_to_client[0]:
-                        print(notification_to_client[1])
-                    else:
-                        print("notification creation failed to client")
-                    delivery_partner,message = OrderManagement.fetch_delivery_partner(delivery_partner_pk=delivery_partner_pk)
+                    # Get or create delivery partner
+                    delivery_partner, message = OrderManagement.fetch_delivery_partner(delivery_partner_pk=delivery_partner_pk)
                     order.delivery_partner = delivery_partner
-                
-                if order_status == 'cancelled':
-                    is_email_sent=EmailService.send_email(
-                    to_emails=[order.customer_id.email],subject="Your Order has been cancelled. Please contact for futher details",text_content="Your Order has been cancelled. Please contact for futher details"
+                    
+                    # Generate invoice HTML for email
+                    try:
+                        invoice_html = InvoiceGenerator.generate_html_invoice(order)
+                        
+                        # Send confirmation email with invoice
+                        is_email_sent = EmailService.send_email(
+                            to_emails=[order.customer_id.email], 
+                            subject=f"Your Order {order.order_id} has been confirmed",
+                            text_content="Your order has been confirmed. Please see the attached invoice for details.",
+                            html_content=invoice_html
+                        )
+                        
+                        # Create notification for the customer
+                        notification_to_client = SystemManagement.create_notification(
+                            title=f"Your Order {order.order_id} has been confirmed", 
+                            user_names=[order.customer_id.username],
+                            description="Your order has been confirmed and is being processed.",
+                            request=request
+                        )
+                        
+                        if not is_email_sent:
+                            # Log email failure but continue
+                            ErrorLogs.objects.create(
+                                error_type="EmailSendError",
+                                error_message=f"Failed to send order confirmation email for order {order.order_id}"
+                            )
+                    except Exception as e:
+                        # Log error but continue with order processing
+                        ErrorLogs.objects.create(
+                            error_type="InvoiceGenerationError",
+                            error_message=f"Error generating invoice for order {order.order_id}: {str(e)}"
+                        )
+
+                elif order_status == 'cancelled':
+                    # Restore product stock quantities
+                    for detail in order_details:
+                        if detail.product_sku:
+                            detail.product_sku.product_stock += detail.quantity
+                            detail.product_sku.save()
+                    
+                    # Update payment status if needed
+                    try:
+                        payment = order.payment_details.first()
+                        if payment and payment.payment_status == 'success':
+                            payment.payment_status = 'refunded'
+                            payment.save()
+                        
+                        # Restore coupon if used
+                        if payment and payment.coupon_applied:
+                            payment.coupon_applied.usage_limit += 1
+                            payment.coupon_applied.save()
+                    except Exception as e:
+                        ErrorLogs.objects.create(
+                            error_type="PaymentUpdateError",
+                            error_message=f"Error updating payment status for cancelled order {order.order_id}: {str(e)}"
+                        )
+                    
+                    # Send cancellation email
+                    is_email_sent = EmailService.send_email(
+                        to_emails=[order.customer_id.email],
+                        subject=f"Your Order {order.order_id} has been cancelled",
+                        text_content="Your order has been cancelled. Please contact customer support for further details."
                     )
-                    notification_to_client = SystemManagement.create_notification(title="Your Order has been cancelled. Please contact for futher details",user_names=[order.customer_id.username])
-                    if notification_to_client[0]:
-                        print(notification_to_client[1])
-                    else:
-                        print("notification creation failed to client")
+                    
+                    # Create notification
+                    notification_to_client = SystemManagement.create_notification(
+                        title=f"Your Order {order.order_id} has been cancelled",
+                        user_names=[order.customer_id.username],
+                        description="Your order has been cancelled. Please contact customer support for further details.",
+                        request=request
+                    )
+                
+                # Log the status change
+                SystemLogs.admin_activites(
+                    request,
+                    f"Order status changed from {previous_status} to {order_status}, order_id - {order.order_id}",
+                    "Updated"
+                )
+                
                 order.save()
 
-            if order_date!="":
+            # Other update operations
+            if order_date != "":
                 order.order_date = order_date
-            if delivery_time_pk!="":
-                delivery_time,message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_time_pk)
+                
+            if delivery_time_pk != "":
+                delivery_time, message = OrderManagement.fetch_delivery_time(delivery_pk=delivery_time_pk)
                 order.delivery_time = delivery_time
-            if total_amount!="":
+                
+            if total_amount != "":
                 order.total_amount = total_amount
 
-            if product_sku_pk!="":
-                product_sku ,message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
+            if product_sku_pk != "" and quantity != "":
+                product_sku, message = ManageProducts.fetch_product_sku(pk=product_sku_pk)
 
                 for o in order_details:
-                    if o.product_sku.pk == product_sku.pk and o.quantity != quantity:
+                    if o.product_sku and o.product_sku.pk == product_sku.pk and o.quantity != quantity:
                         price = o.product_sku.product_price
                         old_subtotal = o.subtotal
-                        old_subtotal= old_subtotal - float(price * o.quantity)
+                        old_subtotal = old_subtotal - float(price * o.quantity)
                         order.total_amount = order.total_amount - float(price * o.quantity)
                         new_subtotal = old_subtotal + float(price * quantity)
                         order.total_amount = order.total_amount + float(price * quantity)
 
                         o.subtotal = new_subtotal
+                        o.quantity = quantity
                         o.save()
                         order.save()
-            
 
-            SystemLogs.updated_by(request,order)
-            SystemLogs.admin_activites(request,f"Order Updated, order_id - {order.order_id} ","Updated")
-            return True, "Updated Sucessfully"
-            
-        
+            SystemLogs.updated_by(request, order)
+            SystemLogs.admin_activites(request, f"Order Updated, order_id - {order.order_id}", "Updated")
+            return True, "Updated Successfully"
+
         except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
             # Log the error
-            error_type = type(error).__name__  # Get the name of the error as a string
+            error_type = type(error).__name__
             error_message = str(error)
             ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
             print(f"{error_type} occurred: {error_message}")
@@ -417,6 +484,92 @@ class OrderManagement:
                 "IntegrityError": "Same type exists in Database!",
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while updating orders! Please try again later.")
+    @staticmethod
+    def generate_invoice_pdf(order_id):
+        """
+        Generate a PDF invoice for an order
+        
+        Args:
+            order_id: Order ID string
+            
+        Returns:
+            HttpResponse with PDF attachment or error message
+        """
+        try:
+            # Get order details
+            dictionary, message = OrderManagement.fetch_orders_details(order_id=order_id)
+            
+            if not dictionary:
+                return False, "Order not found"
+                
+            order_list = dictionary[order_id]
+            order = order_list[0]
+            
+            # Generate PDF
+            pdf = InvoiceGenerator.generate_pdf_invoice(order)
+            
+            if not pdf:
+                return False, "Failed to generate invoice PDF"
+            
+            # Create HTTP response with PDF content
+            invoice_filename = f"Invoice_{order_id}.pdf"
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{invoice_filename}"'
+            
+            # Log the invoice download
+            SystemLogs.admin_activites(None, f"Invoice downloaded for order {order_id}", "Downloaded")
+            
+            return response
+            
+        except Exception as error:
+            # Log the error
+            error_type = type(error).__name__
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+            
+            return False, f"An unexpected error occurred while generating invoice: {error_message}"
+
+    @staticmethod
+    def get_invoice_html(order_id):
+        """
+        Get HTML invoice for preview
+        
+        Args:
+            order_id: Order ID string
+            
+        Returns:
+            HTTP response with HTML content or error message
+        """
+        try:
+            # Get order details
+            dictionary, message = OrderManagement.fetch_orders_details(order_id=order_id)
+            
+            if not dictionary:
+                return False, "Order not found"
+                
+            order_list = dictionary[order_id]
+            order = order_list[0]
+            
+            # Generate invoice context
+            context = InvoiceGenerator.get_invoice_context(order, for_email=True)
+            
+            # Render template
+            html_content = render_to_string('orders/invoice_template.html', context)
+            
+            # Create HTTP response
+            response = HttpResponse(html_content, content_type='text/html')
+            
+            return response
+            
+        except Exception as error:
+            # Log the error
+            error_type = type(error).__name__
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+            
+            return False, f"An unexpected error occurred while generating invoice HTML: {error_message}"
         
     def fetch_order_cancellation_requests(order_cancellation_request_pk=""):
 
