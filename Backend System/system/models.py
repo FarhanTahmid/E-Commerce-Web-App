@@ -65,6 +65,31 @@ class AccountsManager(BaseUserManager):
         user.set_password(password)  # Hashes the password
         user.save(using=self._db)
         return user
+    
+    def create_admin_user(self, email, username, password=None):
+        """
+        Creates and returns a new superuser instance.
+
+        Parameters:
+            email (str): The unique email address for the superuser.
+            username (str): The username for the superuser.
+            password (str, optional): The password for the superuser. Defaults to None.
+
+        Returns:
+            Accounts: A new superuser instance with admin privileges.
+
+        Raises:
+            ValueError: If email or username is not provided.
+        """
+        user = self.create_user(
+            email=self.normalize_email(email),
+            username=username,
+            password=password
+        )
+        user.is_admin = True
+        user.is_staff = True
+        user.save(using=self._db)
+        return user
 
     def create_superuser(self, email, username, password=None):
         """
