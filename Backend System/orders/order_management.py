@@ -349,7 +349,7 @@ class OrderManagement:
                     if delivery_partner_pk == "":
                         return False, "No delivery Partner Selected"
                     
-                    #send notification and email to user
+                    #send notification and email with invoice to user
                     is_email_sent=EmailService.send_email(
                     to_emails=[order.customer_id.email],subject="Your Order has been placed. Happy Shopping",text_content="Your Order has been placed. Happy Shopping"
                     )
