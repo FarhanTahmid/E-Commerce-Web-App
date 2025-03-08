@@ -5,7 +5,7 @@ import Link from 'next/link'
 const Banner = () => {
     return (
         <>
-            <div className="banner-block style-toys-kids">
+            <div className="banner-block style-toys-kids py-8">
                 <div className="container">
                     <div className="content md:rounded-[28px] rounded-2xl overflow-hidden relative">
                         <Image
