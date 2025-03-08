@@ -957,10 +957,10 @@ const MenuCosmeticThree = () => {
                                 </div>
                                 <Link href={'/'} className='logo text-3xl font-semibold text-center'>Anvogue</Link>
                             </div>
-                            <div className="form-search relative mt-2">
+                            {/* <div className="form-search relative mt-2">
                                 <Icon.MagnifyingGlass size={20} className='absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer' />
                                 <input type="text" placeholder='What are you looking for?' className=' h-12 rounded-lg border border-line text-sm w-full pl-10 pr-4' />
-                            </div>
+                            </div> */}
                             <div className="list-nav mt-6">
                                 <ul>
                                     <li
