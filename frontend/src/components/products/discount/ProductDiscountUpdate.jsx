@@ -428,7 +428,7 @@ const ProductDiscountUpdate = () => {
             <div className="card invoice-container">
                 <div className="card-header">
                     <h5>Product Discount Update</h5>
-                    <Link to="/products/discounts" className="btn btn-primary">← Back</Link>
+                    <Link to="/products/discount" className="btn btn-primary">← Back</Link>
                 </div>
                 <div className="card-body p-0">
                     <form onSubmit={handleSubmit}>
