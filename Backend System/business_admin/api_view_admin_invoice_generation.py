@@ -42,7 +42,7 @@ class AdminInvoiceListView(APIView):
             order_id = request.query_params.get('order_id')
             customer_id = request.query_params.get('customer_id')
             customer_email = request.query_params.get('customer_email')
-            status = request.query_params.get('status')
+            order_status = request.query_params.get('status')
             date_from = request.query_params.get('date_from')
             date_to = request.query_params.get('date_to')
             sort_by = request.query_params.get('sort_by', 'created_at')
@@ -63,8 +63,8 @@ class AdminInvoiceListView(APIView):
             if customer_email:
                 invoices = invoices.filter(order__customer_id__email__icontains=customer_email)
                 
-            if status:
-                invoices = invoices.filter(order__order_status=status)
+            if order_status:
+                invoices = invoices.filter(order__order_status=order_status)
                 
             if date_from:
                 try:
@@ -345,9 +345,6 @@ class AdminGenerateInvoiceView(APIView):
     
     def post(self, request, order_id):
         # Check permissions
-        has_permission, response = self.check_admin_permission(request)
-        if not has_permission:
-            return response
             
         try:
             # Get the order

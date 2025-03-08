@@ -30,7 +30,7 @@ class UserInvoiceDownloadView(APIView):
             if request.user.pk != order.customer_id.pk:
                 return Response(
                     {"error": "You don't have permission to access this invoice"}, 
-                    status=status.HTTP_403_FORBIDDEN
+                    status=status.HTTP_404_NOT_FOUND
                 )
             
             # Get or generate the invoice

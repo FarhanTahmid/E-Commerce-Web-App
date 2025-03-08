@@ -41,6 +41,8 @@ class InvoiceGenerator:
             for_email: Boolean flag to indicate if this is for email (HTML) or PDF
         """
         try:
+            from decimal import Decimal
+            
             # Get order details
             order_details = order.items.all()
             shipping_address = order.shipping_address.first()
@@ -60,6 +62,10 @@ class InvoiceGenerator:
             # Get customer info
             customer = order.customer_id
             
+            # Ensure all monetary values are Decimal objects
+            total_amount = Decimal(str(order.total_amount))
+            paid_amount = Decimal(str(payment_details.payment_amount)) if payment_details else Decimal('0.00')
+            
             context = {
                 'invoice_number': InvoiceGenerator.generate_invoice_number(order),
                 'order': order,
@@ -67,9 +73,9 @@ class InvoiceGenerator:
                 'shipping_address': shipping_address,
                 'payment_details': payment_details,
                 'subtotal': subtotal,
-                'total': order.total_amount,
-                'paid_amount': payment_details.payment_amount if payment_details else Decimal('0.00'),
-                'balance_due': order.total_amount - (payment_details.payment_amount if payment_details else Decimal('0.00')),
+                'total': total_amount,
+                'paid_amount': paid_amount,
+                'balance_due': total_amount - paid_amount,
                 'order_date': order_date,
                 'due_date': due_date,
                 'customer': customer,
@@ -104,7 +110,7 @@ class InvoiceGenerator:
         """
         try:
             context = InvoiceGenerator.get_invoice_context(order)
-            pdf_data = render_to_pdf('templates/invoice_template.html', context)
+            pdf_data = render_to_pdf('invoice_template.html', context)
             
             if pdf_data and save_to_db:
                 # Generate invoice number
@@ -157,7 +163,7 @@ class InvoiceGenerator:
         """
         try:
             context = InvoiceGenerator.get_invoice_context(order, for_email=True)
-            template = get_template('templates/invoice_email_template.html')
+            template = get_template('invoice_email_template.html')
             html = template.render(context)
             return html
         except Exception as e:
