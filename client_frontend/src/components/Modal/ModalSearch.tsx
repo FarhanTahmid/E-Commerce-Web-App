@@ -19,7 +19,6 @@ const ModalSearch = () => {
         closeModalSearch()
         setSearchKeyword('')
     }
-
     return (
         <>
             <div className={`modal-search-block`} onClick={closeModalSearch}>
