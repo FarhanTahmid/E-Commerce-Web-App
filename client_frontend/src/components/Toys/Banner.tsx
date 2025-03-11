@@ -9,7 +9,7 @@ const Banner = () => {
                 <div className="container">
                     <div className="content md:rounded-[28px] rounded-2xl overflow-hidden relative">
                         <Image
-                            src={'/images/banner/video-cos3.webp'}
+                            src={'/images/banner/lip stick.png'}
                             width={3000}
                             height={2000}
                             alt='bg'

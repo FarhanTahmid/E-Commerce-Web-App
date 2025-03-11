@@ -56,7 +56,7 @@ const SliderCosmeticThree = () => {
                                     </div>
                                     <div className="sub-img absolute left-0 top-0 w-full h-full z-[-1]">
                                         <Image
-                                            src={'/images/slider/bg-cos3-2.webp'}
+                                            src={'/images/slider/original.webp'}
                                             width={2560}
                                             height={1080}
                                             alt='bg-cos3-2'
