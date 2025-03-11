@@ -31,7 +31,7 @@ const SliderCosmeticThree = () => {
                                     <div className="text-content sm:w-[55%] w-2/3">
                                         <div className="text-sub-display text-center text-white">Sale! Up To 50% Off!</div>
                                         <div className="text-display text-center text-white md:mt-5 mt-2">Discover the Secrets of Effective Skincare</div>
-                                        <Link href='/shop/breadcrumb-img' className="button-main bg-white text-black md:mt-8 mt-3">Shop Now</Link>
+                                        <Link href='/shop' className="button-main bg-white text-black md:mt-8 mt-3">Shop Now</Link>
                                     </div>
                                     <div className="sub-img absolute left-0 top-0 w-full h-full z-[-1]">
                                         <Image
@@ -52,11 +52,11 @@ const SliderCosmeticThree = () => {
                                     <div className="text-content sm:w-[55%] w-2/3">
                                         <div className="text-sub-display text-center text-white">Sale! Up To 50% Off!</div>
                                         <div className="text-display text-center text-white md:mt-5 mt-2">Experience the Beauty of Effective Skincare</div>
-                                        <Link href='/shop/breadcrumb-img' className="button-main bg-white text-black md:mt-8 mt-3">Shop Now</Link>
+                                        <Link href='/shop' className="button-main bg-white text-black md:mt-8 mt-3">Shop Now</Link>
                                     </div>
                                     <div className="sub-img absolute left-0 top-0 w-full h-full z-[-1]">
                                         <Image
-                                            src={'/images/slider/bg-cos3-2.png'}
+                                            src={'/images/slider/bg-cos3-2.webp'}
                                             width={2560}
                                             height={1080}
                                             alt='bg-cos3-2'
@@ -73,7 +73,7 @@ const SliderCosmeticThree = () => {
                                     <div className="text-content sm:w-[55%] w-2/3">
                                         <div className="text-sub-display text-center text-white">Sale! Up To 50% Off!</div>
                                         <div className="text-display text-center text-white md:mt-5 mt-2">Elevate Your Skincare Journey</div>
-                                        <Link href='/shop/breadcrumb-img' className="button-main bg-white text-black md:mt-8 mt-3">Shop Now</Link>
+                                        <Link href='/shop' className="button-main bg-white text-black md:mt-8 mt-3">Shop Now</Link>
                                     </div>
                                     <div className="sub-img absolute left-0 top-0 w-full h-full z-[-1]">
                                         <Image
