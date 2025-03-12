@@ -88,7 +88,7 @@ class FetchViewSet(viewsets.ViewSet):
             with transaction.atomic():
                 queryset = Product_SKU.objects.get(pk=product_sku_pk)
 
-                serializer = self.serializer_class(queryset, many=False)
+                serializer = self.serializer_class(queryset, many=False,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             
         except ProductNotFound as e:
