@@ -143,67 +143,48 @@ const MenuOne: React.FC<Props> = ({ props }) => {
                             </Link>
                             <div className="menu-main h-full max-lg:hidden">
                                 <ul className='flex items-center gap-8 h-full'>
-
-                                    {categories.map((category) => (
-                                        <li className='h-full relative'>
-                                            <Link href="#!" className={`text-button-uppercase duration-300 h-full flex items-center justify-center ${pathname.includes('/pages') ? 'active' : ''}`}>
-                                                {category.category_name}
-                                            </Link>
-                                            <div className="sub-menu py-3 px-5 -left-10 absolute bg-white rounded-b-xl">
-                                                <ul className='w-full'>
-                                                    {getSubcategoriesByCategory(category.id).map((subCategory) => (
-                                                        <li key={subCategory.id}>
-                                                            <Link
-                                                                href="#"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault()
-                                                                    handleSubCategoryClick(subCategory.sub_category_name)
-                                                                }}
-                                                                className={`link text-secondary duration-300 ${pathname === '/pages/about' ? 'active' : ''}`}
-                                                            >
-                                                                {subCategory.sub_category_name}
-                                                            </Link>
-                                                        </li>
-                                                    ))}
-                                                    <li>
-                                                        <Link href="/pages/about" className={`link text-secondary duration-300 ${pathname === '/pages/about' ? 'active' : ''}`}>
-                                                            About Us
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link href="/pages/contact" className={`link text-secondary duration-300 ${pathname === '/pages/contact' ? 'active' : ''}`}>
-                                                            Contact Us
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link href="/pages/store-list" className={`link text-secondary duration-300 ${pathname === '/pages/store-list' ? 'active' : ''}`}>
-                                                            Store List
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link href="/pages/page-not-found" className={`link text-secondary duration-300 ${pathname === '/pages/page-not-found' ? 'active' : ''}`}>
-                                                            404
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link href="/pages/faqs" className={`link text-secondary duration-300 ${pathname === '/pages/faqs' ? 'active' : ''}`}>
-                                                            FAQs
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link href="/pages/coming-soon" className={`link text-secondary duration-300 ${pathname === '/pages/coming-soon' ? 'active' : ''}`}>
-                                                            Coming Soon
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link href="/pages/customer-feedbacks" className={`link text-secondary duration-300 ${pathname === '/pages/customer-feedbacks' ? 'active' : ''}`}>
-                                                            Customer Feedbacks
-                                                        </Link>
-                                                    </li>
-                                                </ul>
+                                    <li className='h-full'>
+                                        <Link href="#!" className='text-button-uppercase duration-300 h-full flex items-center justify-center'>
+                                            Shop
+                                        </Link>
+                                        <div className="mega-menu absolute top-[74px] left-0 bg-white w-screen">
+                                            <div className="container">
+                                                <div className="flex justify-between py-8">
+                                                    <div className="nav-link basis-2/3 flex justify-between pr-12">
+                                                        {categories.map((category) => (
+                                                            <div className="nav-item">
+                                                                <div className="text-button-uppercase pb-2">{category.category_name}</div>
+                                                                <ul>
+                                                                    {getSubcategoriesByCategory(category.id).map((subCategory) => (
+                                                                        <li key={subCategory.id}>
+                                                                            <Link
+                                                                                href="#"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault()
+                                                                                    handleSubCategoryClick(subCategory.sub_category_name)
+                                                                                }}
+                                                                                className={`link text-secondary duration-300 cursor-pointer`}
+                                                                            >
+                                                                                {subCategory.sub_category_name}
+                                                                            </Link>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="recent-product pl-2.5 basis-1/3">
+                                                        <div className="text-button-uppercase pb-2">Recent Products</div>
+                                                        <div className="list-product hide-product-sold  grid grid-cols-2 gap-5 mt-3">
+                                                            {productData.filter(item => item.action === 'add to cart').slice(0, 2).map((prd, index) => (
+                                                                <Product key={index} data={prd} type='grid' style='style-1' />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </li>
-                                    ))}
+                                        </div>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -252,62 +233,71 @@ const MenuOne: React.FC<Props> = ({ props }) => {
                                 >
                                     <Icon.X size={14} />
                                 </div>
-                                <Link href={'/'} className='logo text-3xl font-semibold text-center'>Anvogue</Link>
+                                <Link href={'/'} className='logo text-3xl font-semibold text-center'>Knap Cosmetics</Link>
                             </div>
-                            {/* <div className="form-search relative mt-2">
-                                <Icon.MagnifyingGlass size={20} className='absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer' />
-                                <input type="text" placeholder='What are you looking for?' className=' h-12 rounded-lg border border-line text-sm w-full pl-10 pr-4' />
-                            </div> */}
                             <div className="list-nav mt-6">
                                 <ul>
+                                    <li
+                                        className={`${openSubNavMobile === 3 ? 'open' : ''}`}
+                                        onClick={() => handleOpenSubNavMobile(3)}
+                                    >
+                                        <a href={'#!'} className='text-xl font-semibold flex items-center justify-between mt-5'>Shop
+                                            <span className='text-right'>
+                                                <Icon.CaretRight size={20} />
+                                            </span>
+                                        </a>
+                                        <div className="sub-nav-mobile">
+                                            <div
+                                                className="back-btn flex items-center gap-3"
+                                                onClick={() => handleOpenSubNavMobile(3)}
+                                            >
+                                                <Icon.CaretLeft />
+                                                Back
+                                            </div>
+                                            <div className="list-nav-item w-full pt-3 pb-12">
+                                                <div className="">
+                                                    <div className="nav-link grid grid-cols-2 gap-5 gap-y-6 justify-between">
+                                                        {categories.map((category) => (
+                                                            <div className="nav-item">
+                                                                <div className="text-button-uppercase pb-1">{category.category_name}</div>
+                                                                <ul>
+                                                                    {getSubcategoriesByCategory(category.id).map((subCategory) => (
+                                                                        <li>
+                                                                            <Link
+                                                                                href="#"
+                                                                                className={`text-secondary duration-300 ${pathname === '/shop/breadcrumb-img' ? 'active' : ''}`}
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault()
+                                                                                    handleSubCategoryClick(subCategory.sub_category_name)
+                                                                                }}
+                                                                            >
+                                                                                {subCategory.sub_category_name}
+                                                                            </Link>
+                                                                        </li>
+                                                                    ))}
 
-                                    {categories.map((category) => (
-                                        <li
-                                            key={category.id}
-                                            className={openSubNavMobile === category.id ? 'open' : ''}
-                                            onClick={() => handleOpenSubNavMobile(category.id)}
-                                        >
-                                            <a href={'#!'} className={`text-xl font-semibold flex items-center justify-between mt-5`}>{category.category_name}
-                                                <span className='text-right'>
-                                                    <Icon.CaretRight size={20} />
-                                                </span>
-                                            </a>
-                                            <div className="sub-nav-mobile">
-                                                <div
-                                                    className="back-btn flex items-center gap-3"
-                                                    onClick={() => handleOpenSubNavMobile(1)}
-                                                >
-                                                    <Icon.CaretLeft />
-                                                    Back
-                                                </div>
-                                                <div className="list-nav-item w-full grid grid-cols-2 pt-2 pb-6">
-                                                    <ul>
-                                                        {getSubcategoriesByCategory(category.id).map((subCategory) => (
-                                                            <li key={subCategory.id}>
-
-                                                                <Link href="/" className={`nav-item-mobile link text-secondary duration-300 `}>
-                                                                    {subCategory.sub_category_name}
-                                                                </Link>
-
-                                                            </li>
-
+                                                                </ul>
+                                                            </div>
                                                         ))}
-                                                        {/* <li>
-                                                            <Link href="/" className={`nav-item-mobile link text-secondary duration-300 ${pathname === '/' ? 'active' : ''}`}>
-                                                                Home Fashion 1
-                                                            </Link>
-                                                        </li> */}
-                                                    </ul>
+                                                    </div>
+                                                    <div className="recent-product pt-3">
+                                                        <div className="text-button-uppercase pb-1">Recent Products</div>
+                                                        <div className="list-product hide-product-sold  grid grid-cols-2 gap-5 mt-3">
+                                                            {productData.slice(0, 2).map((prd, index) => (
+                                                                <Product key={index} data={prd} type='grid' style='style-1' />
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </li>
-                                    ))}
+                                        </div>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div >
+            </div>
         </>
     )
 }

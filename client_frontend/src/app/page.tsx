@@ -1,3 +1,4 @@
+"use client"
 // import React from 'react'
 // import TopNavOne from '@/components/Header/TopNav/TopNavOne'
 // import MenuOne from '@/components/Header/Menu/MenuOne'
@@ -36,7 +37,7 @@
 //     </>
 //   )
 // }
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import TopNavOne from '@/components/Header/TopNav/TopNavOne'
 import MenuCosmeticThree from '@/components/Header/Menu/MenuCosmeticThree'
 import SliderCosmeticThree from '@/components/Slider/SliderCosmeticThree'
@@ -54,8 +55,14 @@ import Newsletter from '@/components/Cosmetic3/Newsletter'
 import Footer from '@/components/Footer/Footer'
 import ModalNewsletter from '@/components/Modal/ModalNewsletter'
 import MenuOne from '@/components/Header/Menu/MenuOne'
+import axios from 'axios';
+import useProducts from '@/hooks/useProducts'
+
 
 export default function HomeCosmeticThree() {
+  const { products, loading, error } = useProducts();
+  console.log(products);
+
   return (
     <>
       {/* <TopNavOne props="style-one bg-black" slogan='New customers save 10% with the code GET10' /> */}
@@ -64,8 +71,10 @@ export default function HomeCosmeticThree() {
         <SliderCosmeticThree />
         {/* <BannerTop props="bg-[#F4C6A5] md:py-8 py-4" textColor='text-black' bgLine='bg-black' /> */}
       </div>
-
+      {loading && <p className="text-center text-lg">Loading products...</p>}
+      {error && <p className="text-center text-red-500">{error}</p>}
       {/* <Banner /> */}
+
       <HotProduct data={productData} start={3} limit={9} />
       {/* <BuyPack />
             <AdsPhoto />
