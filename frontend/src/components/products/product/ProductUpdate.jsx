@@ -49,9 +49,13 @@ const ProductUpdate = () => {
 
                 const categoryOptions = categoriesRes.data.product_category.map(c => ({ value: c.id, label: c.category_name }));
                 const brandOptions = brandsRes.data.product_brands.map(b => ({ value: b.id, label: b.brand_name }));
+                console.log("Fetched Categories:", categoriesRes.data.product_category);
+                console.log("Processed Categories:", categoryOptions);
 
                 setCategories(categoryOptions);
                 setBrands(brandOptions);
+                console.log(categories)
+                console.log(categoryOptions);
 
                 fetchProductDetails(categoryOptions, brandOptions);
             } catch (error) {
