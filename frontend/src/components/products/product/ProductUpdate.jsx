@@ -49,13 +49,9 @@ const ProductUpdate = () => {
 
                 const categoryOptions = categoriesRes.data.product_category.map(c => ({ value: c.id, label: c.category_name }));
                 const brandOptions = brandsRes.data.product_brands.map(b => ({ value: b.id, label: b.brand_name }));
-                console.log("Fetched Categories:", categoriesRes.data.product_category);
-                console.log("Processed Categories:", categoryOptions);
 
                 setCategories(categoryOptions);
                 setBrands(brandOptions);
-                console.log(categories)
-                console.log(categoryOptions);
 
                 fetchProductDetails(categoryOptions, brandOptions);
             } catch (error) {
@@ -81,8 +77,12 @@ const ProductUpdate = () => {
             setProductIngredients(product.product_ingredients);
             setProductUsageDirection(product.product_usage_direction);
 
-            const selectedCat = categoryOptions.filter(c => product.product_category.includes(c.value));
-            const selectedBrand = brandOptions.find(b => b.value === product.product_brand) || null;
+            // Fix: Match by category id
+            const selectedCat = categoryOptions.filter(c =>
+                product.product_category.some(p => p.id === c.value)
+            );
+
+            const selectedBrand = brandOptions.find(b => b.value === product.product_brand.id) || null;
 
             setSelectedCategories(selectedCat);
             setSelectedBrand(selectedBrand);
@@ -105,17 +105,25 @@ const ProductUpdate = () => {
 
             const responses = await Promise.all(subCategoryRequests);
 
+            // Fix: Ensure categoryId is a single value, not an array
             const newSubCategories = responses.flatMap(res => res.data.product_sub_category)
-                .map(sc => ({ value: sc.id, label: sc.sub_category_name, categoryId: sc.category_id }));
+                .map(sc => ({
+                    value: sc.id,
+                    label: sc.sub_category_name,
+                    categoryId: sc.category_id // Directly assign the category_id as a single value
+                }));
 
             setSubCategories(newSubCategories);
 
-            // Set only existing subcategories that belong to selected categories
-            setSelectedSubCategories(newSubCategories.filter(sc => existingSubCategoryIds.includes(sc.value)));
+            // Fix: Extract subcategory ids from existingSubCategoryIds and compare to newSubCategories
+            const existingSubCategoryIdsSet = new Set(existingSubCategoryIds.map(sc => sc.id));
+            setSelectedSubCategories(newSubCategories.filter(sc => existingSubCategoryIdsSet.has(sc.value)));
         } catch (error) {
             console.error("Error fetching subcategories:", error);
         }
     };
+
+
 
     // Handle Category Selection
     const handleCategoryChange = async (selectedOptions) => {
