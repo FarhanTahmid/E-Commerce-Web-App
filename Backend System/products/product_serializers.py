@@ -102,11 +102,21 @@ class Product_SKU_Detail_Serializer(serializers.ModelSerializer):
         except:
             return None
         
-    def get_product_images(self,obj):
+    def get_product_images(self, obj):
         try:
-            product = self.get_product(obj)
-            images,message = ManageProducts.fetch_product_image(product_pk=product.pk)
-            return images
-        except:
+            product_id = obj.product_id.pk
+            images, message = ManageProducts.fetch_product_image(product_pk=product_id)
+            image_list = []
+            # Add absolute URLs to the images
+            request = self.context.get('request')
+            if request and images:
+                for image in images:
+                    if hasattr(image, 'product_image') and image.product_image:
+                        image_list.append(request.build_absolute_uri(
+                            f"/{SERVER_API_URL}{settings.MEDIA_URL}{image.product_image}"
+                        ))
+                
+            return image_list
+        except Exception as e:
             return None
     
