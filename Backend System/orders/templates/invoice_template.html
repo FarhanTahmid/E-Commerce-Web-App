@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice {{ invoice_number }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .invoice-title {
+            font-size: 28px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .company-details, .customer-details {
+            width: 45%;
+        }
+        h3 {
+            margin: 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+            font-size: 16px;
+        }
+        .invoice-meta {
+            width: 45%;
+            text-align: right;
+        }
+        .invoice-meta p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th {
+            background-color: #0066cc;
+            color: white;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .totals {
+            width: 50%;
+            float: right;
+            margin-top: 30px;
+        }
+        .totals table {
+            width: 100%;
+        }
+        .totals table td {
+            text-align: right;
+        }
+        .totals table td:first-child {
+            text-align: left;
+            font-weight: bold;
+        }
+        .payment-info {
+            clear: both;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+        }
+        .signature img {
+            max-width: 200px;
+            display: block;
+            margin-left: auto;
+        }
+        .paid-stamp, .cancelled-stamp {
+            position: absolute;
+            top: 45%;
+            left: 35%;
+            transform: rotate(-30deg);
+            font-size: 72px;
+            font-weight: bold;
+            opacity: 0.5;
+            z-index: 100;
+        }
+        .paid-stamp {
+            color: #00AA00;
+        }
+        .cancelled-stamp {
+            color: #AA0000;
+        }
+        .logo {
+            max-width: 200px;
+            max-height: 80px;
+            float: right;
+        }
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+    </style>
+</head>
+<body>
+    {% if is_paid %}
+    <div class="paid-stamp">PAID</div>
+    {% elif is_cancelled %}
+    <div class="cancelled-stamp">CANCELLED</div>
+    {% endif %}
+    
+    <div class="invoice-header clearfix">
+        <div class="logo">
+            <img src="{{ static_url }}img/logo.png" alt="Company Logo">
+        </div>
+        <div class="invoice-title">INVOICE</div>
+    </div>
+    
+    <div class="invoice-details">
+        <div class="company-details">
+            <h3>From</h3>
+            <p>Your E-commerce Company Name</p>
+            <p>123 E-commerce Street</p>
+            <p>Business City, State 12345</p>
+            <p>Phone: +1 (123) 456-7890</p>
+            <p>Email: contact@yourecommerce.com</p>
+        </div>
+        
+        <div class="invoice-meta">
+            <h3>Invoice Details</h3>
+            <p><strong>Invoice No:</strong> {{ invoice_number }}</p>
+            <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+            <p><strong>Invoice Date:</strong> {{ order_date }}</p>
+            <p><strong>Due Date:</strong> {{ due_date }}</p>
+            {% if payment_details and payment_details.payment_reference %}
+            <p><strong>Payment Reference:</strong> {{ payment_details.payment_reference }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="customer-details">
+        <h3>Bill To</h3>
+        <p>{{ customer.first_name }} {{ customer.last_name }}</p>
+        {% if shipping_address %}
+        <p>{{ shipping_address.address_line1 }}</p>
+        {% if shipping_address.address_line2 %}
+        <p>{{ shipping_address.address_line2 }}</p>
+        {% endif %}
+        <p>{{ shipping_address.city }}, {{ shipping_address.country }} {{ shipping_address.postal_code }}</p>
+        {% endif %}
+        <p>Phone: {{ customer.phone_no }}</p>
+        <p>Email: {{ customer.email }}</p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Sl.</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order_details %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.product_sku.product_id.product_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.product_sku.product_price|floatformat:2 }}</td>
+                <td>${{ item.subtotal|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td>${{ subtotal|floatformat:2 }}</td>
+            </tr>
+            {% if payment_details and payment_details.coupon_applied %}
+            <tr>
+                <td>Discount (Coupon: {{ payment_details.coupon_applied }}):</td>
+                <td>-${{ payment_details.coupon_applied.discount_amount|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td><strong>Total:</strong></td>
+                <td><strong>${{ total|floatformat:2 }}</strong></td>
+            </tr>
+            <tr>
+                <td>Paid ({{ order_date }}):</td>
+                <td>${{ paid_amount|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td><strong>Balance Due:</strong></td>
+                <td><strong>${{ balance_due|floatformat:2 }}</strong></td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="payment-info">
+        <h3>Payment Information</h3>
+        <p><strong>Payment Method:</strong> 
+            {% if payment_details %}
+                {{ payment_details.get_payment_mode_display }}
+            {% else %}
+                Not specified
+            {% endif %}
+        </p>
+        <p><strong>Payment Status:</strong> 
+            {% if payment_details %}
+                {{ payment_details.get_payment_status_display }}
+            {% else %}
+                Pending
+            {% endif %}
+        </p>
+        <p><strong>Instructions:</strong> Please include the invoice number with your payment.</p>
+    </div>
+    
+    <div class="signature">
+        <p>Authorized Signatory</p>
+        <img src="{{ static_url }}img/signature.png" alt="Signature">
+    </div>
+    
+    <div class="footer" style="margin-top: 40px; text-align: center; font-size: 10px; color: #888;">
+        <p>Thank you for your business!</p>
+        <p>For any questions regarding this invoice, please contact our customer support at support@yourecommerce.com</p>
+    </div>
+</body>
+</html>

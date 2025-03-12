@@ -2,7 +2,7 @@ from django.db import models
 from customer.models import Accounts,Coupon
 from products.models import Product_SKU
 from business_admin.models import BusinessAdminUser
-
+from django.utils import timezone
 class DeliveryPartner(models.Model):
 
     delivery_partner_name = models.CharField(max_length=1000,null=False,blank=False)
@@ -328,3 +328,39 @@ class CancelOrderRequest(models.Model):
     
 
 
+def get_invoice_upload_path(instance, filename):
+    """
+    Define the upload path for invoice PDFs
+    Format: invoices/{year}/{month}/{order_id}/{filename}
+    """
+    now = timezone.now()
+    return f'invoices/{now.year}/{now.month:02d}/{instance.order.order_id}/{filename}'
+
+class Invoice(models.Model):
+    """
+    Model to store generated invoices.
+    
+    Attributes:
+        order (ForeignKey): The order this invoice belongs to
+        invoice_number (CharField): Unique invoice number
+        invoice_file (FileField): The PDF file of the invoice
+        created_at (DateTimeField): When the invoice was created
+        updated_at (DateTimeField): When the invoice was last updated
+        is_finalized (BooleanField): Whether this is the final version of the invoice
+        updated_by (JSONField): Who last updated this invoice
+    """
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='invoices')
+    invoice_number = models.CharField(max_length=100, unique=True)
+    invoice_file = models.FileField(upload_to=get_invoice_upload_path, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_finalized = models.BooleanField(default=False)
+    updated_by = models.JSONField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"Invoice {self.invoice_number} for Order {self.order.order_id}"
+    
+    class Meta:
+        verbose_name = "Invoice"
+        verbose_name_plural = "Invoices"
+        ordering = ['-created_at'] 
