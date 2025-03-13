@@ -2376,6 +2376,42 @@ class DeleteProduct(APIView):
             )
 
 #product sku
+class FetchProductSKUGenderChoices(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(ratelimit(key='ip', rate=REFRESH_RATE, method='GET', block=True))
+    def get(self,request,format=None,*args, **kwargs):
+        try:
+            
+            choices = ManageProducts.fetch_product_sku_gender_choices()
+            return Response({
+                'message':"Fetched Successfully",
+                'data':choices
+            },status=status.HTTP_200_OK)
+
+        except JSONDecodeError as e:
+            return Response(
+                {'error': 'Invalid JSON format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except KeyError as e:
+            return Response(
+                {'error': f'Missing required field: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid value: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        except Exception as e:
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
 class FetchProductSKU(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -2388,6 +2424,7 @@ class FetchProductSKU(APIView):
             product_id = self.request.query_params.get('product_id',"")
             product_name = self.request.query_params.get('product_name',"")
             product_sku = self.request.query_params.get('product_sku',"")
+            product_gender = self.request.query_params.get('product_gender',"") #fetch name from the list
 
             if pk!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(pk=pk)
@@ -2401,6 +2438,9 @@ class FetchProductSKU(APIView):
             elif product_sku!= "":
                 product_sku_fetch,message = ManageProducts.fetch_product_sku(product_sku=product_sku)
                 product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=False)
+            elif product_gender!= "":
+                product_sku_fetch,message = ManageProducts.fetch_product_sku(gender=product_gender)
+                product_sku_fetch_data = product_serializers.Product_SKU_Serializer(product_sku_fetch,many=True)
             else:
                 return Response({
                     'error': "No parameter passed! Must pass a single parameter"
@@ -2449,6 +2489,7 @@ class CreateProductSKU(APIView):
             product_price = self.request.data.get('product_price',"")
             product_stock = self.request.data.get('product_stock',"")
             product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',[])
+            product_gender = self.request.data.get('product_gender',"")
 
             #can none
             product_color = self.request.data.get('product_color',"")
@@ -2463,12 +2504,15 @@ class CreateProductSKU(APIView):
                 missing_fields.append("Product stock")
             if len(product_flavours_pk_list)==0:
                 missing_fields.append("Product Flavours")
+            if product_gender == "":
+                missing_fields.append("Product Gender")
+
             if missing_fields:
                 return Response({
                     'error':f"The following fields are required: {', '.join(missing_fields)}"
                 },status=status.HTTP_400_BAD_REQUEST)
 
-            product_sku_created,message = ManageProducts.create_product_sku(request,product_pk,product_price,product_stock,product_flavours_pk_list,product_color
+            product_sku_created,message = ManageProducts.create_product_sku(request,product_pk,product_price,product_stock,product_flavours_pk_list,product_gender,product_color
                                                                             ,product_size)
             if product_sku_created:
                 return Response({
@@ -2513,6 +2557,7 @@ class UpdateProductSKU(APIView):
             product_price = self.request.data.get('product_price',"")
             product_stock = self.request.data.get('product_stock',"")
             product_flavours_pk_list = self.request.data.get('product_flavours_pk_list',[])
+            product_gender = self.request.data.get('product_gender',"")
 
             #can none
             product_color = self.request.data.get('product_color',"")
@@ -2533,7 +2578,7 @@ class UpdateProductSKU(APIView):
                 },status=status.HTTP_400_BAD_REQUEST)
 
             product_sku_update, message = ManageProducts.update_product_sku(request,product_sku_pk,product_id,product_price,
-                                                                            product_stock,product_flavours_pk_list,product_color,product_size)
+                                                                            product_stock,product_flavours_pk_list,product_gender,product_color,product_size)
             if product_sku_update:
                 return Response({
                     'message':message

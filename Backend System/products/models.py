@@ -126,6 +126,14 @@ class Product(models.Model):
 
 class Product_SKU(models.Model):
 
+    '''This table stores the SKU of the product. SKU is generated based on the product name, color, gender and size'''
+
+    GENDER_CHOICES=[
+        ('Male','M'),
+        ('Female','F'),
+        ('Unisex','U'),
+    ]
+
     product_id = models.ForeignKey(Product, null=False, blank=False, on_delete=models.CASCADE,related_name='product')
     product_sku = models.CharField(null=False, blank=False, max_length=1000,unique=True)
     product_color = models.CharField(null=True, blank=True, max_length=1000)
@@ -133,6 +141,7 @@ class Product_SKU(models.Model):
     product_price=models.DecimalField(null=False,blank=False,default=0,max_digits=50,decimal_places=2)
     product_stock = models.IntegerField(null=False, blank=False, default=0)
     product_flavours=models.ManyToManyField(Product_Flavours,related_name='product_flavour')
+    product_gender = models.CharField(null=True, blank=True, max_length=100)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     updated_by = models.JSONField(blank=True, null=True)
