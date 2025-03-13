@@ -108,10 +108,8 @@ class FetchViewSet(viewsets.ViewSet):
         try:
             with transaction.atomic():
                 queryset = Product_SKU.objects.all()
-                print(queryset)
 
                 serializer = self.serializer_class(queryset, many=True)
-                print(serializer.data)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
