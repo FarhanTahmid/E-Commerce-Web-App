@@ -4,7 +4,6 @@ import Cookies from 'js-cookie';
 import Select from "react-select";
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-
 const ProductSKUCreate = () => {
     const navigate = useNavigate();
     const { product_id } = useParams();
@@ -13,6 +12,8 @@ const ProductSKUCreate = () => {
     const [productStock, setProductStock] = useState('');
     const [productFlavours, setProductFlavours] = useState([]);
     const [selectedProductFlavours, setSelectedProductFlavours] = useState([]);
+    const [genders, setGenders] = useState([]);
+    const [selectedGender, setSelectedGender] = useState(null);
     const [productColor, setProductColor] = useState("#000000");
     const [hexError, setHexError] = useState("");
     const [productSize, setProductSize] = useState('');
@@ -20,7 +21,6 @@ const ProductSKUCreate = () => {
     const [messageType, setMessageType] = useState('');
 
     const API_BASE_URL = 'http://127.0.0.1:8000/server_api/product';
-
 
     // Function to validate hex code
     const handleHexChange = (e) => {
@@ -35,11 +35,21 @@ const ProductSKUCreate = () => {
         }
     };
 
-
     useEffect(() => {
-        fetchProducts();
-        fetchProductFlavours();
+        fetchInitialData();
     }, []);
+
+    const fetchInitialData = async () => {
+        try {
+            await Promise.all([
+                fetchProductGenders(),
+                fetchProducts(),
+                fetchProductFlavours()
+            ]);
+        } catch (error) {
+            console.error("Error fetching initial data:", error);
+        }
+    };
 
     const fetchProducts = async () => {
         try {
@@ -58,10 +68,6 @@ const ProductSKUCreate = () => {
             else {
                 navigate("/404");
             }
-
-
-            // setProducts(filteredProducts);
-            // console.log(filteredProducts);
         } catch (error) {
             console.error("Error fetching products:", error);
         }
@@ -75,6 +81,18 @@ const ProductSKUCreate = () => {
             setProductFlavours(response.data.product_flavours_data.map(c => ({ value: c.id, label: c.product_flavour_name })));
         } catch (error) {
             console.error("Error fetching product flavours:", error);
+        }
+    };
+
+    const fetchProductGenders = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/product-sku/fetch-product-sku-gender-choices/`, {
+                headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+            });
+            const genderOptions = response.data.data.map((gender) => ({ value: gender, label: gender }));
+            setGenders(genderOptions);
+        } catch (error) {
+            console.error("Error fetching product genders:", error);
         }
     };
 
@@ -95,6 +113,7 @@ const ProductSKUCreate = () => {
                 product_flavours_pk_list: selectedProductFlavours.map(c => c.value),
                 product_color: productColor,
                 product_size: productSize,
+                product_gender: selectedGender?.value, // Include product_gender in the request
             }, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}`, "Content-Type": "application/json" }
             });
@@ -106,6 +125,7 @@ const ProductSKUCreate = () => {
             setProductPrice('');
             setProductStock('');
             setSelectedProductFlavours([]);
+            setSelectedGender(null);
             setProductColor("#000000");
             setProductSize('');
         } catch (error) {
@@ -144,8 +164,12 @@ const ProductSKUCreate = () => {
                                         <input type="number" className="form-control" value={productStock} onChange={(e) => setProductStock(e.target.value)} required />
                                     </div>
                                     <div className="mb-3">
+                                        <label className="form-label">Product is For</label>
+                                        <Select options={genders} value={selectedGender} onChange={setSelectedGender} required />
+                                    </div>
+                                    <div className="mb-3">
                                         <label className="form-label">Product Flavours</label>
-                                        <Select isMulti options={productFlavours} value={selectedProductFlavours} onChange={setSelectedProductFlavours} />
+                                        <Select isMulti options={productFlavours} value={selectedProductFlavours} onChange={setSelectedProductFlavours} required />
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label">Product Color</label>
@@ -157,6 +181,7 @@ const ProductSKUCreate = () => {
                                                 style={{ width: "100px" }}
                                                 value={productColor}
                                                 onChange={(e) => setProductColor(e.target.value)}
+                                                required
                                             />
 
                                             {/* Hex Code Input */}
@@ -166,10 +191,10 @@ const ProductSKUCreate = () => {
                                                 style={{ width: "120px", textTransform: "uppercase" }}
                                                 value={productColor}
                                                 onChange={handleHexChange}
+                                                required
                                             />
                                         </div>
                                         {hexError && <small className="text-danger">{hexError}</small>}
-
                                     </div>
 
                                     <div className="mb-3">

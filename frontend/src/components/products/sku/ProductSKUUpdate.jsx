@@ -14,15 +14,17 @@ const ProductSKUUpdate = () => {
     const [productStock, setProductStock] = useState('');
     const [productFlavours, setProductFlavours] = useState([]);
     const [selectedProductFlavours, setSelectedProductFlavours] = useState([]);
+    const [genders, setGenders] = useState([]);
+    const [selectedGender, setSelectedGender] = useState(null);
     const [productColor, setProductColor] = useState("#000000");
     const [hexError, setHexError] = useState("");
     const [productSize, setProductSize] = useState('');
+    const [dataLoaded, setDataLoaded] = useState(false);
 
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteAction, setDeleteAction] = useState(null); // Store the delete action type
-
 
     const API_BASE_URL = "http://127.0.0.1:8000/server_api/product";
 
@@ -41,8 +43,21 @@ const ProductSKUUpdate = () => {
 
     useEffect(() => {
         fetchProducts();
-    });
+    }, []);
 
+    const fetchProductGenders = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/product-sku/fetch-product-sku-gender-choices/`, {
+                headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+            });
+            const genderOptions = response.data.data.map((gender) => ({ value: gender, label: gender }));
+            setGenders(genderOptions);
+            return genderOptions;
+        } catch (error) {
+            console.error("Error fetching product genders:", error);
+            return [];
+        }
+    };
 
     const fetchProducts = async () => {
         try {
@@ -66,32 +81,34 @@ const ProductSKUUpdate = () => {
         }
     };
 
-
     // Fetch Categories & Brands on Mount
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchInitialData = async () => {
             try {
-                const [flavoursRes] = await Promise.all([
-                    axios.get(`${API_BASE_URL}/product-flavour/fetch-product-flavour/`, {
-                        headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
-                    })
-                ]);
+                // Fetch genders first
+                const genderOptions = await fetchProductGenders();
+
+                // Then fetch flavours
+                const flavoursRes = await axios.get(`${API_BASE_URL}/product-flavour/fetch-product-flavour/`, {
+                    headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` }
+                });
 
                 const flavourOptions = flavoursRes.data.product_flavours_data.map(c => ({ value: c.id, label: c.product_flavour_name }));
-
                 setProductFlavours(flavourOptions);
 
-                fetchProductDetails(flavourOptions);
+                // Finally fetch product details
+                await fetchProductDetails(flavourOptions, genderOptions);
+                setDataLoaded(true);
             } catch (error) {
                 console.error("Error fetching initial data:", error);
             }
         };
 
-        fetchData();
+        fetchInitialData();
     }, []);
 
     // Fetch Product Details
-    const fetchProductDetails = async (flavourOptions) => {
+    const fetchProductDetails = async (flavourOptions, genderOptions) => {
         try {
             const response = await axios.get(`${API_BASE_URL}/product-sku/fetch-product-sku/`, {
                 headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
@@ -104,16 +121,19 @@ const ProductSKUUpdate = () => {
             setProductStock(product.product_stock);
             setProductSize(product.product_size);
 
-            const selectedflav = flavourOptions.filter(c => product.product_flavours.includes(c.value));
+            // Set selected gender properly
+            const selectedGenderOption = genderOptions.find(g => g.value === product.product_gender);
+            setSelectedGender(selectedGenderOption || null);
 
-            setSelectedProductFlavours(selectedflav);
+            // Set selected flavours
+            const selectedFlav = flavourOptions.filter(c => product.product_flavours.includes(c.value));
+            setSelectedProductFlavours(selectedFlav);
 
         } catch (error) {
             console.error("Error fetching product details:", error);
             navigate("/404");
         }
     };
-
 
     // Handle Product Update
     const handleUpdateProduct = async (e) => {
@@ -133,6 +153,7 @@ const ProductSKUUpdate = () => {
                 product_flavours_pk_list: selectedProductFlavours.map(c => c.value),
                 product_color: productColor,
                 product_size: productSize,
+                product_gender: selectedGender?.value, // Ensure gender is passed
             }, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("accessToken")}`,
@@ -147,7 +168,6 @@ const ProductSKUUpdate = () => {
             setMessageType("danger");
         }
     };
-
 
     /** Handle product deletion */
     const handleDeleteProduct = () => {
@@ -218,8 +238,12 @@ const ProductSKUUpdate = () => {
                                         <input type="number" className="form-control" value={productStock} onChange={(e) => setProductStock(e.target.value)} required />
                                     </div>
                                     <div className="mb-3">
+                                        <label className="form-label">Product is For</label>
+                                        <Select options={genders} value={selectedGender} onChange={setSelectedGender} required />
+                                    </div>
+                                    <div className="mb-3">
                                         <label className="form-label">Product Flavours</label>
-                                        <Select isMulti options={productFlavours} value={selectedProductFlavours} onChange={setSelectedProductFlavours} />
+                                        <Select isMulti options={productFlavours} value={selectedProductFlavours} onChange={setSelectedProductFlavours} required />
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label">Product Color</label>
@@ -231,6 +255,7 @@ const ProductSKUUpdate = () => {
                                                 style={{ width: "100px" }}
                                                 value={productColor}
                                                 onChange={(e) => setProductColor(e.target.value)}
+                                                required
                                             />
 
                                             {/* Hex Code Input */}
@@ -240,17 +265,16 @@ const ProductSKUUpdate = () => {
                                                 style={{ width: "120px", textTransform: "uppercase" }}
                                                 value={productColor}
                                                 onChange={handleHexChange}
+                                                required
                                             />
                                         </div>
                                         {hexError && <small className="text-danger">{hexError}</small>}
-
                                     </div>
 
                                     <div className="mb-3">
                                         <label className="form-label">Product Size</label>
                                         <input type="text" className="form-control" value={productSize} onChange={(e) => setProductSize(e.target.value)} required />
                                     </div>
-
 
                                     <div className='d-flex gap-2'>
                                         <button type="submit" className="btn btn-success">Update Product</button>
@@ -261,7 +285,6 @@ const ProductSKUUpdate = () => {
                         </div>
                     </form>
                     <ConfirmationModal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={confirmDelete} message="Are you sure you want to delete this product?" />
-
                 </div>
             </div>
         </div>

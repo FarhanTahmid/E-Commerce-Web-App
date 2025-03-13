@@ -32,6 +32,7 @@ const ProductSKUList = () => {
 
             });
             setProductsSkus(response.data.product_sku_fetch);
+            console.log(response.data.product_sku_fetch);
         } catch (error) {
             console.error("Error fetching productsSkus:", error.response ? error.response.data : error);
         }
