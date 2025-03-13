@@ -73,39 +73,42 @@ class Product_Serializer(serializers.ModelSerializer):
         model = Product
         fields= '__all__'
 
-class Product_SKU_Detail_Serializer(serializers.ModelSerializer):
+class Product_Detail_Serializer(serializers.ModelSerializer):
 
-    product = serializers.SerializerMethodField()
-    product_discount = Product_Discount_Serializer(many=True,read_only=True)
+    product_category = Product_Category_Serializer(many=True,read_only=True)
+    product_sub_category = Product_Sub_Category_Serializer(many=True,read_only=True)
+    product_brand = Product_Brands_Serializer(read_only=True)
+    product_discount = serializers.SerializerMethodField()
     product_images= serializers.SerializerMethodField()
     product_flavours = serializers.SerializerMethodField()
+    product_skus = serializers.SerializerMethodField()
 
     class Meta:
-        model = Product_SKU
+        model = Product
         fields='__all__'
 
     def get_product_flavours(self, obj):
-        return [flavour.product_flavour_name for flavour in obj.product_flavours.all()]
-
-    def get_product(self,obj):
-        try:
-            product_sku = Product_SKU.objects.get(id=obj.pk)
-            return Product_Serializer(product_sku.product_id, context=self.context).data
-        except:
-            return None
         
-    # def get_product_discount(self,obj):
-    #     try:
-    #         product = self.get_product(obj)
-    #         discounts,message = ManageProducts.fetch_product_discount(product_id=product.pk)
-    #         return discounts[0]
-    #     except:
-    #         return None
+        flavours = {}
+        product_sku = Product_SKU.objects.filter(product_id=obj.pk)
+        for sku in product_sku:
+            flavour = Product_Flavour_Serializer(sku.product_flavours.all(),many=True).data
+            flavours[sku.pk] = flavour
+        return flavours
+        
+    def get_product_discount(self, obj):
+        try:
+            discounts, message = ManageProducts.fetch_product_discount(product_id=obj.pk)
+            if discounts and len(discounts) > 0:
+                return Product_Discount_Serializer(discounts[0]).data
+            return None
+        except Exception as e:
+            print(f"Discount error: {e}")
+            return None
         
     def get_product_images(self, obj):
         try:
-            product_id = obj.product_id.pk
-            images, message = ManageProducts.fetch_product_image(product_pk=product_id)
+            images, message = ManageProducts.fetch_product_image(product_pk=obj.pk)
             image_list = []
             # Add absolute URLs to the images
             request = self.context.get('request')
@@ -115,8 +118,15 @@ class Product_SKU_Detail_Serializer(serializers.ModelSerializer):
                         image_list.append(request.build_absolute_uri(
                             f"/{SERVER_API_URL}{settings.MEDIA_URL}{image.product_image}"
                         ))
-                
             return image_list
+        except Exception as e:
+            return None
+        
+    def get_product_skus(self, obj):
+
+        try:
+            skus, message = ManageProducts.fetch_product_sku(product_id=obj.pk)
+            return Product_SKU_Serializer(skus, many=True).data
         except Exception as e:
             return None
     
