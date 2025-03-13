@@ -47,12 +47,12 @@ const HotProduct: React.FC<Props> = ({ data, start, limit }) => {
                             }}
                             className='h-full'
                         >
+
                             {data
-                                .filter(product => product.category === 'cosmetic')
                                 .slice(start, limit)
                                 .map((prd, index) => (
                                     <SwiperSlide key={index}>
-                                        <Product data={prd} type='grid' />
+                                        <Product data={prd} type='grid' style='style-1' />
                                     </SwiperSlide>
                                 ))}
                         </Swiper>

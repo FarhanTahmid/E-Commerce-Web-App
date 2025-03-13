@@ -26,5 +26,6 @@ export interface ProductType {
     images: Array<string>,
     description: string,
     action: string,
-    slug: string
+    slug: string,
+    sku: string
 }

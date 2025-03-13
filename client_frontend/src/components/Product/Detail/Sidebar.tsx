@@ -406,7 +406,7 @@ const Sidebar: React.FC<Props> = ({ data, productId }) => {
                                         <div className="button-block mt-5">
                                             <div className="button-main w-full text-center">Buy It Now</div>
                                         </div>
-                                        <div className="flex items-center lg:gap-20 gap-8 mt-5">
+                                        {/* <div className="flex items-center lg:gap-20 gap-8 mt-5">
                                             <div className="compare flex items-center gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleAddToCompare() }}>
                                                 <div className="compare-btn md:w-12 md:h-12 w-10 h-10 flex items-center justify-center border border-line cursor-pointer rounded-xl duration-300 hover:bg-black hover:text-white">
                                                     <Icon.ArrowsCounterClockwise className='heading6' />
@@ -419,7 +419,8 @@ const Sidebar: React.FC<Props> = ({ data, productId }) => {
                                                 </div>
                                                 <span>Share Products</span>
                                             </div>
-                                        </div><div className="more-infor mt-6">
+                                        </div> */}
+                                        <div className="more-infor mt-6">
                                             <div className="flex items-center gap-4 flex-wrap">
                                                 <div className="flex items-center gap-1">
                                                     <Icon.ArrowClockwise className='body1' />

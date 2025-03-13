@@ -143,7 +143,7 @@ const ModalQuickview = () => {
                                         <div className="caption2 text-secondary font-semibold uppercase">{selectedProduct?.type}</div>
                                         <div className="heading4 mt-1">{selectedProduct?.name}</div>
                                     </div>
-                                    <div
+                                    {/* <div
                                         className={`add-wishlist-btn w-10 h-10 flex items-center justify-center border border-line cursor-pointer rounded-lg duration-300 flex-shrink-0 hover:bg-black hover:text-white ${wishlistState.wishlistArray.some(item => item.id === selectedProduct?.id) ? 'active' : ''}`}
                                         onClick={handleAddToWishlist}
                                     >
@@ -156,7 +156,7 @@ const ModalQuickview = () => {
                                                 <Icon.Heart size={20} />
                                             </>
                                         )}
-                                    </div>
+                                    </div> */}
                                 </div>
                                 <div className="flex items-center mt-3">
                                     <Rate currentRate={selectedProduct?.rate} size={14} />
@@ -171,6 +171,7 @@ const ModalQuickview = () => {
                                             -{percentSale}%
                                         </div>
                                     )}
+                                    <br />
                                     <div className='desc text-secondary mt-3'>{selectedProduct?.description}</div>
                                 </div>
                                 <div className="list-action mt-6">
@@ -181,7 +182,6 @@ const ModalQuickview = () => {
                                                 <div
                                                     className={`color-item w-12 h-12 rounded-xl duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
                                                     key={index}
-                                                    datatype={item.image}
                                                     onClick={() => {
                                                         handleActiveColor(item.color)
                                                     }}
@@ -196,6 +196,7 @@ const ModalQuickview = () => {
                                                     <div className="tag-action bg-black text-white caption2 capitalize px-1.5 py-0.5 rounded-sm">
                                                         {item.color}
                                                     </div>
+
                                                 </div>
                                             ))}
                                         </div>
@@ -241,7 +242,7 @@ const ModalQuickview = () => {
                                     <div className="button-block mt-5">
                                         <div className="button-main w-full text-center">Buy It Now</div>
                                     </div>
-                                    <div className="flex items-center flex-wrap lg:gap-20 gap-8 gap-y-4 mt-5">
+                                    {/* <div className="flex items-center flex-wrap lg:gap-20 gap-8 gap-y-4 mt-5">
                                         <div className="compare flex items-center gap-3 cursor-pointer" onClick={handleAddToCompare}>
                                             <div
                                                 className="compare-btn md:w-12 md:h-12 w-10 h-10 flex items-center justify-center border border-line cursor-pointer rounded-xl duration-300 hover:bg-black hover:text-white"
@@ -256,7 +257,7 @@ const ModalQuickview = () => {
                                             </div>
                                             <span>Share Products</span>
                                         </div>
-                                    </div>
+                                    </div> */}
                                     <div className="more-infor mt-6">
                                         <div className="flex items-center gap-4 flex-wrap">
                                             <div className="flex items-center gap-1">
@@ -280,7 +281,7 @@ const ModalQuickview = () => {
                                         </div>
                                         <div className="flex items-center gap-1 mt-3">
                                             <div className="text-title">SKU:</div>
-                                            <div className="text-secondary">53453412</div>
+                                            <div className="text-secondary">{selectedProduct?.sku}</div>
                                         </div>
                                         <div className="flex items-center gap-1 mt-3">
                                             <div className="text-title">Categories:</div>
