@@ -54,6 +54,8 @@ const useProducts = () => {
                     return;
                 }
 
+                console.log(response.data);
+
                 setProducts(response.data);
 
                 const transformed = response.data
@@ -74,13 +76,14 @@ const useProducts = () => {
                             const price = parseFloat(item.product_price) || 0;
                             const originPrice = discountAmount > 0 ? price + (price * (discountAmount / 100)) : price;
                             const defaultImage = "/images/product/1000x1000.png";
+                            console.log(product.product_gender);
 
                             return {
                                 id: item.id?.toString() || "0",
                                 category: product?.product_category?.[0]?.category_name?.toLowerCase() || "cosmetic",
                                 type: product.product_sub_category?.[0]?.sub_category_name?.toLowerCase() || "face",
                                 name: product.product_name || "Unnamed Product",
-                                gender: "women",
+                                gender: product.product_gender,
                                 new: new Date(item.created_at || Date.now()) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
                                 sale: discountAmount > 0,
                                 rate: 5,

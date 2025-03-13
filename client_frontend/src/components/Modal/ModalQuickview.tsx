@@ -158,10 +158,10 @@ const ModalQuickview = () => {
                                         )}
                                     </div> */}
                                 </div>
-                                <div className="flex items-center mt-3">
+                                {/* <div className="flex items-center mt-3">
                                     <Rate currentRate={selectedProduct?.rate} size={14} />
                                     <span className='caption1 text-secondary'>(1.234 reviews)</span>
-                                </div>
+                                </div> */}
                                 <div className="flex items-center gap-3 flex-wrap mt-5 pb-6 border-b border-line">
                                     <div className="product-price heading5">${selectedProduct?.price}.00</div>
                                     <div className='w-px h-4 bg-line'></div>
@@ -180,19 +180,17 @@ const ModalQuickview = () => {
                                         <div className="list-color flex items-center gap-2 flex-wrap mt-3">
                                             {selectedProduct?.variation.map((item, index) => (
                                                 <div
-                                                    className={`color-item w-12 h-12 rounded-xl duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
+                                                    className={`color-item w-12 h-12 rounded-xl duration-300 relative ${activeColor === item.color ? 'active' : ''} overflow-hidden`}
                                                     key={index}
                                                     onClick={() => {
                                                         handleActiveColor(item.color)
                                                     }}
                                                 >
-                                                    <Image
-                                                        src={item.colorImage}
-                                                        width={100}
-                                                        height={100}
-                                                        alt='color'
-                                                        className='rounded-xl'
-                                                    />
+                                                    <div
+                                                        style={{ backgroundColor: item.colorCode, width: 100, height: 100 }}
+                                                        className="rounded-xl"
+                                                    ></div>
+
                                                     <div className="tag-action bg-black text-white caption2 capitalize px-1.5 py-0.5 rounded-sm">
                                                         {item.color}
                                                     </div>
@@ -204,13 +202,13 @@ const ModalQuickview = () => {
                                     <div className="choose-size mt-5">
                                         <div className="heading flex items-center justify-between">
                                             <div className="text-title">Size: <span className='text-title size'>{activeSize}</span></div>
-                                            <div
+                                            {/* <div
                                                 className="caption1 size-guide text-red underline cursor-pointer"
                                                 onClick={handleOpenSizeGuide}
                                             >
                                                 Size Guide
                                             </div>
-                                            <ModalSizeguide data={selectedProduct} isOpen={openSizeGuide} onClose={handleCloseSizeGuide} />
+                                            <ModalSizeguide data={selectedProduct} isOpen={openSizeGuide} onClose={handleCloseSizeGuide} /> */}
                                         </div>
                                         <div className="list-size flex items-center gap-2 flex-wrap mt-3">
                                             {selectedProduct?.sizes.map((item, index) => (
@@ -224,24 +222,47 @@ const ModalQuickview = () => {
                                             ))}
                                         </div>
                                     </div>
+                                    <div className="heading flex items-center justify-between mt-5">
+                                        <div className="text-title">Product is For: <span className='text-title size'>{selectedProduct?.gender}</span></div>
+                                    </div>
+                                    <div className="heading flex items-center justify-between mt-5">
+                                        <div className="text-title">Stock: <span className='text-title size'>{selectedProduct?.quantity}</span></div>
+                                    </div>
                                     <div className="text-title mt-5">Quantity:</div>
                                     <div className="choose-quantity flex items-center max-xl:flex-wrap lg:justify-between gap-5 mt-3">
                                         <div className="quantity-block md:p-3 max-md:py-1.5 max-md:px-3 flex items-center justify-between rounded-lg border border-line sm:w-[180px] w-[120px] flex-shrink-0">
                                             <Icon.Minus
-                                                onClick={handleDecreaseQuantity}
-                                                className={`${selectedProduct?.quantityPurchase === 1 ? 'disabled' : ''} cursor-pointer body1`}
+                                                onClick={() => {
+                                                    if (selectedProduct?.quantityPurchase && selectedProduct.quantityPurchase > 1) {
+                                                        handleDecreaseQuantity();
+                                                    }
+                                                }}
+                                                className={`${(selectedProduct?.quantityPurchase ?? 1) <= 1 ? 'opacity-50' : ''} cursor-pointer body1`}
                                             />
-                                            <div className="body1 font-semibold">{selectedProduct?.quantityPurchase}</div>
+                                            <div className="body1 font-semibold">{selectedProduct?.quantityPurchase || 1}</div>
                                             <Icon.Plus
-                                                onClick={handleIncreaseQuantity}
-                                                className='cursor-pointer body1'
+                                                onClick={() => {
+                                                    if (selectedProduct?.quantity !== undefined && (selectedProduct.quantityPurchase ?? 0) < selectedProduct.quantity) {
+                                                        handleIncreaseQuantity();
+                                                    }
+                                                }}
+                                                className={`${(selectedProduct?.quantityPurchase ?? 0) >= (selectedProduct?.quantity ?? 0) ? 'opacity-50' : ''} cursor-pointer body1`}
                                             />
                                         </div>
-                                        <div onClick={handleAddToCart} className="button-main w-full text-center bg-white text-black border border-black">Add To Cart</div>
+                                        <div
+                                            onClick={() => {
+                                                if ((selectedProduct?.quantity ?? 0) > 0) {
+                                                    handleAddToCart();
+                                                }
+                                            }}
+                                            className={`button-main w-full text-center bg-white text-black border border-black ${selectedProduct?.quantity === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                        >
+                                            {(selectedProduct?.quantity ?? 0) > 0 ? 'Add To Cart' : 'Out of Stock'}
+                                        </div>
                                     </div>
-                                    <div className="button-block mt-5">
+                                    {/* <div className="button-block mt-5">
                                         <div className="button-main w-full text-center">Buy It Now</div>
-                                    </div>
+                                    </div> */}
                                     {/* <div className="flex items-center flex-wrap lg:gap-20 gap-8 gap-y-4 mt-5">
                                         <div className="compare flex items-center gap-3 cursor-pointer" onClick={handleAddToCompare}>
                                             <div
@@ -259,7 +280,7 @@ const ModalQuickview = () => {
                                         </div>
                                     </div> */}
                                     <div className="more-infor mt-6">
-                                        <div className="flex items-center gap-4 flex-wrap">
+                                        {/* <div className="flex items-center gap-4 flex-wrap">
                                             <div className="flex items-center gap-1">
                                                 <Icon.ArrowClockwise className='body1' />
                                                 <div className="text-title">Delivery & Return</div>
@@ -278,21 +299,21 @@ const ModalQuickview = () => {
                                             <Icon.Eye className='body1' />
                                             <span className="text-title">38</span>
                                             <span className="text-secondary">people viewing this product right now!</span>
-                                        </div>
+                                        </div> */}
                                         <div className="flex items-center gap-1 mt-3">
                                             <div className="text-title">SKU:</div>
                                             <div className="text-secondary">{selectedProduct?.sku}</div>
                                         </div>
                                         <div className="flex items-center gap-1 mt-3">
                                             <div className="text-title">Categories:</div>
-                                            <div className="text-secondary">{selectedProduct?.category}, {selectedProduct?.gender}</div>
+                                            <div className="text-secondary">{selectedProduct?.category}</div>
                                         </div>
                                         <div className="flex items-center gap-1 mt-3">
                                             <div className="text-title">Tag:</div>
                                             <div className="text-secondary">{selectedProduct?.type}</div>
                                         </div>
                                     </div>
-                                    <div className="list-payment mt-7">
+                                    {/* <div className="list-payment mt-7">
                                         <div className="main-content lg:pt-8 pt-6 lg:pb-6 pb-4 sm:px-4 px-3 border border-line rounded-xl relative max-md:w-2/3 max-sm:w-full">
                                             <div className="heading6 px-5 bg-white absolute -top-[14px] left-1/2 -translate-x-1/2 whitespace-nowrap">Guranteed safe checkout</div>
                                             <div className="list grid grid-cols-6">
@@ -352,7 +373,7 @@ const ModalQuickview = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>
