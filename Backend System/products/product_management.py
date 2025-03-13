@@ -1665,7 +1665,34 @@ class ManageProducts:
             return False, error_messages.get(error_type, "An unexpected error occurred while deleting product! Please try again later.")
     
     #Manage product sku
-    def fetch_product_sku(pk="",product_id="",product_name="",product_sku=""):
+    def fetch_product_sku_gender_choices():
+
+        try:
+
+            # Fetch all the choices
+            gender_choices = Product_SKU.GENDER_CHOICES
+            returned_list = []
+            for g in gender_choices:
+                returned_list.append(g[0])
+            
+            return returned_list
+        except (DatabaseError, OperationalError, ProgrammingError, IntegrityError, Exception) as error:
+            # Log the error
+            error_type = type(error).__name__  # Get the name of the error as a string
+            error_message = str(error)
+            ErrorLogs.objects.create(error_type=error_type, error_message=error_message)
+            print(f"{error_type} occurred: {error_message}")
+
+            # Return appropriate messages based on the error type
+            error_messages = {
+                "DatabaseError": "An unexpected error in Database occurred while fetching product sku gender choices! Please try again later.",
+                "OperationalError": "An unexpected error in server occurred while fetching product sku gender choices! Please try again later.",
+                "ProgrammingError": "An unexpected error in server occurred while fetching product sku gender choices! Please try again later.",
+                "IntegrityError": "Same type exists in Database!",
+            }
+            return False, error_messages.get(error_type, "An unexpected error occurred while fetching product sku! Please try again later.")
+        
+    def fetch_product_sku(pk="",product_id="",product_name="",product_sku="",gender=""):
 
         """
         Fetch product SKUs based on various optional parameters with detailed exception handling.
@@ -1679,6 +1706,7 @@ class ManageProducts:
             product_id (int, optional): The primary key (ID) of the product to filter SKUs by. Defaults to None.
             product_name (str, optional): The name of the product to filter SKUs by. Defaults to None.
             product_sku (str, optional): The SKU code of the product SKU to be fetched. Defaults to None.
+            gender (str, optional): The gender of the product SKU to be fetched. Defaults to None.
 
         Returns:
             tuple:
@@ -1696,6 +1724,9 @@ class ManageProducts:
             print(message)
 
             sku, message = fetch_product_sku(product_sku="SKU123")
+            print(message)
+
+            sku, message = fetch_product_sku(gender="Male")
             print(message)
 
         Exception Handling:
@@ -1725,6 +1756,9 @@ class ManageProducts:
                 product,message = ManageProducts.fetch_product(product_name=product_name)
                 product_skus = Product_SKU.objects.filter(product_id=product)
                 return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
+            elif gender!= "":
+                product_skus = Product_SKU.objects.filter(product_gender=gender)
+                return product_skus, "Fetched successfully" if len(product_skus)>0 else "No product sku found"
             elif product_sku!= "":
                 try:
                     return Product_SKU.objects.get(product_sku=product_sku.upper()), "Fetched successfully"
@@ -1748,7 +1782,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while fetching product sku! Please try again later.")
         
-    def create_product_sku(request,product_pk,product_price,product_stock,product_flavours_pk_list,product_color="",product_size=""):
+    def create_product_sku(request,product_pk,product_price,product_stock,product_flavours_pk_list,product_gender,product_color="",product_size=""):
 
         """
         Create a new product SKU with detailed exception handling.
@@ -1764,6 +1798,7 @@ class ManageProducts:
             product_price (float): The price of the product SKU.
             product_stock (int): The stock quantity of the product SKU.
             product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the SKU.
+            product_gender (str): The gender of the product. Must be one of the choices in `Product SKU' and must provide.
             product_color (str, optional): The color of the product SKU. Defaults to None.
             product_size (str or int, optional): The size of the product SKU. Defaults to None.
 
@@ -1779,6 +1814,7 @@ class ManageProducts:
                 product_price=25.99,
                 product_stock=100,
                 product_flavours_pk_list=[1, 2, 3],
+                product_gender = 'Male',
                 product_color="Red",
                 product_size="L"
             )
@@ -1802,7 +1838,7 @@ class ManageProducts:
         try:
             product,message = ManageProducts.fetch_product(product_pk=product_pk)
             #creating product sku for this product
-            product_sku = Product_SKU.objects.create(product_id=product,product_price=product_price,product_stock=product_stock)
+            product_sku = Product_SKU.objects.create(product_id=product,product_price=product_price,product_stock=product_stock,product_gender=product_gender)
             product_sku.save()
             product_flavours = [Product_Flavours.objects.get(pk=p) for p in product_flavours_pk_list]
             product_sku.product_flavours.add(*product_flavours)
@@ -1834,7 +1870,7 @@ class ManageProducts:
             }
             return False, error_messages.get(error_type, "An unexpected error occurred while creating product sku! Please try again later.")
 
-    def update_product_sku(request,product_sku_pk,product_id,product_price,product_stock,product_flavours_pk_list,product_color="",product_size=""):
+    def update_product_sku(request,product_sku_pk,product_id,product_price,product_stock,product_flavours_pk_list,product_gender="",product_color="",product_size=""):
 
         """
         Update an existing product SKU with detailed exception handling.
@@ -1851,6 +1887,7 @@ class ManageProducts:
             product_price (float): The new price of the product SKU.
             product_stock (int): The new stock quantity of the product SKU.
             product_flavours_pk_list (list): A list of primary keys (IDs) of the product flavours to be associated with the SKU.
+            product_gender (str): The gender of the product. Optional to update.
             product_color (str, optional): The new color of the product SKU. Defaults to None.
             product_size (str or int, optional): The new size of the product SKU. Defaults to None.
 
@@ -1867,6 +1904,7 @@ class ManageProducts:
                 product_price=29.99,
                 product_stock=150,
                 product_flavours_pk_list=[1, 2, 3],
+                product_gender = 'Female',
                 product_color="Blue",
                 product_size="M"
             )
@@ -1910,6 +1948,9 @@ class ManageProducts:
                         product_sku.product_size = str(product_size)
                     else:
                         product_sku.product_size = product_size
+            if product_sku.product_gender != product_gender:
+                product_sku.product_gender = product_gender
+
             product_sku.save()
             SystemLogs.updated_by(request,product_sku)
             SystemLogs.admin_activites(request,f"Updated Product sku with sku - {product_sku.product_sku}",message="Updated")

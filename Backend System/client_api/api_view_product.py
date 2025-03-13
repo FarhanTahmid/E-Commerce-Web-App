@@ -109,7 +109,7 @@ class FetchViewSet(viewsets.ViewSet):
             with transaction.atomic():
                 queryset = Product_SKU.objects.all()
 
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -134,7 +134,7 @@ class FetchViewSet(viewsets.ViewSet):
                 if search:
                     queryset = queryset.filter(product_id__product_name__icontains=search) or queryset.filter(product_id__product_brand__brand_name__icontains=search) or queryset.filter(product_id__product_category__category_name__icontains=search) or queryset.filter(product_id__product_sub_category__sub_category_name__icontains=search) or queryset.filter(product_price__gte=search) or queryset.filter(product_price__lte=search) or queryset.filter(product_flavours__product_flavour_name=search)
 
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -158,7 +158,7 @@ class FetchViewSet(viewsets.ViewSet):
                 if brand_name:
                     queryset = queryset.filter(product_id__product_brand__brand_name=brand_name)
 
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -182,7 +182,7 @@ class FetchViewSet(viewsets.ViewSet):
                 if category_name:
                     queryset = queryset.filter(product_id__product_category__category_name=category_name)
 
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -208,7 +208,7 @@ class FetchViewSet(viewsets.ViewSet):
                 if sub_category_name:
                     queryset = queryset.filter(product_id__product_sub_category__sub_category_name=sub_category_name)
 
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -233,7 +233,7 @@ class FetchViewSet(viewsets.ViewSet):
                 if flavour_name:
                     queryset = queryset.filter(product_flavours__product_flavour_name=flavour_name)
 
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -259,7 +259,7 @@ class FetchViewSet(viewsets.ViewSet):
 
                 queryset = queryset.filter(product_price__gte = min_price,product_price__lte = max_price)
 
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -285,7 +285,7 @@ class FetchViewSet(viewsets.ViewSet):
                 else:
                     queryset = queryset
 
-                serializer = Product_Brands_Serializer(queryset, many=True)
+                serializer = Product_Brands_Serializer(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -311,7 +311,7 @@ class FetchViewSet(viewsets.ViewSet):
                 else:
                     queryset = queryset
 
-                serializer = Product_Category_Serializer(queryset, many=True)
+                serializer = Product_Category_Serializer(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
         except ProductNotFound as e:
@@ -336,7 +336,7 @@ class FetchViewSet(viewsets.ViewSet):
                 else:
                     queryset = queryset
 
-                serializer = Product_Sub_Category_Serializer(queryset, many=True)
+                serializer = Product_Sub_Category_Serializer(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
         except ProductNotFound as e:

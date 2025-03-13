@@ -581,7 +581,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_sku/create/')
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.create_product_sku(request,product_pk=self.product2.pk,product_price=25,product_stock=100,product_flavours_pk_list=[self.product_flavour1.pk],product_size=10)
+        success, message = ManageProducts.create_product_sku(request,product_pk=self.product2.pk,product_price=25,product_stock=100,product_flavours_pk_list=[self.product_flavour1.pk],product_size=10,product_gender="Male")
         self.assertTrue(success,"Product sku should be created successfully!")
         self.assertEqual(message,"Product sku created successfully","Success message is incorrect")
 
@@ -592,7 +592,7 @@ class TestManageProducts(TestCase):
         request = self.factory.post('/product/product_sku/update/')
         request.user = self._create_mock_dev_user()
         #request.user = self._create_mock_businessadmin_user()
-        success, message = ManageProducts.update_product_sku(request,product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_flavours_pk_list=[self.product_flavour2.pk,self.product_flavour1.pk],product_color="red",product_size=80)
+        success, message = ManageProducts.update_product_sku(request,product_sku_pk=self.product_sku1.pk,product_id=self.product1.pk,product_price=100,product_stock=50,product_flavours_pk_list=[self.product_flavour2.pk,self.product_flavour1.pk],product_color="red",product_size=80,product_gender='Unisex')
         self.assertTrue(success,"Product sku should be updated successfully!")
         self.assertEqual(message,"Product sku updated with new sku id","Success message is incorrect")
 

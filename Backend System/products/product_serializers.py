@@ -76,7 +76,7 @@ class Product_Serializer(serializers.ModelSerializer):
 class Product_SKU_Detail_Serializer(serializers.ModelSerializer):
 
     product = serializers.SerializerMethodField()
-    product_discount = serializers.SerializerMethodField()
+    product_discount = Product_Discount_Serializer(many=True,read_only=True)
     product_images= serializers.SerializerMethodField()
     product_flavours = serializers.SerializerMethodField()
 
@@ -94,13 +94,13 @@ class Product_SKU_Detail_Serializer(serializers.ModelSerializer):
         except:
             return None
         
-    def get_product_discount(self,obj):
-        try:
-            product = self.get_product(obj)
-            discounts,message = ManageProducts.fetch_product_discount(product_id=product.pk)
-            return discounts[0]
-        except:
-            return None
+    # def get_product_discount(self,obj):
+    #     try:
+    #         product = self.get_product(obj)
+    #         discounts,message = ManageProducts.fetch_product_discount(product_id=product.pk)
+    #         return discounts[0]
+    #     except:
+    #         return None
         
     def get_product_images(self, obj):
         try:
