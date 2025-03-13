@@ -1,20 +1,9 @@
-"use client"
+"use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-// Define Product type based on your Django model
-interface Product {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    image: string;
-    category: string;
-    [key: string]: any; // Allow additional properties
-}
-
 const useProducts = () => {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const API_BASE_URL = `http://127.0.0.1:8000/`;
@@ -22,7 +11,8 @@ const useProducts = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get<Product[]>(`${API_BASE_URL}client_api/fetch/fetch_all_product/`);
+                const response = await axios.get(`${API_BASE_URL}client_api/fetch/fetch_all_product/`);
+                console.log("response.data", response)
                 setProducts(response.data);
             } catch (err) {
                 setError((err as Error).message);
@@ -33,7 +23,7 @@ const useProducts = () => {
 
         fetchProducts();
     }, []);
-
+    console.log("products", { products })
     return { products, loading, error };
 };
 
