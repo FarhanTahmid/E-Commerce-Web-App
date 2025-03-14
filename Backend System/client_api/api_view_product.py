@@ -70,8 +70,8 @@ class FetchViewSet(viewsets.ViewSet):
 
     authentication_classes = [SafeJWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = product_serializers.Product_SKU_Detail_Serializer
-    queryset = Product_SKU.objects.all()
+    serializer_class = product_serializers.Product_Detail_Serializer
+    queryset = Product.objects.all()
 
     def get_permissions(self):
         
@@ -82,11 +82,11 @@ class FetchViewSet(viewsets.ViewSet):
         return super().get_permissions()
     
     @action(detail=False, methods=['GET'])
-    def fetch_product_details(self,request,product_sku_pk):
+    def fetch_product_details(self,request,product_id):
     
         try:
             with transaction.atomic():
-                queryset = Product_SKU.objects.get(pk=product_sku_pk)
+                queryset = Product.objects.get(pk=product_id)
 
                 serializer = self.serializer_class(queryset, many=False,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -97,7 +97,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed  to fetch Product'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -107,7 +107,11 @@ class FetchViewSet(viewsets.ViewSet):
     
         try:
             with transaction.atomic():
+<<<<<<< HEAD
                 queryset = Product_SKU.objects.all()
+=======
+                queryset = Product.objects.all()
+>>>>>>> ac88bd6b2cfe543a45e7eea9b1c6bd1365cd8435
 
                 serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -119,7 +123,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed to fetch Product'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -128,11 +132,21 @@ class FetchViewSet(viewsets.ViewSet):
     
         try:
             with transaction.atomic():
-                queryset = Product_SKU.objects.all()
+                queryset = Product.objects.all()
                 search = request.query_params.get('search',"").strip()
-
-                if search:
-                    queryset = queryset.filter(product_id__product_name__icontains=search) or queryset.filter(product_id__product_brand__brand_name__icontains=search) or queryset.filter(product_id__product_category__category_name__icontains=search) or queryset.filter(product_id__product_sub_category__sub_category_name__icontains=search) or queryset.filter(product_price__gte=search) or queryset.filter(product_price__lte=search) or queryset.filter(product_flavours__product_flavour_name=search)
+                try:
+                    search = float(search)
+                    matching_product_ids = Product_SKU.objects.filter(
+                    Q(product_price__gte=search)
+                    ).values_list('product_id', flat=True).distinct()
+                    queryset = queryset.filter(pk__in=matching_product_ids)
+                except:
+                    queryset = queryset.filter(
+                                            Q(product_name__icontains=search)|
+                                            Q(product_brand__brand_name__icontains=search) |
+                                            Q(product_category__category_name__icontains=search) |
+                                            Q(product_sub_category__sub_category_name__icontains=search)
+                                        )
 
                 serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -144,7 +158,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed to fetch Product'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -153,10 +167,10 @@ class FetchViewSet(viewsets.ViewSet):
         
         try:
             with transaction.atomic():
-                queryset = Product_SKU.objects.all()
+                queryset = Product.objects.all()
                 brand_name = request.query_params.get('brand_name',"").strip()
                 if brand_name:
-                    queryset = queryset.filter(product_id__product_brand__brand_name=brand_name)
+                    queryset = queryset.filter(product_brand__brand_name=brand_name)
 
                 serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -168,7 +182,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed  to fetch Product'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
@@ -177,10 +191,10 @@ class FetchViewSet(viewsets.ViewSet):
         
         try:
             with transaction.atomic():
-                queryset = Product_SKU.objects.all()
+                queryset = Product.objects.all()
                 category_name = request.query_params.get('category_name',"").strip()
                 if category_name:
-                    queryset = queryset.filter(product_id__product_category__category_name=category_name)
+                    queryset = queryset.filter(product_category__category_name=category_name)
 
                 serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -192,7 +206,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed  to fetch Product'},
                 status=status.
                 HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -202,11 +216,11 @@ class FetchViewSet(viewsets.ViewSet):
         
         try:
             with transaction.atomic():
-                queryset = Product_SKU.objects.all()
+                queryset = Product.objects.all()
                 sub_category_name = request.query_params.get('sub_category_name',"").strip()
 
                 if sub_category_name:
-                    queryset = queryset.filter(product_id__product_sub_category__sub_category_name=sub_category_name)
+                    queryset = queryset.filter(product_sub_category__sub_category_name=sub_category_name)
 
                 serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -218,7 +232,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed  to fetch Product'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
@@ -227,12 +241,20 @@ class FetchViewSet(viewsets.ViewSet):
         
         try:
             with transaction.atomic():
-                queryset = Product_SKU.objects.all()
-                flavour_name = request.query_params.get('flavour_name',"").strip()
+                queryset = Product.objects.all()
+                flavour_name = request.query_params.get('flavour_name',"")
+                try:
+                    flavours,message = ManageProducts.fetch_product_flavour(product_flavour_name=flavour_name)
+                    if flavour_name:
+                        matching_product_ids = Product_SKU.objects.filter(
+                            product_flavours__id=flavours.pk 
+                        ).values_list('product_id', flat=True).distinct()
+                        print(matching_product_ids)
+                        queryset = queryset.filter(pk__in=matching_product_ids)
+                except:
+                    flavours = None
 
-                if flavour_name:
-                    queryset = queryset.filter(product_flavours__product_flavour_name=flavour_name)
-
+                    queryset = None
                 serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -243,7 +265,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed  to fetch Product'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
@@ -252,12 +274,12 @@ class FetchViewSet(viewsets.ViewSet):
         
         try:
             with transaction.atomic():
-                queryset = Product_SKU.objects.all()
+                queryset = Product.objects.all()
                 max_price_ = Product_SKU.objects.all().order_by('-product_price')[0]
                 min_price = request.query_params.get('min_price',0)
                 max_price = request.query_params.get('max_price',max_price_.product_price)
 
-                queryset = queryset.filter(product_price__gte = min_price,product_price__lte = max_price)
+                queryset = queryset.filter(product__product_price__gte = min_price,product__product_price__lte = max_price)
 
                 serializer = self.serializer_class(queryset, many=True,context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -269,7 +291,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed to fetch Product'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -295,7 +317,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed  to fetch Product brands'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -320,7 +342,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+                {'error': 'Failed  to fetch Product categories'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
@@ -345,7 +367,7 @@ class FetchViewSet(viewsets.ViewSet):
             raise  # 403
         except Exception as e:
             return Response(
-                {'error': 'Failed to add product to cart'},
+               {'error': 'Failed  to fetch Product sub categories'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

@@ -182,7 +182,7 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                 ) : (
                                     <>
                                         {
-                                            data.thumbImage.map((img, index) => (
+                                            data.thumbImage.slice(0, 2).map((img, index) => (
                                                 <Image
                                                     key={index}
                                                     src={img}
