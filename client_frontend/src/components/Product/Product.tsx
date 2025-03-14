@@ -33,53 +33,141 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
     const { addToCompare, removeFromCompare, compareState } = useCompare();
     const { openModalCompare } = useModalCompareContext()
     const { openQuickview } = useModalQuickviewContext()
+    const [currentPrice, setCurrentPrice] = useState(data.lowestPrice)
+    const [currentOriginalPrice, setCurrentOriginalPrice] = useState(data.lowestPrice)
+    const [showPriceRange, setShowPriceRange] = useState(!activeColor)
     const router = useRouter()
 
-    const handleActiveColor = (item: string) => {
-        setActiveColor(item)
+    interface PriceObject {
+        color: string;
+        price: number;
+        originalPrice: number;
     }
+
+    const handleActiveColor = (color: string): void => {
+        setActiveColor(color);
+        setShowPriceRange(false);
+
+        // Find the price object for the selected color
+        if (data.prices) {
+            const selectedPriceObj = data.prices.find((item) => item.color === color);
+
+            if (selectedPriceObj) {
+                setCurrentPrice(selectedPriceObj.price);
+                setCurrentOriginalPrice(selectedPriceObj.originalPrice);
+            }
+        }
+    };
 
     const handleActiveSize = (item: string) => {
         setActiveSize(item)
     }
 
     const handleAddToCart = () => {
-        if (!cartState.cartArray.find(item => item.id === data.id)) {
-            addToCart({ ...data });
-            updateCart(data.id, data.quantityPurchase, activeSize, activeColor)
-        } else {
-            updateCart(data.id, data.quantityPurchase, activeSize, activeColor)
+        // Find the price object for the selected color
+        let selectedPriceObj = data.prices.find(item => item.color === activeColor);
+
+        // If no color is selected, use the first available price object
+        if (!selectedPriceObj && data.prices.length > 0) {
+            selectedPriceObj = data.prices[0];
         }
-        openModalCart()
+
+        if (selectedPriceObj) {
+            // Use the SKU ID instead of product ID
+            const skuId = selectedPriceObj.id;
+
+            if (!cartState.cartArray.find(item => item.id === skuId)) {
+                // Create a modified product object with the specific SKU information
+                const productToAdd = {
+                    ...data,
+                    skuId: skuId, // Use SKU ID as the primary identifier
+                    selectedColor: activeColor,
+                    selectedSize: activeSize,
+                    price: selectedPriceObj.price,
+                    originalPrice: selectedPriceObj.originalPrice
+                };
+
+                addToCart(productToAdd);
+            } else {
+                // Update quantity for existing item in cart
+                updateCart(selectedPriceObj.sku, data.quantityPurchase, activeSize, activeColor);
+            }
+
+            openModalCart();
+        }
     };
 
     const handleAddToWishlist = () => {
-        // if product existed in wishlit, remove from wishlist and set state to false
-        if (wishlistState.wishlistArray.some(item => item.id === data.id)) {
-            removeFromWishlist(data.id);
-        } else {
-            // else, add to wishlist and set state to true
-            addToWishlist(data);
+        // Find the price object for the selected color
+        let selectedPriceObj = data.prices.find(item => item.color === activeColor);
+
+        // If no color is selected, use the first available price object
+        if (!selectedPriceObj && data.prices.length > 0) {
+            selectedPriceObj = data.prices[0];
         }
-        openModalWishlist();
+
+        if (selectedPriceObj) {
+            const skuId = selectedPriceObj.id;
+
+            // Create a modified product object with the specific SKU information
+            const productToAdd = {
+                ...data,
+                skuId: skuId,
+                selectedColor: activeColor,
+                selectedSize: activeSize,
+                price: selectedPriceObj.price,
+                originalPrice: selectedPriceObj.originalPrice
+            };
+
+            // If product existed in wishlist, remove from wishlist
+            if (wishlistState.wishlistArray.some(item => item.skuId === skuId)) {
+                removeFromWishlist(skuId); // Update to use skuId instead of data.id
+            } else {
+                // Else, add to wishlist
+                addToWishlist(productToAdd);
+            }
+
+            openModalWishlist();
+        }
     };
 
     const handleAddToCompare = () => {
-        // if product existed in wishlit, remove from wishlist and set state to false
-        if (compareState.compareArray.length < 3) {
-            if (compareState.compareArray.some(item => item.id === data.id)) {
-                removeFromCompare(data.id);
-            } else {
-                // else, add to wishlist and set state to true
-                addToCompare(data);
-            }
-        } else {
-            alert('Compare up to 3 products')
+        // Find the price object for the selected color
+        let selectedPriceObj = data.prices.find(item => item.color === activeColor);
+
+        // If no color is selected, use the first available price object
+        if (!selectedPriceObj && data.prices.length > 0) {
+            selectedPriceObj = data.prices[0];
         }
 
-        openModalCompare();
-    };
+        if (selectedPriceObj) {
+            const skuId = selectedPriceObj.id;
 
+            // Create a modified product object with the specific SKU information
+            const productToAdd = {
+                ...data,
+                skuId: skuId,
+                selectedColor: activeColor,
+                selectedSize: activeSize,
+                price: selectedPriceObj.price,
+                originalPrice: selectedPriceObj.originalPrice
+            };
+
+            if (compareState.compareArray.length < 3) {
+                // If product existed in compare, remove from compare
+                if (compareState.compareArray.some(item => item.skuId === skuId)) {
+                    removeFromCompare(skuId); // Update to use skuId instead of data.id
+                } else {
+                    // Else, add to compare
+                    addToCompare(productToAdd);
+                }
+            } else {
+                alert('Compare up to 3 products');
+            }
+
+            openModalCompare();
+        }
+    };
     const handleQuickviewOpen = () => {
         openQuickview(data)
     }
@@ -91,12 +179,13 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
 
     let percentSale = Math.floor(100 - ((data.price / data.originPrice) * 100))
     let percentSold = Math.floor((data.sold / data.quantity) * 100)
+    console.log("data", data)
 
     return (
         <>
             {type === "grid" ? (
                 <div className={`product-item grid-type ${style}`}>
-                    <div onClick={() => handleDetailProduct(data.id)} className="product-main cursor-pointer block">
+                    <div onClick={() => handleDetailProduct(data.id.toString())} className="product-main cursor-pointer block">
                         <div className="product-thumb bg-white relative overflow-hidden rounded-2xl">
                             {data.new && (
                                 <div className="product-tag text-button-uppercase bg-green px-3 py-0.5 inline-block rounded-full absolute top-3 left-3 z-[1]">
@@ -122,35 +211,6 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                             <Icon.ShoppingBagOpen size={20} />
                                         </div>
                                     )}
-                                    {/* <div
-                                        className={`add-wishlist-btn w-[32px] h-[32px] flex items-center justify-center rounded-full bg-white duration-300 relative ${wishlistState.wishlistArray.some(item => item.id === data.id) ? 'active' : ''}`}
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleAddToWishlist()
-                                        }}
-                                    >
-                                        <div className="tag-action bg-black text-white caption2 px-1.5 py-0.5 rounded-sm">Add To Wishlist</div>
-                                        {wishlistState.wishlistArray.some(item => item.id === data.id) ? (
-                                            <>
-                                                <Icon.Heart size={18} weight='fill' className='text-white' />
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Icon.Heart size={18} />
-                                            </>
-                                        )}
-                                    </div>
-                                    <div
-                                        className={`compare-btn w-[32px] h-[32px] flex items-center justify-center rounded-full bg-white duration-300 relative mt-2 ${compareState.compareArray.some(item => item.id === data.id) ? 'active' : ''}`}
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleAddToCompare()
-                                        }}
-                                    >
-                                        <div className="tag-action bg-black text-white caption2 px-1.5 py-0.5 rounded-sm">Compare Product</div>
-                                        <Icon.Repeat size={18} className='compare-icon' />
-                                        <Icon.CheckCircle size={20} className='checked-icon' />
-                                    </div> */}
                                     {style === 'style-3' || style === 'style-4' ? (
                                         <div
                                             className={`quick-view-btn w-[32px] h-[32px] flex items-center justify-center rounded-full bg-white duration-300 relative mt-2 ${compareState.compareArray.some(item => item.id === data.id) ? 'active' : ''}`}
@@ -166,36 +226,23 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                 </div>
                             ) : <></>}
                             <div className="product-img w-full h-full aspect-[3/4]">
-                                {activeColor ? (
-                                    <>
-                                        {
+
+                                <>
+                                    {
+                                        data.thumbImage.slice(0, 2).map((img, index) => (
                                             <Image
-                                                src={data.variation.find(item => item.color === activeColor)?.image ?? ''}
+                                                key={index}
+                                                src={img}
                                                 width={500}
                                                 height={500}
-                                                alt={data.name}
                                                 priority={true}
+                                                alt={data.name}
                                                 className='w-full h-full object-cover duration-700'
                                             />
-                                        }
-                                    </>
-                                ) : (
-                                    <>
-                                        {
-                                            data.thumbImage.slice(0, 2).map((img, index) => (
-                                                <Image
-                                                    key={index}
-                                                    src={img}
-                                                    width={500}
-                                                    height={500}
-                                                    priority={true}
-                                                    alt={data.name}
-                                                    className='w-full h-full object-cover duration-700'
-                                                />
-                                            ))
-                                        }
-                                    </>
-                                )}
+                                        ))
+                                    }
+                                </>
+
                             </div>
                             {data.sale && (
                                 <>
@@ -235,13 +282,18 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                     )}
                                     {data.action === 'add to cart' ? (
                                         <div
-                                            className="add-cart-btn w-full text-button-uppercase py-2 text-center rounded-full duration-500 bg-white hover:bg-black hover:text-white"
+                                            className={`add-cart-btn w-full text-button-uppercase py-2 text-center rounded-full duration-500 ${activeColor
+                                                ? 'bg-white hover:bg-black hover:text-white cursor-pointer'
+                                                : 'bg-white hover:bg-black hover:text-white cursor-not-allowed'
+                                                }`}
                                             onClick={e => {
                                                 e.stopPropagation();
-                                                handleAddToCart()
+                                                if (activeColor) {
+                                                    handleAddToCart();
+                                                }
                                             }}
                                         >
-                                            Add To Cart
+                                            {activeColor ? 'Add To Cart' : 'Select Color'}
                                         </div>
                                     ) : (
                                         <>
@@ -415,9 +467,9 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                 </div>
                             </div>
                             <div className="product-name text-title duration-300">{data.name}</div>
-                            {data.variation.length > 0 && data.action === 'add to cart' && (
+                            {data.prices && data.action === 'add to cart' && (
                                 <div className="list-color py-2 max-md:hidden flex items-center gap-2 flex-wrap duration-500">
-                                    {data.variation.map((item, index) => (
+                                    {data.prices.map((item, index) => (
                                         <div
                                             key={index}
                                             className={`color-item w-6 h-6 rounded-full duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
@@ -431,9 +483,9 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                     ))}
                                 </div>
                             )}
-                            {data.variation.length > 0 && data.action === 'quick shop' && (
+                            {data.prices && data.action === 'quick shop' && (
                                 <div className="list-color-image max-md:hidden flex items-center gap-2 flex-wrap duration-500">
-                                    {data.variation.map((item, index) => (
+                                    {data.prices.map((item, index) => (
                                         <div
                                             className={`color-item w-8 h-8 rounded-lg duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
                                             key={index}
@@ -456,13 +508,21 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                 </div>
                             )}
                             <div className="product-price-block flex items-center gap-2 flex-wrap mt-1 duration-300 relative z-[1]">
-                                <div className="product-price text-title">${data.price}.00</div>
-                                {percentSale > 0 && (
+                                {showPriceRange && data.lowestPrice !== data.highestPrice ? (
+                                    <div className="product-price text-title">${data.lowestPrice}.00 - ${data.highestPrice}.00</div>
+                                ) : (
                                     <>
-                                        <div className="product-origin-price caption1 text-secondary2"><del>${data.originPrice}.00</del></div>
-                                        <div className="product-sale caption1 font-medium bg-green px-3 py-0.5 inline-block rounded-full">
-                                            -{percentSale}%
-                                        </div>
+                                        <div className="product-price text-title">${currentPrice}.00</div>
+                                        {currentOriginalPrice > currentPrice && (
+                                            <>
+                                                <div className="product-origin-price caption1 text-secondary2">
+                                                    <del>${currentOriginalPrice}.00</del>
+                                                </div>
+                                                <div className="product-sale caption1 font-medium bg-green px-3 py-0.5 inline-block rounded-full">
+                                                    -{Math.floor(100 - ((currentPrice / currentOriginalPrice) * 100))}%
+                                                </div>
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -559,17 +619,17 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                         <div className="product-infor max-sm:w-full">
                                             <div onClick={() => handleDetailProduct(data.id)} className="product-name heading6 inline-block duration-300">{data.name}</div>
                                             <div className="product-price-block flex items-center gap-2 flex-wrap mt-2 duration-300 relative z-[1]">
-                                                <div className="product-price text-title">${data.price}.00</div>
-                                                <div className="product-origin-price caption1 text-secondary2"><del>${data.originPrice}.00</del></div>
+                                                <div className="product-price text-title">${currentPrice}.00</div>
+                                                <div className="product-origin-price caption1 text-secondary2"><del>${currentOriginalPrice}.00</del></div>
                                                 {data.originPrice && (
                                                     <div className="product-sale caption1 font-medium bg-green px-3 py-0.5 inline-block rounded-full">
                                                         -{percentSale}%
                                                     </div>
                                                 )}
                                             </div>
-                                            {data.variation.length > 0 && data.action === 'add to cart' ? (
+                                            {data.prices && data.action === 'add to cart' ? (
                                                 <div className="list-color max-md:hidden py-2 mt-5 mb-1 flex items-center gap-3 flex-wrap duration-300">
-                                                    {data.variation.map((item, index) => (
+                                                    {data.prices.map((item, index) => (
                                                         <div
                                                             key={index}
                                                             className={`color-item w-8 h-8 rounded-full duration-300 relative`}
@@ -581,10 +641,10 @@ const Product: React.FC<ProductProps> = ({ data, type, style }) => {
                                                 </div>
                                             ) : (
                                                 <>
-                                                    {data.variation.length > 0 && data.action === 'quick shop' ? (
+                                                    {data.prices && data.action === 'quick shop' ? (
                                                         <>
                                                             <div className="list-color flex items-center gap-2 flex-wrap mt-5">
-                                                                {data.variation.map((item, index) => (
+                                                                {data.prices.map((item, index) => (
                                                                     <div
                                                                         className={`color-item w-12 h-12 rounded-xl duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
                                                                         key={index}
